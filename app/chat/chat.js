@@ -1,50 +1,64 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Send, Loader2, MessageCircle, User, Image, Clock } from "lucide-react";
+import { ArrowLeft, Send, Loader2, MessageCircle, User, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import NavBar from "@/components/NavBar";
+import ItemPostModal from "@/components/ItemPostModal";
 
 export default function ChatPage() {
+  const router = useRouter();
   const [user, setUser] = useState(null);
-  const [chats, setChats] = useState([]);
-  const [selectedChat, setSelectedChat] = useState(null);
+  const [view, setView] = useState('list');
+  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showPostModal, setShowPostModal] = useState(false);
   const messagesEndRef = useRef(null);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const itemId = searchParams.get("itemId");
-  const supabaseClient = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  );
 
   useEffect(() => {
     getUser();
-    fetchChats();
   }, []);
 
+  // Combined Fetch and Subscription Logic
   useEffect(() => {
+    let channel;
+
+    if (user) {
+      fetchConversations();
+
+      // Initialize real-time subscription correctly[cite: 4]
+      channel = supabase
+        .channel("messages-subscription")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "messages"
+          },
+          () => {
+            fetchConversations();
+          }
+        )
+        .subscribe();
+    }
+
+    // Cleanup: This prevents the "cannot add callbacks after subscribe" error[cite: 4]
     return () => {
-      if (selectedChat) {
-        supabaseClient.removeAllChannels();
+      if (channel) {
+        supabase.removeChannel(channel);
       }
     };
-  }, [selectedChat]);
+  }, [user]);
 
   useEffect(() => {
-    if (selectedChat) {
-      fetchMessages(selectedChat.id);
-      const unsubscribe = subscribeToMessages(selectedChat.id);
-      return unsubscribe;
+    if (messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [selectedChat]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   const getUser = async () => {
@@ -53,104 +67,97 @@ export default function ChatPage() {
     setLoading(false);
   };
 
-  const fetchChats = async () => {
+  const fetchConversations = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("chats")
-      .select("*, messages(id, content, sender_id, created_at), item:items(title, image_url)")
-      .or(`finder_id.eq.${user.id},claimer_id.eq.${user.id}`)
-      .order("created_at", { ascending: false });
-    setChats(data || []);
-  };
 
-  const fetchMessages = async (chatId) => {
-    const { data } = await supabaseClient
+    const { data: allMessages, error } = await supabase
       .from("messages")
-      .select("*, profiles!sender_id_fkey(username)")
-      .eq("chat_id", chatId)
-      .order("created_at", { ascending: true });
-    setMessages(data || []);
+      .select(`
+        *,
+        items:item_id(id, title, image_url, user_id),
+        senderProfile:sender_id(id, full_name, avatar_url),
+        receiverProfile:receiver_id(id, full_name, avatar_url)
+      `)
+      .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching conversations:", error);
+      return;
+    }
+
+    const conversationMap = {};
+
+    allMessages?.forEach((msg) => {
+      const itemId = msg.item_id;
+
+      if (!conversationMap[itemId]) {
+        const otherUserId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
+        const otherUserProfile = msg.sender_id === user.id ? msg.receiverProfile : msg.senderProfile;
+
+        conversationMap[itemId] = {
+          id: itemId,
+          itemTitle: msg.items?.title || "Item",
+          otherUserId,
+          otherUser: otherUserProfile || { id: otherUserId, full_name: "Unknown", avatar_url: null },
+          lastMessage: msg.content,
+          lastMessageTime: new Date(msg.created_at),
+          allMessages: []
+        };
+      }
+
+      conversationMap[itemId].allMessages.push(msg);
+    });
+
+    const sortedConversations = Object.values(conversationMap)
+      .sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+
+    setConversations(sortedConversations);
   };
 
-  const subscribeToMessages = (chatId) => {
-    const channel = supabaseClient
-      .channel("chat-channel")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "messages",
-          filter: `chat_id=eq.${chatId}`
-        },
-        (payload) => {
-          fetchMessages(chatId);
-        }
-      )
-      .subscribe((status) => {
-        console.log("Subscription status:", status);
-      });
+  const selectConversation = (conv) => {
+    const sortedMessages = [...conv.allMessages].sort(
+      (a, b) => new Date(a.created_at) - new Date(b.created_at)
+    );
 
-    return () => supabaseClient.removeChannel(channel);
+    setSelectedConversation(conv);
+    setMessages(sortedMessages);
+    setView('chat');
+  };
+
+  const backToList = () => {
+    setView('list');
+    setSelectedConversation(null);
+    setMessages([]);
+    setNewMessage("");
+  };
+
+  const handleFileSelected = (file) => {
+    const previewUrl = URL.createObjectURL(file);
+    setShowPostModal(false);
+    router.push(`/cam?preview=${encodeURIComponent(previewUrl)}`);
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedChat || !user) return;
+    if (!newMessage.trim() || !selectedConversation || !user) return;
 
-    const { error } = await supabaseClient
-      .from("messages")
-      .insert({
-        chat_id: selectedChat.id,
-        sender_id: user.id,
-        content: newMessage.trim()
-      });
+    try {
+      const { error } = await supabase
+        .from("messages")
+        .insert({
+          sender_id: user.id,
+          receiver_id: selectedConversation.otherUserId,
+          item_id: selectedConversation.id,
+          content: newMessage.trim()
+        });
 
-    if (error) {
-      alert("Failed to send: " + error.message);
-    } else {
+      if (error) throw error;
+
       setNewMessage("");
-    }
-  };
-
-  const createChat = async (itemId) => {
-    if (!user || !itemId) return;
-    const { data: existing } = await supabase
-      .from("chats")
-      .select("id")
-      .eq("item_id", itemId)
-      .or(`finder_id.eq.${user.id},claimer_id.eq.${user.id}`).single();
-
-    if (existing) {
-      setSelectedChat(existing);
-      return;
-    }
-
-    const { data: item } = await supabase
-      .from("items")
-      .select("finder_id")
-      .eq("id", itemId)
-      .single();
-
-    if (!item) {
-      alert("Item not found");
-      return;
-    }
-
-    const { data: newChat, error } = await supabase
-      .from("chats")
-      .insert({
-        item_id: itemId,
-        finder_id: item.finder_id,
-        claimer_id: user.id
-      })
-      .select()
-      .single();
-
-    if (error) {
-      alert("Failed to create chat: " + error.message);
-    } else {
-      setSelectedChat(newChat);
-      setChats([newChat, ...chats]);
+      fetchConversations();
+    } catch (error) {
+      console.error("Error sending message:", error);
+      alert("Failed to send message");
     }
   };
 
@@ -174,184 +181,162 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] text-white p-4 pb-24 font-sans">
-      {/* Header */}
-      <div className="flex items-center mb-6 p-2">
-        <button onClick={() => router.back()} className="p-3 mr-3 hover:bg-orange-500/20 rounded-2xl transition-all shrink-0">
-          <ArrowLeft size={20} className="text-orange-400" />
-        </button>
-        <h1 className="text-2xl font-bold bg-linear-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">Messages</h1>
-      </div>
+    <div className="min-h-screen bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] text-white pb-24 font-sans">
+      {view === 'list' ? (
+        <>
+          <div className="flex items-center mb-6 p-6">
+            <h1 className="text-2xl font-bold bg-linear-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">Messages</h1>
+          </div>
 
-      <div className="flex h-[calc(100vh-220px)] gap-4">
-        {/* Chats List */}
-        <div className="w-80 flex flex-col bg-black/30 backdrop-blur-xl border border-orange-500/30 rounded-3xl p-4 shadow-2xl shadow-orange-500/10 min-h-0">
-          <div className="flex-1 overflow-y-auto space-y-2 mb-4 pr-2 -mr-4">
+          <div className="px-6 space-y-4">
             <AnimatePresence>
-              {chats.map((chat) => (
+              {conversations.map((conv) => (
                 <motion.button
-                  key={chat.id}
-                  initial={{ opacity: 0, scale: 0.95, x: -20 }}
-                  animate={{ opacity: 1, scale: 1, x: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, x: 20 }}
-                  layout
-                  onClick={() => setSelectedChat(chat)}
-                  className={`group w-full p-4 rounded-2xl flex items-start gap-3 hover:bg-orange-500/10 transition-all border border-orange-500/20 overflow-hidden relative ${selectedChat?.id === chat.id ? "bg-orange-500/20 border-orange-500/40 ring-2 ring-orange-500/50 shadow-orange-500/25" : ""}`}
+                  key={conv.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  onClick={() => selectConversation(conv)}
+                  className="w-full bg-black/30 backdrop-blur-xl border border-orange-500/20 rounded-2xl p-4 flex items-center gap-4 hover:bg-orange-500/10 transition-all text-left"
                 >
-                  <div className="w-12 h-12 shrink-0 bg-linear-to-br from-orange-500/20 to-orange-600/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-orange-500/30">
-                    <MessageCircle size={20} className="text-orange-400 drop-shadow-sm" />
+                  <div className="w-12 h-12 bg-linear-to-br from-orange-500/20 to-orange-600/20 rounded-full flex items-center justify-center border border-orange-500/30 flex-shrink-0">
+                    {conv.otherUser?.avatar_url ? (
+                      <img src={conv.otherUser.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+                    ) : (
+                      <User size={20} className="text-orange-400" />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm truncate bg-linear-to-r from-white to-orange-100 bg-clip-text text-transparent group-hover:from-orange-100">{chat.item?.title || "New Conversation"}</p>
-                    <p className="text-xs text-orange-300/80 truncate mt-0.5">
-                      {chat.messages?.[0]?.content ? chat.messages[0].content.slice(0, 35) + "..." : "No messages yet"}
-                    </p>
+                    <p className="font-bold text-left">{conv.otherUser?.full_name || "User"}</p>
+                    <p className="text-sm text-orange-300/80 truncate">{conv.lastMessage}</p>
                   </div>
-                  {selectedChat?.id === chat.id && (
-                    <div className="absolute -right-2 -top-2 w-4 h-4 bg-orange-500 rounded-full border-2 border-background shadow-lg" />
-                  )}
+                  <div className="text-xs text-orange-400/60 flex-shrink-0">
+                    {conv.lastMessageTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
                 </motion.button>
               ))}
             </AnimatePresence>
-            {chats.length === 0 && (
-              <motion.div 
-                initial={{ opacity: 0 }} 
-                animate={{ opacity: 1 }} 
-                className="text-center py-12 text-orange-400/60"
-              >
+            {conversations.length === 0 && (
+              <div className="text-center py-12 text-orange-400/60">
                 <MessageCircle size={48} className="mx-auto mb-4 opacity-40" />
                 <p className="font-medium">No conversations yet</p>
-                <p className="text-sm opacity-75 mt-1">Chats appear here when someone messages you about a found item</p>
-              </motion.div>
+                <p className="text-sm opacity-75 mt-1">Messages appear here when someone contacts you about found items</p>
+              </div>
             )}
           </div>
-          
-          {itemId && (
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => createChat(itemId)}
-              className="px-6 py-3 bg-linear-to-r from-orange-500 via-orange-500/90 to-orange-600 rounded-2xl font-bold shadow-xl shadow-orange-500/40 hover:shadow-2xl hover:shadow-orange-500/50 transition-all border border-orange-500/50 text-white text-sm uppercase tracking-wide"
-            >
-              💬 Chat about found item
-            </motion.button>
-          )}
-        </div>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center justify-between p-6 border-b border-orange-500/20 bg-black/40 backdrop-blur-sm">
+            <button onClick={backToList} className="p-2 hover:bg-orange-500/20 rounded-full transition">
+              <ArrowLeft size={20} className="text-orange-400" />
+            </button>
+            <div className="flex-1 text-center mx-4">
+              <h2 className="font-bold text-lg">{selectedConversation?.otherUser?.full_name || "Chat"}</h2>
+              <p className="text-sm text-orange-300/60">{selectedConversation?.itemTitle}</p>
+            </div>
+            <button className="p-2 hover:bg-orange-500/20 rounded-full transition">
+              <User size={20} className="text-orange-400" />
+            </button>
+          </div>
 
-        {/* Active Chat */}
-        <div className="flex-1 flex flex-col bg-black/20 backdrop-blur-xl border border-orange-500/20 rounded-3xl shadow-2xl shadow-orange-500/5 overflow-hidden">
-          {selectedChat ? (
-            <>
-              {/* Chat Header */}
-              <div className="p-6 border-b border-orange-500/20 bg-black/40 backdrop-blur-sm flex items-center gap-4">
-                <div className="w-12 h-12 bg-linear-to-br from-orange-400/20 to-orange-500/20 rounded-2xl flex items-center justify-center border-2 border-orange-500/30">
-                  <Image size={20} className="text-orange-400" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-bold text-xl truncate bg-linear-to-r from-white to-orange-200 bg-clip-text text-transparent">
-                    {selectedChat.item?.title || "Chat"}
-                  </h2>
-                  <p className="text-sm text-orange-400/80 font-medium">Found item discussion</p>
-                </div>
-              </div>
-
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-black/10 min-h-0">
-                <AnimatePresence>
-                  {messages.map((msg, index) => (
-                    <motion.div
-                      key={msg.id}
-                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -20, scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
-                      className={`flex ${msg.sender_id === user.id ? "justify-end" : "justify-start"}`}
-                    >
-                      <div className={`max-w-[75%] p-4 rounded-3xl shadow-lg ${
-                        msg.sender_id === user.id
-                          ? "bg-linear-to-br from-orange-500 to-orange-600 text-white shadow-orange-500/50"
-                          : "bg-white/10 backdrop-blur-sm border border-white/10 shadow-gray-900/50 text-white"
-                      }`}>
-                        <p className="text-sm leading-relaxed">{msg.content}</p>
-                        <div className="flex items-center gap-1 mt-2 opacity-75 text-xs">
-                          <Clock size={12} />
-                          {new Date(msg.created_at).toLocaleString("en-US", {
-                            hour: "numeric",
-                            minute: "2-digit",
-                            hour12: true
-                          })}
+          <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-[calc(100vh-300px)]">
+            <AnimatePresence>
+              {messages.map((msg) => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className={`flex ${msg.sender_id === user.id ? 'justify-end' : 'justify-start'}`}
+                >
+                  {msg.sender_id !== user.id ? (
+                    <div className="max-w-[75%] flex gap-3">
+                      <div className="w-8 h-8 bg-linear-to-br from-orange-500/20 to-orange-600/20 rounded-full flex items-center justify-center border border-orange-500/30 flex-shrink-0">
+                        {selectedConversation?.otherUser?.avatar_url ? (
+                          <img src={selectedConversation.otherUser.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
+                        ) : (
+                          <User size={16} className="text-orange-400" />
+                        )}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-sm font-bold text-orange-400">{selectedConversation?.otherUser?.full_name || "User"}</span>
+                          <span className="text-xs text-orange-300/60 flex items-center gap-1">
+                            <Clock size={10} />
+                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <div className="bg-white/10 backdrop-blur-sm border border-white/10 rounded-2xl p-3 text-white">
+                          <p className="text-sm">{msg.content}</p>
                         </div>
                       </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-                {messages.length === 0 && selectedChat && (
-                  <div className="flex flex-col items-center justify-center h-64 text-orange-400/60">
-                    <MessageCircle size={64} className="mb-4 opacity-30" />
-                    <p className="text-lg font-medium">No messages yet</p>
-                    <p className="text-sm opacity-75 mt-1">Be the first to say hi!</p>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
+                    </div>
+                  ) : (
+                    <div className="max-w-[75%] flex gap-3 flex-row-reverse">
+                      <div className="w-8 h-8 bg-linear-to-br from-orange-500/20 to-orange-600/20 rounded-full flex items-center justify-center border border-orange-500/30 flex-shrink-0">
+                        <User size={16} className="text-orange-400" />
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-2 mb-1 flex-row-reverse">
+                          <span className="text-sm font-bold text-orange-400">You</span>
+                          <span className="text-xs text-orange-300/60 flex items-center gap-1">
+                            <Clock size={10} />
+                            {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <div className="bg-linear-to-br from-orange-500 to-orange-600 rounded-2xl p-3 text-white">
+                          <p className="text-sm">{msg.content}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            {messages.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-64 text-orange-400/60">
+                <MessageCircle size={64} className="mb-4 opacity-30" />
+                <p className="text-lg font-medium">No messages yet</p>
+                <p className="text-sm opacity-75 mt-1">Be the first to say hi!</p>
               </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
 
-              {/* Input */}
-              <div className="p-6 border-t border-orange-500/20 bg-black/40 backdrop-blur-sm">
-                <div className="flex items-end gap-3">
-                  <input
-                    ref={(el) => el?.focus()}
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type your message..."
-                    className="flex-1 max-h-24 min-h-11 bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-3xl text-white placeholder:text-orange-400/60 focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 outline-none resize-none transition-all shadow-inner"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        sendMessage();
-                      }
-                    }}
-                  />
-                  <motion.button
-                    whileTap={{ scale: 0.95 }}
-                    onClick={sendMessage}
-                    disabled={!newMessage.trim()}
-                    className="p-4 bg-linear-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-orange-400 disabled:to-orange-500 disabled:cursor-not-allowed rounded-3xl shadow-xl shadow-orange-500/40 hover:shadow-2xl hover:shadow-orange-500/60 transition-all flex items-center justify-center min-w-13 h-13 border border-orange-500/50 disabled:opacity-50"
-                  >
-                    <Send size={20} className="text-white" />
-                  </motion.button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center p-12 bg-linear-to-b from-transparent to-black/50">
-              <motion.div 
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center text-orange-400/60"
+          <div className="p-6 border-t border-orange-500/20 bg-black/40 backdrop-blur-sm">
+            <div className="flex items-end gap-3">
+              <input
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                placeholder="Type your message..."
+                className="flex-1 bg-white/5 backdrop-blur-sm border border-white/10 p-4 rounded-3xl text-white placeholder:text-orange-400/60 focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500/50 outline-none resize-none"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+              />
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={sendMessage}
+                disabled={!newMessage.trim()}
+                className="p-4 bg-linear-to-br from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-orange-400 disabled:to-orange-500 disabled:cursor-not-allowed rounded-3xl shadow-xl shadow-orange-500/40 hover:shadow-2xl hover:shadow-orange-500/60 transition-all flex items-center justify-center min-w-13 h-13 border border-orange-500/50 disabled:opacity-50"
               >
-                <MessageCircle size={96} className="mx-auto mb-6 opacity-20 drop-shadow-2xl" />
-                <h2 className="text-2xl font-bold mb-3 bg-linear-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">
-                  Welcome to Messages
-                </h2>
-                <p className="text-lg mb-8 max-w-md mx-auto leading-relaxed opacity-80">
-                  Start a conversation when someone wants to claim your found item,
-                  or respond when others message you about items you posted.
-                </p>
-                {itemId && (
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => createChat(itemId)}
-                    className="px-8 py-4 bg-linear-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 rounded-3xl font-bold text-lg shadow-2xl shadow-orange-500/50 hover:shadow-3xl hover:shadow-orange-500/60 transition-all border border-orange-500/50 text-white uppercase tracking-wide"
-                  >
-                    💬 Start Item Chat
-                  </motion.button>
-                )}
-              </motion.div>
+                <Send size={20} className="text-white" />
+              </motion.button>
             </div>
-          )}
-        </div>
-      </div>
+          </div>
+        </>
+      )}
+
+      <ItemPostModal
+        open={showPostModal}
+        onClose={() => setShowPostModal(false)}
+        onFileSelect={handleFileSelected}
+      />
+      <NavBar activePage="chat" onPlusClick={() => setShowPostModal(true)} />
     </div>
   );
 }

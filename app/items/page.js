@@ -2,149 +2,194 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { 
-  ArrowLeft, Search, Grid, List, 
-  Clock, Plus, AlertCircle 
+import {
+  ArrowLeft, Search, Grid, List,
+  Clock, AlertCircle, ChevronRight, SlidersHorizontal, MapPin, Package
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import NavBar from "@/components/NavBar";
 
 export default function ItemsPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("found");
   const [viewMode, setViewMode] = useState("grid");
+  const [showFilters, setShowFilters] = useState(false);
+  const [viewUserPosts, setViewUserPosts] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [items, setItems] = useState([]);
+  const [userItems, setUserItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchItems();
-  }, [activeTab]);
+  const [locationFilter, setLocationFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
+
+  const locations = ['All', 'Shed', 'Activity Center', 'ER Bldg.', 'ENB Bldg.', 'Volleyball Court', 'Basketball Court', 'Admin Bldg.', 'Quadrangle'];
+  const statuses = ['All', 'Unclaimed', 'Claimed'];
+
+  const statusMap = { 'Active': 'Unclaimed', 'Resolved': 'Claimed' };
+  const reverseStatusMap = { 'Unclaimed': 'Active', 'Claimed': 'Resolved' };
+
+  useEffect(() => { fetchItems(); }, [activeTab]);
 
   const fetchItems = async () => {
     try {
       setLoading(true);
+      const formattedCategory = activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
+      const { data: { user } } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from("items")
         .select("*")
-        .eq("status", activeTab)
+        .eq("category", formattedCategory)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       setItems(data || []);
-    } catch (error) {
-      console.error("Error fetching items:", error.message);
+      if (user) setUserItems(data?.filter(item => item.user_id === user.id) || []);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredItems = items.filter(item => 
-    item.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const applyFilters = (list) => {
+    return list.filter(item => {
+      const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesLocation = locationFilter === 'All' || (item.location_tag && item.location_tag.includes(locationFilter));
+      const dbStatusFilter = reverseStatusMap[statusFilter] || 'All';
+      const matchesStatus = statusFilter === 'All' || item.status === dbStatusFilter;
+      return matchesSearch && matchesLocation && matchesStatus;
+    });
+  };
+
+  const currentDisplayList = applyFilters(viewUserPosts ? userItems : items);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white pb-24">
-      <header className="p-6 max-w-6xl mx-auto">
-        {/* Top Nav */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <button onClick={() => router.back()} className="p-2 hover:bg-white/5 rounded-full transition">
-              <ArrowLeft size={24} />
-            </button>
-            <h1 className="text-2xl font-bold text-orange-500">
-              {activeTab === 'found' ? 'Found Items' : 'Lost Items'}
-            </h1>
-          </div>
-          
-          <div className="flex bg-black border border-white/10 p-1 rounded-xl">
-            <button 
-              onClick={() => setViewMode("grid")}
-              className={`p-2 rounded-lg transition-all ${viewMode === "grid" ? "bg-orange-500 text-white" : "text-gray-400"}`}
-            >
-              <Grid size={18} />
-            </button>
-            <button 
-              onClick={() => setViewMode("list")}
-              className={`p-2 rounded-lg transition-all ${viewMode === "list" ? "bg-orange-500 text-white" : "text-gray-400"}`}
-            >
-              <List size={18} />
-            </button>
-          </div>
-        </div>
+    /* GRADIENT BACKGROUND TO MATCH HOME AND PROFILE PAGES */
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] text-white pb-32 font-sans">
 
-        {/* Search Bar */}
-        <div className="relative mb-6">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
-          <input 
-            type="text" 
-            placeholder="Search items" // Match your screenshot placeholder
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white/5 border border-white/10 py-4 pl-12 pr-4 rounded-2xl outline-none focus:border-orange-500/50 transition-all"
-          />
-        </div>
+      {/* CENTERED HEADER WITH LOGO PLACEHOLDER */}
+      <header className="sticky top-0 z-50 bg-transparent backdrop-blur-xl border-b border-white/5 p-5">
+        <div className="max-w-6xl mx-auto flex items-center justify-center">
+          {/* LOGO AREA - CENTERED */}
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(249,115,22,0.5)]">
+              <Package size={18} className="text-black" strokeWidth={3} />
+            </div>
+            <span className="text-lg font-black tracking-widest text-orange-500 hidden sm:block">FOUNDIT</span>
+          </div>
 
-        {/* Toggle Tabs (Pill Style) */}
-        <div className="flex bg-white/5 rounded-2xl p-1 border border-white/5">
-          {["found", "lost"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${
-                activeTab === tab 
-                ? "border border-orange-500 text-orange-500 bg-orange-500/5" 
-                : "text-gray-500 hover:text-gray-300"
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
+          <div className="ml-auto flex bg-white/5 p-1 rounded-xl border border-white/10 backdrop-blur-md">
+            <button onClick={() => setViewMode("grid")} className={`p-2 rounded-lg transition-all ${viewMode === "grid" ? "bg-orange-500 text-white shadow-[0_0_20px_rgba(249,115,22,0.5)]" : "text-white/30"}`}><Grid size={18} /></button>
+            <button onClick={() => setViewMode("list")} className={`p-2 rounded-lg transition-all ${viewMode === "list" ? "bg-orange-500 text-white shadow-[0_0_20px_rgba(249,115,22,0.5)]" : "text-white/30"}`}><List size={18} /></button>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto p-6">
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <div className="w-12 h-12 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
-            <p className="text-gray-500 text-sm italic">Scanning database...</p>
+      <main className="max-w-6xl mx-auto px-6 pt-6 space-y-6">
+
+        {/* TAB SWITCHER */}
+        <div className="relative flex bg-white/5 p-1.5 rounded-[1.5rem] border border-white/10 shadow-2xl backdrop-blur-md">
+          <motion.div
+            className="absolute inset-y-1.5 bg-orange-500 rounded-[1.1rem] shadow-[0_0_30px_rgba(249,115,22,0.4)]"
+            animate={{ x: activeTab === 'found' ? 0 : '100%' }}
+            transition={{ type: "spring", stiffness: 350, damping: 30 }}
+            style={{ width: 'calc(50% - 6px)' }}
+          />
+          <button onClick={() => setActiveTab('found')} className={`relative z-10 flex-1 py-3 text-xs font-black tracking-widest transition-colors ${activeTab === 'found' ? 'text-white' : 'text-white/30'}`}>FOUND</button>
+          <button onClick={() => setActiveTab('lost')} className={`relative z-10 flex-1 py-3 text-xs font-black tracking-widest transition-colors ${activeTab === 'lost' ? 'text-white' : 'text-white/30'}`}>LOST</button>
+        </div>
+
+        {/* CONTROLS */}
+        <div className="relative flex gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500" size={20} />
+            <input
+              type="text"
+              placeholder={`Search ${activeTab} items...`}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-white/[0.04] border border-white/10 py-4 pl-12 pr-4 rounded-2xl outline-none text-sm focus:border-orange-500/50 transition-all placeholder:text-white/20"
+            />
           </div>
-        ) : filteredItems.length === 0 ? (
-          <div className="py-24 text-center">
-             <AlertCircle size={48} className="text-gray-700 mx-auto mb-4" />
-             <p className="text-gray-500">No items match your search</p>
-          </div>
-        ) : (
-          <div className={viewMode === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" : "space-y-4"}>
-            {filteredItems.map((item) => (
-              <motion.div 
-                layout
-                key={item.id} 
-                onClick={() => router.push(`/items/${item.id}`)}
-                className="group cursor-pointer bg-white/5 border border-white/10 rounded-4xl overflow-hidden hover:border-orange-500/40 transition-all"
+          <button
+            onClick={() => setViewUserPosts(!viewUserPosts)}
+            className={`p-4 rounded-2xl border transition-all ${viewUserPosts ? 'bg-orange-500 border-orange-400 text-white shadow-[0_0_20px_rgba(249,115,22,0.4)]' : 'bg-white/5 border-white/10 text-white/40'}`}
+          >
+            <Clock size={22} />
+          </button>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`p-4 rounded-2xl border transition-all ${showFilters ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/10 text-orange-500'}`}
+          >
+            <SlidersHorizontal size={22} />
+          </button>
+
+          {/* OVERLAPPING FILTER DROPDOWN */}
+          <AnimatePresence>
+            {showFilters && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="absolute top-full right-0 mt-2 z-50 w-80 bg-[#121212]/95 border border-white/10 rounded-[2rem] backdrop-blur-2xl shadow-2xl"
               >
-                <div className="h-56 w-full overflow-hidden">
-                  <img src={item.image_url} alt="" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                </div>
-                <div className="p-6">
-                  <h3 className="font-bold text-lg mb-2">{item.title}</h3>
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <Clock size={14} />
-                    {new Date(item.created_at).toLocaleDateString()}
+                <div className="p-6 space-y-6">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-4 block">Location</label>
+                    <div className="flex flex-wrap gap-2">
+                      {locations.map(loc => (
+                        <button key={loc} onClick={() => setLocationFilter(loc)} className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${locationFilter === loc ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-4 block">Status</label>
+                    <div className="flex gap-2">
+                      {statuses.map(stat => (
+                        <button key={stat} onClick={() => setStatusFilter(stat)} className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${statusFilter === stat ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/5 text-white/40'}`}>{stat}</button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </motion.div>
-            ))}
-          </div>
-        )}
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* FEED */}
+        <motion.div layout className={viewMode === "grid" ? "grid grid-cols-2 gap-4" : "space-y-4"}>
+          {currentDisplayList.map((item) => (
+            <motion.div
+              layout
+              key={item.id}
+              onClick={() => router.push(`/items/${item.id}`)}
+              className={`group bg-white/[0.04] border border-white/10 rounded-[2rem] overflow-hidden hover:border-orange-500/40 transition-all duration-300 backdrop-blur-sm shadow-xl ${viewMode === "list" ? "flex p-3 gap-5 items-center" : "flex flex-col"}`}
+            >
+              <div className={`relative flex-shrink-0 overflow-hidden ${viewMode === "list" ? "w-24 h-24 rounded-2xl" : "aspect-square w-full"}`}>
+                <img src={item.image_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+              </div>
+
+              <div className={`flex-1 ${viewMode === "list" ? "py-1" : "p-5"}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="font-bold text-sm tracking-tight line-clamp-1">{item.title}</h3>
+                  <span className="text-[7px] font-black uppercase text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20">
+                    {statusMap[item.status] || item.status}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-white/30">
+                  <MapPin size={10} className="text-orange-500" />
+                  <span className="text-[9px] font-bold uppercase tracking-widest">{item.location_tag}</span>
+                </div>
+              </div>
+              {viewMode === "list" && <ChevronRight size={16} className="text-white/10 mr-2" />}
+            </motion.div>
+          ))}
+        </motion.div>
       </main>
 
-      {/* Floating Plus Button */}
-      <button
-        onClick={() => router.push('/item')}
-        className="fixed bottom-10 right-10 w-16 h-12 bg-orange-500 rounded-2xl flex items-center justify-center text-black shadow-2xl shadow-orange-500/40"
-      >
-        <Plus size={32} strokeWidth={3} />
-      </button>
+      {/* Navigation Bar */}
+      <NavBar activePage="items" />
     </div>
   );
 }

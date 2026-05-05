@@ -1,7 +1,6 @@
 ## Project Identity
 - **Name:** FoundIt (LSPU Lost and Found System)
-- **Theme:** Purple iOS UI (Glassmorphism, backdrop-blur-md, rounded-2xl, thin white borders)
-- **Primary Color:** Violet-600 / Purple-700
+- **Theme:** Orange iOS UI (Glassmorphism, backdrop-blur-md, rounded-2xl, thin white borders)
 
 ## Tech Stack
 - **Framework:** Next.js (App Router)

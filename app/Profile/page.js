@@ -1,10 +1,9 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase'; 
-import { Search, Tag, Plus, MessageCircle, User, Mail, ChevronRight, LogOut, Trash2, Camera, Image, X, Send, Loader2 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { Search, Tag, Plus, MessageCircle, User, Mail, ChevronRight, LogOut, Trash2, Camera, Image, X, Send, Loader2, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -14,14 +13,14 @@ export default function ProfilePage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [posting, setPosting] = useState(false);
-  
+
   const [profile, setProfile] = useState({
     full_name: "",
     student_number: "",
     email: "",
     avatar_url: ""
   });
-  
+
   const router = useRouter();
 
   const getProfile = useCallback(async () => {
@@ -37,7 +36,7 @@ export default function ProfilePage() {
           .maybeSingle();
 
         if (error) throw error;
-        
+
         if (data) {
           setProfile({
             full_name: data.full_name || "LSPU Student",
@@ -173,16 +172,20 @@ export default function ProfilePage() {
   );
 
   return (
-    <div className="min-h-screen text-white pb-32 font-sans bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233]">
+    <div className="min-h-screen text-white pb-20 font-sans bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233]">
       {/* Header */}
-      <div className="sticky top-0 z-20 backdrop-blur-md bg-black/40 border-b border-orange-500/20 px-6 pt-12 pb-6 flex justify-center">
+      <div className="sticky top-0 z-20 backdrop-blur-md bg-black/40 border-b border-orange-500/20 px-6 pt-4 pb-6 flex items-center justify-between">
+        <button onClick={() => router.push('/Home')} className="p-2 hover:bg-white/5 rounded-full transition text-orange-400">
+          <ArrowLeft size={24} />
+        </button>
         <h1 className="text-3xl font-extrabold tracking-tight text-orange-400">Profile</h1>
+        <div className="w-10" />
       </div>
 
       <main className="px-6 mt-10 max-w-lg mx-auto space-y-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} 
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
           className="rounded-3xl bg-black/40 border border-orange-500/30 p-8 flex flex-col items-center shadow-2xl shadow-orange-500/10">
-          
+
           <div className="relative mb-4 group">
             <div className="w-32 h-32 rounded-full bg-black border-2 border-orange-500/50 flex items-center justify-center overflow-hidden relative shadow-inner">
               {profile.avatar_url ? (
@@ -216,7 +219,7 @@ export default function ProfilePage() {
         {/* Menu Sections */}
         <div className="rounded-3xl bg-black/40 border border-orange-500/30 overflow-hidden">
           <ActionRow icon={<Mail size={20} />} label="Notification Settings" />
-          
+
           <button onClick={handleLogout} className="w-full flex items-center justify-between px-6 py-5 border-b border-orange-500/20 hover:bg-orange-500/5 transition-all group text-orange-300">
             <div className="flex items-center gap-4">
               <LogOut size={20} className="group-hover:translate-x-1 transition-transform" />
@@ -235,19 +238,7 @@ export default function ProfilePage() {
         </div>
       </main>
 
-      {/* Navigation */}
-      <nav className="fixed bottom-6 left-6 right-6 h-18 bg-black/50 backdrop-blur-2xl rounded-[2.5rem] border border-orange-500/20 shadow-2xl flex items-center justify-around px-4 z-50">
-        <NavIcon icon={<Search size={22} />} label="Explore" onClick={() => router.push('/Home')} />
-        <NavIcon icon={<Tag size={22} />} label="Items" onClick={() => router.push('/items')} />
-        <button 
-          onClick={() => setShowPostModal(true)}
-          className="p-4 rounded-full -translate-y-6 border-4 border-black shadow-xl shadow-orange-500/40 bg-gradient-to-br from-[#ff6b35] to-[#ff8c42] active:scale-90 transition-transform"
-        >
-          <Plus size={24} color="white" strokeWidth={3} />
-        </button>
-        <NavIcon icon={<MessageCircle size={22} />} label="Chat" onClick={() => router.push('/chat')} />
-        <NavIcon icon={<User size={22} />} label="Profile" active />
-      </nav>
+
 
       {/* Modals */}
       <AnimatePresence>
@@ -268,7 +259,7 @@ export default function ProfilePage() {
         {showPostModal && (
           <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-black border border-orange-500/30 rounded-[2.5rem] w-full max-w-md overflow-hidden">
-               <div className="flex items-center justify-between p-6 border-b border-orange-500/20">
+              <div className="flex items-center justify-between p-6 border-b border-orange-500/20">
                 <h2 className="text-xl font-bold">Report Found Item</h2>
                 <button onClick={() => setShowPostModal(false)} className="text-orange-400"><X size={20} /></button>
               </div>

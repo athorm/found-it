@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase' 
+import { supabase } from '@/lib/supabase'
 import { User, GraduationCap, Mail, Lock } from 'lucide-react'
 
 export default function LoginPage() {
@@ -34,30 +34,36 @@ export default function LoginPage() {
         setMessage('')
 
         try {
-            // Sign up the user in Supabase Auth
+            // Sign up and auto-authenticate the user
             const { data, error: authError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
                 options: {
-                    // Storing data in metadata allows the SQL Trigger to pick it up
                     data: {
                         full_name: formData.fullName,
                         student_number: formData.studentNumber,
                     },
-                    emailRedirectTo: `${window.location.origin}/login`,
                 },
             })
 
             if (authError) throw authError
 
-            // NOTE: We no longer manually upsert to 'profiles' here. 
-            // The SQL Trigger handles this automatically on the server side.
+            // Auto sign in the user (since we want immediate access)
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email: formData.email,
+                password: formData.password
+            })
 
-            setMessage('Account created! Please check your email to verify your account.')
-            
+            if (signInError) throw signInError
+
+            setMessage('Account created successfully! Welcome to FoundIt!')
+
             // Clear form for security
             setFormData({ fullName: '', studentNumber: '', email: '', password: '', loginIdentifier: '' })
-            
+
+            // Redirect to home
+            router.push('/Home')
+
         } catch (err) {
             setError(err.message)
         } finally {
@@ -106,7 +112,7 @@ export default function LoginPage() {
     }
 
     return (
-        <div style={{background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, rgba(124, 45, 18, 0.2) 100%)'}} className="min-h-screen flex items-center justify-center p-4">
+        <div style={{ background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, rgba(124, 45, 18, 0.2) 100%)' }} className="min-h-screen flex items-center justify-center p-4">
             <div className="w-full max-w-md bg-black/40 backdrop-blur-2xl border border-orange-500/20 rounded-3xl p-8 shadow-2xl shadow-orange-500/10">
                 <div className="text-center mb-8">
                     <h1 className="text-5xl font-extrabold gradient-text mb-2 tracking-tight">FoundIt</h1>
@@ -118,7 +124,7 @@ export default function LoginPage() {
                     <button
                         type="button"
                         onClick={() => { setIsSignUp(false); setError(''); setMessage(''); }}
-                        style={!isSignUp ? {background: 'linear-gradient(90deg, #ff6b35 0%, #ff8c42 100%)'} : {}}
+                        style={!isSignUp ? { background: 'linear-gradient(90deg, #ff6b35 0%, #ff8c42 100%)' } : {}}
                         className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all ${!isSignUp ? 'text-white shadow-lg shadow-orange-500/30' : 'text-orange-300/60 hover:text-orange-300'}`}
                     >
                         Sign In
@@ -126,7 +132,7 @@ export default function LoginPage() {
                     <button
                         type="button"
                         onClick={() => { setIsSignUp(true); setError(''); setMessage(''); }}
-                        style={isSignUp ? {background: 'linear-gradient(90deg, #ff6b35 0%, #ff8c42 100%)'} : {}}
+                        style={isSignUp ? { background: 'linear-gradient(90deg, #ff6b35 0%, #ff8c42 100%)' } : {}}
                         className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all ${isSignUp ? 'text-white shadow-lg shadow-orange-500/30' : 'text-orange-300/60 hover:text-orange-300'}`}
                     >
                         Sign Up
@@ -206,7 +212,7 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        style={{background: 'linear-gradient(90deg, #ff6b35 0%, #ff8c42 100%)'}}
+                        style={{ background: 'linear-gradient(90deg, #ff6b35 0%, #ff8c42 100%)' }}
                         className="w-full py-4 text-white font-bold rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-orange-500/30 hover:opacity-90"
                     >
                         {loading ? (
