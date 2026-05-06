@@ -15,6 +15,7 @@ export default function ItemDetailPage() {
     const [owner, setOwner] = useState(null);
     const [user, setUser] = useState(null);
     const [showPostModal, setShowPostModal] = useState(false);
+    const isOwner = user?.id === item?.user_id;
 
     useEffect(() => {
         fetchItemDetail();
@@ -84,45 +85,84 @@ export default function ItemDetailPage() {
     const statusMap = { "Active": "Unclaimed", "Resolved": "Claimed" };
     const displayStatus = statusMap[item.status] || item.status;
 
+    const handleToggleStatus = async () => {
+        if (!isOwner) return;
+
+        const newStatus = item.status === 'Active' ? 'Resolved' : 'Active';
+
+        const { error } = await supabase
+            .from('items')
+            .update({ status: newStatus })
+            .eq('id', item.id);
+
+        if (error) {
+            console.error("Error updating status:", error);
+            alert("Failed to update status.");
+        } else {
+            setItem({ ...item, status: newStatus });
+        }
+    };
+
     const handleContactOwner = async () => {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError || !session?.access_token) {
-            console.error('Unable to get session for chat creation:', sessionError);
+        if (!user) {
             alert('Please log in to message the poster.');
             return;
         }
 
-        if (!item) return;
-
-        if (user?.id === item.user_id) {
+        if (user.id === item.user_id) {
             alert('This is your own item.');
             return;
         }
 
-        const response = await fetch('/api/chats', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({ itemId: item.id }),
-        });
-
-        let result = null;
         try {
-            result = await response.json();
-        } catch (parseError) {
-            console.error('Chat API JSON parse error:', parseError);
-        }
+            // 1. Check if a chat already exists for this exact item and user pair
+            const { data: existingChats, error: fetchError } = await supabase
+                .from('chats')
+                .select('id')
+                .eq('item_id', item.id)
+                // The user clicking the button is the 'claimer', the owner is the 'finder' (or vice versa depending on your schema)
+                .or(`claimer_id.eq.${user.id},finder_id.eq.${user.id}`);
 
-        if (!response.ok) {
-            console.error('Chat API error:', response.status, result);
-            alert(result?.error || `Unable to start chat (${response.status}).`);
-            return;
-        }
+            if (fetchError) throw fetchError;
 
-        if (result.chatId) {
-            router.push(`/chat?id=${result.chatId}`);
+            // If a chat exists, just route to it and stop
+            if (existingChats && existingChats.length > 0) {
+                router.push(`/chat?id=${existingChats[0].id}`);
+                return;
+            }
+
+            // 2. If no chat exists, create a new one
+            const { data: newChat, error: createError } = await supabase
+                .from('chats')
+                .insert({
+                    item_id: item.id,
+                    finder_id: item.user_id, // The poster
+                    claimer_id: user.id,     // The person messaging
+                    status: 'open'
+                })
+                .select()
+                .single();
+
+            if (createError) throw createError;
+
+            // 3. Send the automatic first message containing the item details
+            const initialMessage = `Hi! I am reaching out regarding your post: "${item.title}".`;
+
+            await supabase.from('messages').insert({
+                chat_id: newChat.id,
+                item_id: item.id,
+                sender_id: user.id,
+                receiver_id: item.user_id,
+                content: initialMessage,
+                is_read: false
+            });
+
+            // 4. Redirect to the newly created chat
+            router.push(`/chat?id=${newChat.id}`);
+
+        } catch (error) {
+            console.error("Error handling chat:", error);
+            alert("Could not start conversation.");
         }
     };
 
@@ -211,31 +251,30 @@ export default function ItemDetailPage() {
                 </motion.div>
 
                 {/* Owner Info */}
-                {owner && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="rounded-[2.5rem] bg-black/40 border border-orange-500/30 p-8"
-                    >
-                        <h3 className="text-sm font-semibold text-orange-400 uppercase tracking-widest mb-4">Posted by</h3>
-                        <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 rounded-2xl bg-black border-2 border-orange-500/50 flex items-center justify-center overflow-hidden">
-                                {owner.avatar_url ? (
-                                    <img src={owner.avatar_url} alt={owner.full_name} className="w-full h-full object-cover" />
-                                ) : (
-                                    <User size={32} className="text-orange-300" />
-                                )}
-                            </div>
-                            <div className="flex-1">
-                                <p className="text-lg font-bold text-white">{owner.full_name}</p>
-                                <p className="text-sm text-orange-300/60">{owner.email}</p>
-                            </div>
-                            <button onClick={handleContactOwner} type="button" className="p-3 bg-orange-500/10 border border-orange-500/30 rounded-full hover:bg-orange-500/20 transition">
-                                <MessageCircle size={20} className="text-orange-500" />
-                            </button>
+                {isOwner ? (
+                    <div className="space-y-3 w-full">
+                        <div className="w-full py-3 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center gap-2 text-white/50 font-black tracking-widest text-xs">
+                            <User size={16} />
+                            YOU POSTED THIS ITEM
                         </div>
-                    </motion.div>
+                        <button
+                            onClick={handleToggleStatus}
+                            className={`w-full py-4 rounded-2xl font-black tracking-widest transition-all shadow-lg ${item.status === 'Active'
+                                ? 'bg-green-600 hover:bg-green-700 text-white'
+                                : 'bg-orange-500 hover:bg-orange-600 text-white'
+                                }`}
+                        >
+                            MARK AS {item.status === 'Active' ? 'CLAIMED' : 'UNCLAIMED'}
+                        </button>
+                    </div>
+                ) : (
+                    <button
+                        onClick={handleContactOwner}
+                        className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black tracking-widest flex items-center justify-center gap-3 transition-all shadow-[0_0_30px_rgba(249,115,22,0.3)]"
+                    >
+                        <MessageCircle size={20} strokeWidth={3} />
+                        MESSAGE POSTER
+                    </button>
                 )}
             </main>
 
