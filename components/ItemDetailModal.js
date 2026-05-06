@@ -76,29 +76,27 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
         }
 
         try {
-            // 1. Check if a chat already exists for this exact item and user pair
+            // 1. Check for existing chat
             const { data: existingChats, error: fetchError } = await supabase
                 .from('chats')
                 .select('id')
                 .eq('item_id', item.id)
-                // The user clicking the button is the 'claimer', the owner is the 'finder' (or vice versa depending on your schema)
                 .or(`claimer_id.eq.${user.id},finder_id.eq.${user.id}`);
 
             if (fetchError) throw fetchError;
 
-            // If a chat exists, just route to it and stop
             if (existingChats && existingChats.length > 0) {
                 router.push(`/chat?id=${existingChats[0].id}`);
                 return;
             }
 
-            // 2. If no chat exists, create a new one
+            // 2. Create new chat
             const { data: newChat, error: createError } = await supabase
                 .from('chats')
                 .insert({
                     item_id: item.id,
-                    finder_id: item.user_id, // The poster
-                    claimer_id: user.id,     // The person messaging
+                    finder_id: item.user_id,
+                    claimer_id: user.id,
                     status: 'open'
                 })
                 .select()
@@ -106,10 +104,11 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
 
             if (createError) throw createError;
 
-            // 3. Send the automatic first message containing the item details
-            const initialMessage = `Hi! I am reaching out regarding your post: "${item.title}".`;
+            // 3. Generate the automated initial message
+            const initialMessage = `Hi! I'm reaching out about your post "${item.title}" at ${item.location_tag}. Is this still available?`;
 
-            await supabase.from('messages').insert({
+            // THE FIX: Correctly capturing 'msgError' from the insertion[cite: 5]
+            const { error: msgError } = await supabase.from('messages').insert({
                 chat_id: newChat.id,
                 item_id: item.id,
                 sender_id: user.id,
@@ -118,12 +117,14 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
                 is_read: false
             });
 
-            // 4. Redirect to the newly created chat
+            if (msgError) throw msgError;
+
+            // 4. Redirect to the new chat page[cite: 5]
             router.push(`/chat?id=${newChat.id}`);
 
         } catch (error) {
-            console.error("Error handling chat:", error);
-            alert("Could not start conversation.");
+            console.error("Detailed Chat Error:", error.message || error);
+            alert(`Could not start conversation: ${error.message || 'Unknown error'}`);
         }
     };
 

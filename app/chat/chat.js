@@ -17,9 +17,11 @@ export default function ChatPage() {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [showPostModal, setShowPostModal] = useState(false);
+  const channelRef = useRef(null);
   const messagesEndRef = useRef(null);
   const activeChannelRef = useRef(null);
   const [visibleTimes, setVisibleTimes] = useState({});
+
 
   const toggleTime = (msgId) => {
     setVisibleTimes(prev => ({ ...prev, [msgId]: !prev[msgId] }));
@@ -45,6 +47,19 @@ export default function ChatPage() {
       };
     }
   }, [user]);
+
+  // Add this near your other useEffects in chat/page.js
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const chatId = urlParams.get('id');
+
+    if (chatId && conversations.length > 0) {
+      const targetConv = conversations.find(c => c.id === chatId);
+      if (targetConv) {
+        selectConversation(targetConv);
+      }
+    }
+  }, [conversations]);
 
   useEffect(() => {
     if (messages.length > 0) {
@@ -111,38 +126,36 @@ export default function ChatPage() {
   };
 
   const selectConversation = async (conv) => {
-    if (activeChannelRef.current) {
-      await supabase.removeChannel(activeChannelRef.current);
-    }
+    setSelectedConversation(conv);
+    setView('chat'); // <--- SWITCH THE VIEW TO SHOW THE CHAT WINDOW
 
-    const { data: msgData } = await supabase
+    // 3. Fetch existing message history (so the chat isn't empty)
+    const { data: history, error } = await supabase
       .from('messages')
       .select('*')
       .eq('chat_id', conv.id)
       .order('created_at', { ascending: true });
 
-    setMessages(msgData || []);
-    setSelectedConversation(conv);
-    setView('chat');
+    if (!error) {
+      setMessages(history);
+    }
 
-    const roomChannel = supabase
-      .channel(`room-${conv.id}`)
-      .on("postgres_changes", {
-        event: "INSERT",
-        schema: "public",
-        table: "messages",
-        filter: `chat_id=eq.${conv.id}`
-      }, (payload) => {
-        setMessages(prev => {
-          if (prev.some(m => m.id === payload.new.id)) return prev;
-          return [...prev, payload.new];
-        });
+    // 4. Realtime setup (Ensure subscribe is last!)[cite: 3]
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+
+    const channel = supabase.channel(`room-${conv.id}`);
+    channel.on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${conv.id}` },
+      (payload) => {
+        setMessages((prev) => [...prev, payload.new]);
       }
-      ).subscribe();
+    ).subscribe();
 
-    activeChannelRef.current = roomChannel;
+    channelRef.current = channel;
   };
-
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation || !user) return;
     const content = newMessage.trim();
