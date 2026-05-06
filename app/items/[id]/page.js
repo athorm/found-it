@@ -13,11 +13,22 @@ export default function ItemDetailPage() {
     const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
     const [owner, setOwner] = useState(null);
+    const [user, setUser] = useState(null);
     const [showPostModal, setShowPostModal] = useState(false);
 
     useEffect(() => {
         fetchItemDetail();
     }, [params.id]);
+
+    useEffect(() => {
+        const getUser = async () => {
+            const {
+                data: { user },
+            } = await supabase.auth.getUser();
+            setUser(user);
+        };
+        getUser();
+    }, []);
 
     const fetchItemDetail = async () => {
         try {
@@ -73,10 +84,52 @@ export default function ItemDetailPage() {
     const statusMap = { "Active": "Unclaimed", "Resolved": "Claimed" };
     const displayStatus = statusMap[item.status] || item.status;
 
+    const handleContactOwner = async () => {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !session?.access_token) {
+            console.error('Unable to get session for chat creation:', sessionError);
+            alert('Please log in to message the poster.');
+            return;
+        }
+
+        if (!item) return;
+
+        if (user?.id === item.user_id) {
+            alert('This is your own item.');
+            return;
+        }
+
+        const response = await fetch('/api/chats', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({ itemId: item.id }),
+        });
+
+        let result = null;
+        try {
+            result = await response.json();
+        } catch (parseError) {
+            console.error('Chat API JSON parse error:', parseError);
+        }
+
+        if (!response.ok) {
+            console.error('Chat API error:', response.status, result);
+            alert(result?.error || `Unable to start chat (${response.status}).`);
+            return;
+        }
+
+        if (result.chatId) {
+            router.push(`/chat?id=${result.chatId}`);
+        }
+    };
+
     const handleFileSelected = (file) => {
         const previewUrl = URL.createObjectURL(file);
         setShowPostModal(false);
-        router.push(`/cam?preview=${encodeURIComponent(previewUrl)}`);
+        router.push(`/post?preview=${encodeURIComponent(previewUrl)}`);
     };
 
     return (
@@ -178,7 +231,7 @@ export default function ItemDetailPage() {
                                 <p className="text-lg font-bold text-white">{owner.full_name}</p>
                                 <p className="text-sm text-orange-300/60">{owner.email}</p>
                             </div>
-                            <button className="p-3 bg-orange-500/10 border border-orange-500/30 rounded-full hover:bg-orange-500/20 transition">
+                            <button onClick={handleContactOwner} type="button" className="p-3 bg-orange-500/10 border border-orange-500/30 rounded-full hover:bg-orange-500/20 transition">
                                 <MessageCircle size={20} className="text-orange-500" />
                             </button>
                         </div>

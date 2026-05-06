@@ -14,7 +14,7 @@ export default function HomePage() {
   const handleFileSelected = (file) => {
     const previewUrl = URL.createObjectURL(file);
     setShowPostModal(false);
-    router.push(`/cam?preview=${encodeURIComponent(previewUrl)}`);
+    router.push(`/post?preview=${encodeURIComponent(previewUrl)}`);
   };
 
   return (

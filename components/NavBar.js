@@ -8,7 +8,7 @@ export default function NavBar({ activePage, onPlusClick }) {
         if (onPlusClick) {
             onPlusClick();
         } else {
-            window.location.href = '/cam';
+            window.location.href = '/post';
         }
     };
 

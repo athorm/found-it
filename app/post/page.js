@@ -1,9 +1,11 @@
 'use client';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Send, Loader2, AlertCircle, ChevronDown, Check } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, AlertCircle, ChevronDown, Check, Maximize2 } from 'lucide-react';
+import ItemPostModal from '@/components/ItemPostModal';
+import Cropper from 'react-easy-crop';
 
 // --- CUSTOM DROPDOWN COMPONENT ---
 function CustomSelect({ label, value, options, onChange, placeholder = "Select" }) {
@@ -13,7 +15,6 @@ function CustomSelect({ label, value, options, onChange, placeholder = "Select" 
     <div className="space-y-1 relative">
       <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-400/80 ml-1">{label}</label>
 
-      {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center justify-between text-white focus:border-orange-500/50 transition-all active:scale-[0.98]"
@@ -26,13 +27,10 @@ function CustomSelect({ label, value, options, onChange, placeholder = "Select" 
         </motion.div>
       </button>
 
-      {/* Animated Dropdown Menu */}
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Click outside to close */}
             <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
-
             <motion.div
               initial={{ opacity: 0, y: -10, scale: 0.95 }}
               animate={{ opacity: 1, y: 5, scale: 1 }}
@@ -69,86 +67,115 @@ function PostItemContent() {
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('found');
+  const [category, setCategory] = useState('Found');
   const [locationTag, setLocationTag] = useState('');
   const [specificLocation, setSpecificLocation] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
 
-  const locationOptions = [
-    { label: 'Shed', value: 'Shed' },
-    { label: 'Activity Center', value: 'Activity Center' },
-    { label: 'ER Bldg.', value: 'ER Bldg.' },
-    { label: 'ENB Bldg.', value: 'ENB Bldg.' },
-    { label: 'Volleyball Court', value: 'Volleyball Court' },
-    { label: 'Basketball Court', value: 'Basketball Court' },
-    { label: 'Admin Bldg.', value: 'Admin Bldg.' },
-    { label: 'Quadrangle', value: 'Quadrangle' }
-  ];
+  // --- CROP & PREVIEW STATES ---[cite: 4]
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [isCropping, setIsCropping] = useState(false);
+  const [finalImage, setFinalImage] = useState(preview);
 
-  const categoryOptions = [
-    { label: 'Found', value: 'Found' },
-    { label: 'Lost', value: 'Lost' }
-  ];
+  const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  const handleFileSelect = (file) => {
+    const previewUrl = URL.createObjectURL(file);
+    setFinalImage(previewUrl);
+    router.push(`/post?preview=${encodeURIComponent(previewUrl)}`);
+  };
+
+  const getCroppedImg = async () => {
+    try {
+      const img = new Image();
+      img.src = preview;
+      await new Promise((resolve) => (img.onload = resolve));
+
+      const canvas = document.createElement('canvas');
+      canvas.width = croppedAreaPixels.width;
+      canvas.height = croppedAreaPixels.height;
+      const ctx = canvas.getContext('2d');
+
+      ctx.drawImage(
+        img,
+        croppedAreaPixels.x,
+        croppedAreaPixels.y,
+        croppedAreaPixels.width,
+        croppedAreaPixels.height,
+        0,
+        0,
+        croppedAreaPixels.width,
+        croppedAreaPixels.height
+      );
+
+      return new Promise((resolve) => {
+        canvas.toBlob((blob) => resolve(blob), 'image/jpeg');
+      });
+    } catch (e) {
+      console.error("Cropping error:", e);
+    }
+  };
+
+  const handleDoneAdjusting = async () => {
+    const blob = await getCroppedImg();
+    if (blob) {
+      const newPreview = URL.createObjectURL(blob);
+      setFinalImage(newPreview); // Update visual preview immediately[cite: 4]
+    }
+    setIsCropping(false);
+  };
 
   const handlePost = async () => {
-    if (!title || !description || !preview || !locationTag) {
+    if (!title || !description || !finalImage || !locationTag) {
       return alert("Please fill in all fields");
     }
 
     try {
       setLoading(true);
-
-      // 1. Get current user[cite: 5]
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("You must be logged in to post.");
 
-      // 2. Convert preview blob URL to a File object[cite: 5]
-      const fetchResponse = await fetch(preview);
+      // Fetch the current version of the image (either cropped or original)
+      const fetchResponse = await fetch(finalImage || preview);
       const blob = await fetchResponse.blob();
-      const fileExt = 'jpg';
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      const fileName = `${user.id}/${Date.now()}.jpg`;
 
-      // 3. Upload to 'items' bucket[cite: 5]
       const { error: uploadError } = await supabase.storage
         .from('items')
         .upload(fileName, blob, { contentType: 'image/jpeg' });
 
       if (uploadError) throw uploadError;
 
-      // 4. Get Public URL[cite: 5]
       const { data: { publicUrl } } = supabase.storage
         .from('items')
         .getPublicUrl(fileName);
 
-      // 5. Insert into Database[cite: 5]
       const { error: dbError } = await supabase.from('items').insert([{
         title,
         description,
         image_url: publicUrl,
         user_id: user.id,
-        category, // Ensure this is 'Found' or 'Lost' [source: 4]
+        category,
         location_tag: specificLocation ? `${locationTag} - ${specificLocation}` : locationTag,
         status: 'Active'
       }]);
 
       if (dbError) throw dbError;
-
       router.push('/Home');
     } catch (err) {
-      console.error(err);
       alert(`Error: ${err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
-  if (error) return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-8">
-      <AlertCircle size={48} className="text-red-500 mb-4" />
-      <button onClick={() => router.back()} className="text-orange-400 underline">Go Back</button>
-    </div>
-  );
+  if (!preview) {
+    return <ItemPostModal open={true} onClose={() => router.back()} onFileSelect={handleFileSelect} />;
+  }
 
   return (
     <div className="min-h-screen text-white p-6 bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233]">
@@ -159,15 +186,52 @@ function PostItemContent() {
         <h1 className="text-2xl font-bold tracking-tight">Post Report</h1>
       </header>
 
-      <div className="w-full h-56 rounded-[2.5rem] overflow-hidden border border-white/10 mb-8 shadow-2xl">
-        <img src={preview} alt="Preview" className="w-full h-full object-cover" />
+      {/* INTERACTIVE IMAGE CONTAINER[cite: 4] */}
+      <div className="relative w-full h-56 rounded-[2.5rem] overflow-hidden border border-white/10 mb-8 shadow-2xl group bg-black">
+        {isCropping ? (
+          <div className="absolute inset-0 z-50">
+            <Cropper
+              image={preview}
+              crop={crop}
+              zoom={zoom}
+              aspect={16 / 9}
+              onCropChange={setCrop}
+              onCropComplete={onCropComplete}
+              onZoomChange={setZoom}
+            />
+            <button
+              onClick={handleDoneAdjusting}
+              className="absolute bottom-4 right-4 bg-orange-500 text-black px-6 py-3 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition-all"
+            >
+              Done Adjusting
+            </button>
+          </div>
+        ) : (
+          <div className="relative w-full h-full cursor-pointer" onClick={() => setIsCropping(true)}>
+            <img src={finalImage || preview} alt="Preview" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+
+            {/* PULSATING ADJUST HINT[cite: 4] */}
+            <div className="absolute inset-0 bg-black/20 flex flex-col items-center justify-center gap-2">
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="bg-orange-500/90 backdrop-blur-md p-3 rounded-full shadow-lg"
+              >
+                <Maximize2 size={20} className="text-black" />
+              </motion.div>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white drop-shadow-lg bg-black/40 px-3 py-1 rounded-full">
+                Tap to adjust
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="space-y-6 max-w-md mx-auto pb-10">
         <div className="space-y-1">
           <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-400/80 ml-1">Item Title</label>
           <input
-            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-orange-500/30 transition-all"
+            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-orange-500/30 transition-all placeholder:text-white/20"
             placeholder="What did you find?" value={title} onChange={(e) => setTitle(e.target.value)}
           />
         </div>
@@ -176,13 +240,22 @@ function PostItemContent() {
           <CustomSelect
             label="Category"
             value={category}
-            options={categoryOptions}
+            options={[{ label: 'Found', value: 'Found' }, { label: 'Lost', value: 'Lost' }]}
             onChange={setCategory}
           />
           <CustomSelect
             label="General Area"
             value={locationTag}
-            options={locationOptions}
+            options={[
+              { label: 'Shed', value: 'Shed' },
+              { label: 'Activity Center', value: 'Activity Center' },
+              { label: 'ER Bldg.', value: 'ER Bldg.' },
+              { label: 'ENB Bldg.', value: 'ENB Bldg.' },
+              { label: 'Volleyball Court', value: 'Volleyball Court' },
+              { label: 'Basketball Court', value: 'Basketball Court' },
+              { label: 'Admin Bldg.', value: 'Admin Bldg.' },
+              { label: 'Quadrangle', value: 'Quadrangle' }
+            ]}
             onChange={setLocationTag}
           />
         </div>
@@ -190,14 +263,14 @@ function PostItemContent() {
         <div className="space-y-1">
           <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-400/80 ml-1">Specific Details</label>
           <textarea
-            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl h-28 outline-none resize-none focus:border-orange-500/30 transition-all text-sm"
+            className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl h-28 outline-none resize-none focus:border-orange-500/30 transition-all text-sm placeholder:text-white/20"
             placeholder="Color, brand, unique features..." value={description} onChange={(e) => setDescription(e.target.value)}
           />
         </div>
 
         <button
           onClick={handlePost}
-          disabled={loading}
+          disabled={loading || isCropping}
           className="w-full py-5 rounded-[2rem] font-bold flex items-center justify-center gap-3 bg-linear-to-r from-orange-600 to-orange-400 hover:brightness-110 active:scale-95 transition-all shadow-xl shadow-orange-900/20 disabled:opacity-50"
         >
           {loading ? <Loader2 className="animate-spin" /> : <><Send size={18} /> Submit Report</>}

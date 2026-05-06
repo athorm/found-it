@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import NavBar from "@/components/NavBar";
+import ItemDetailModal from "@/components/ItemDetailModal";
+import ItemPostModal from "@/components/ItemPostModal";
 
 export default function ItemsPage() {
   const router = useRouter();
@@ -23,6 +25,16 @@ export default function ItemsPage() {
   const [locationFilter, setLocationFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
 
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showPostModal, setShowPostModal] = useState(false);
+
+  const handleFileSelected = (file) => {
+    const previewUrl = URL.createObjectURL(file);
+    setShowPostModal(false);
+    router.push(`/post?preview=${encodeURIComponent(previewUrl)}`);
+  };
+
   const locations = ['All', 'Shed', 'Activity Center', 'ER Bldg.', 'ENB Bldg.', 'Volleyball Court', 'Basketball Court', 'Admin Bldg.', 'Quadrangle'];
   const statuses = ['All', 'Unclaimed', 'Claimed'];
 
@@ -30,6 +42,11 @@ export default function ItemsPage() {
   const reverseStatusMap = { 'Unclaimed': 'Active', 'Claimed': 'Resolved' };
 
   useEffect(() => { fetchItems(); }, [activeTab]);
+
+  const handleItemClick = (item) => {
+    setSelectedItem(item);
+    setIsModalOpen(true);
+  };
 
   const fetchItems = async () => {
     try {
@@ -46,7 +63,8 @@ export default function ItemsPage() {
       setItems(data || []);
       if (user) setUserItems(data?.filter(item => item.user_id === user.id) || []);
     } finally {
-      setLoading(false);
+      // Small delay ensures the grid doesn't flicker during rapid state updates[cite: 3]
+      setTimeout(() => setLoading(false), 100);
     }
   };
 
@@ -63,13 +81,11 @@ export default function ItemsPage() {
   const currentDisplayList = applyFilters(viewUserPosts ? userItems : items);
 
   return (
-    /* GRADIENT BACKGROUND TO MATCH HOME AND PROFILE PAGES */
     <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] text-white pb-32 font-sans">
 
-      {/* CENTERED HEADER WITH LOGO PLACEHOLDER */}
+      {/* HEADER */}
       <header className="sticky top-0 z-50 bg-transparent backdrop-blur-xl border-b border-white/5 p-5">
         <div className="max-w-6xl mx-auto flex items-center justify-center">
-          {/* LOGO AREA - CENTERED */}
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(249,115,22,0.5)]">
               <Package size={18} className="text-black" strokeWidth={3} />
@@ -123,7 +139,6 @@ export default function ItemsPage() {
             <SlidersHorizontal size={22} />
           </button>
 
-          {/* OVERLAPPING FILTER DROPDOWN */}
           <AnimatePresence>
             {showFilters && (
               <motion.div
@@ -156,40 +171,111 @@ export default function ItemsPage() {
           </AnimatePresence>
         </div>
 
-        {/* FEED */}
-        <motion.div layout className={viewMode === "grid" ? "grid grid-cols-2 gap-4" : "space-y-4"}>
-          {currentDisplayList.map((item) => (
-            <motion.div
-              layout
-              key={item.id}
-              onClick={() => router.push(`/items/${item.id}`)}
-              className={`group bg-white/[0.04] border border-white/10 rounded-[2rem] overflow-hidden hover:border-orange-500/40 transition-all duration-300 backdrop-blur-sm shadow-xl ${viewMode === "list" ? "flex p-3 gap-5 items-center" : "flex flex-col"}`}
-            >
-              <div className={`relative flex-shrink-0 overflow-hidden ${viewMode === "list" ? "w-24 h-24 rounded-2xl" : "aspect-square w-full"}`}>
-                <img src={item.image_url} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-              </div>
+        {/* CONTENT AREA WITH LOADING & ANIMATION[cite: 3] */}
+        <div className="relative min-h-[400px]">
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <motion.div
+                key="loader"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center pt-20 space-y-4"
+              >
+                <div className="w-10 h-10 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
+                <p className="text-[10px] font-black tracking-widest text-orange-500/40 uppercase">Fetching items...</p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="list"
+                layout
+                className={viewMode === "grid" ? "grid grid-cols-2 gap-4" : "space-y-4"}
+              >
+                <AnimatePresence mode="popLayout">
+                  {currentDisplayList.length > 0 ? (
+                    currentDisplayList.map((item, index) => (
+                      <motion.div
+                        layout
+                        key={item.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{
+                          opacity: 1,
+                          y: 0,
+                          transition: {
+                            delay: index * 0.05,
+                            duration: 0.4,
+                            ease: [0.23, 1, 0.32, 1]
+                          }
+                        }}
+                        exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
 
-              <div className={`flex-1 ${viewMode === "list" ? "py-1" : "p-5"}`}>
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="font-bold text-sm tracking-tight line-clamp-1">{item.title}</h3>
-                  <span className="text-[7px] font-black uppercase text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20">
-                    {statusMap[item.status] || item.status}
-                  </span>
-                </div>
+                        // iOS-STYLE TACTILE INTERACTION
+                        whileTap={{ scale: 0.96 }} // Subtle shrink on tap
+                        whileHover={{ y: -4 }} // Gentle lift-up instead of scaling out
 
-                <div className="flex items-center gap-1.5 text-white/30">
-                  <MapPin size={10} className="text-orange-500" />
-                  <span className="text-[9px] font-bold uppercase tracking-widest">{item.location_tag}</span>
-                </div>
-              </div>
-              {viewMode === "list" && <ChevronRight size={16} className="text-white/10 mr-2" />}
-            </motion.div>
-          ))}
-        </motion.div>
+                        onClick={() => handleItemClick(item)}
+                        className={`group bg-white/[0.04] border border-white/10 rounded-[2.2rem] overflow-hidden hover:border-orange-500/40 transition-colors duration-300 backdrop-blur-sm shadow-xl cursor-pointer active:bg-white/[0.08] ${viewMode === "list" ? "flex p-3 gap-5 items-center" : "flex flex-col"
+                          }`}
+                      >
+                        <div className={`relative flex-shrink-0 overflow-hidden ${viewMode === "list" ? "w-24 h-24 rounded-[1.5rem]" : "aspect-square w-full"
+                          }`}>
+                          <img
+                            src={item.image_url}
+                            alt=""
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                          />
+
+                          {/* iOS-STYLE OVERLAY SHIMMER ON HOVER */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        </div>
+
+                        <div className={`flex-1 ${viewMode === "list" ? "py-1" : "p-5"}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="font-bold text-sm tracking-tight line-clamp-1">{item.title}</h3>
+                            <span className="text-[7px] font-black uppercase text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20">
+                              {statusMap[item.status] || item.status}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-white/30">
+                            <MapPin size={10} className="text-orange-500" />
+                            <span className="text-[9px] font-bold uppercase tracking-widest">{item.location_tag}</span>
+                          </div>
+                        </div>
+
+                        {viewMode === "list" && (
+                          <ChevronRight size={16} className="text-white/10 mr-2 group-hover:text-orange-500 transition-colors" />
+                        )}
+                      </motion.div>
+                    ))
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                      className="col-span-2 flex flex-col items-center justify-center py-20 text-white/20"
+                    >
+                      <Package size={48} strokeWidth={1} className="mb-4" />
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em]">No items posted yet</p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </main>
 
-      {/* Navigation Bar */}
-      <NavBar activePage="items" />
+      <ItemDetailModal
+        item={selectedItem}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+
+      <ItemPostModal
+        open={showPostModal}
+        onClose={() => setShowPostModal(false)}
+        onFileSelect={handleFileSelected}
+      />
+
+      <NavBar activePage="items" onPlusClick={() => setShowPostModal(true)} />
     </div>
   );
 }

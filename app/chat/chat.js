@@ -30,15 +30,26 @@ export default function ChatPage() {
     if (user) {
       fetchConversations();
 
-      // Initialize real-time subscription correctly[cite: 4]
+      // Initialize real-time subscription for both chats and messages
       channel = supabase
-        .channel("messages-subscription")
+        .channel("conversations-subscription")
         .on(
           "postgres_changes",
           {
             event: "*",
             schema: "public",
             table: "messages"
+          },
+          () => {
+            fetchConversations();
+          }
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "chats"
           },
           () => {
             fetchConversations();
@@ -61,6 +72,29 @@ export default function ChatPage() {
     }
   }, [messages]);
 
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const chatIdFromUrl = searchParams.get('id');
+
+    if (!chatIdFromUrl || !user) return;
+
+    const targetConv = conversations.find(c => String(c.id) === chatIdFromUrl);
+    if (targetConv) {
+      selectConversation(targetConv);
+      return;
+    }
+
+    fetchChatById(chatIdFromUrl).then((chat) => {
+      if (chat) {
+        setConversations((prev) => {
+          const already = prev.some((c) => String(c.id) === String(chat.id));
+          return already ? prev : [...prev, chat];
+        });
+        selectConversation(chat);
+      }
+    });
+  }, [conversations, user]);
+
   const getUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setUser(user);
@@ -70,59 +104,153 @@ export default function ChatPage() {
   const fetchConversations = async () => {
     if (!user) return;
 
-    const { data: allMessages, error } = await supabase
-      .from("messages")
-      .select(`
-        *,
-        items:item_id(id, title, image_url, user_id),
-        senderProfile:sender_id(id, full_name, avatar_url),
-        receiverProfile:receiver_id(id, full_name, avatar_url)
-      `)
-      .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
+    const { data: chatsData, error } = await supabase
+      .from("chats")
+      .select('id, item_id, finder_id, claimer_id, status, created_at')
+      .or(`finder_id.eq.${user.id},claimer_id.eq.${user.id}`)
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error("Error fetching conversations:", error);
+      console.error("fetchConversations error:", error?.message || error);
+      setConversations([]);
       return;
     }
 
-    const conversationMap = {};
+    if (!chatsData || chatsData.length === 0) {
+      setConversations([]);
+      return;
+    }
 
-    allMessages?.forEach((msg) => {
-      const itemId = msg.item_id;
+    const itemIds = [...new Set(chatsData.map((chat) => chat.item_id).filter(Boolean))];
+    const profileIds = [...new Set(chatsData.flatMap((chat) => [chat.finder_id, chat.claimer_id]).filter(Boolean))];
 
-      if (!conversationMap[itemId]) {
-        const otherUserId = msg.sender_id === user.id ? msg.receiver_id : msg.sender_id;
-        const otherUserProfile = msg.sender_id === user.id ? msg.receiverProfile : msg.senderProfile;
+    const [{ data: itemsData }, { data: profilesData, error: profileError }] = await Promise.all([
+      supabase.from('items').select('id, title, image_url').in('id', itemIds),
+      supabase.from('profiles').select('id, full_name, avatar_url').in('id', profileIds)
+    ]);
 
-        conversationMap[itemId] = {
-          id: itemId,
-          itemTitle: msg.items?.title || "Item",
-          otherUserId,
-          otherUser: otherUserProfile || { id: otherUserId, full_name: "Unknown", avatar_url: null },
-          lastMessage: msg.content,
-          lastMessageTime: new Date(msg.created_at),
-          allMessages: []
-        };
-      }
+    if (profileError) {
+      console.error('fetchConversations profiles error:', profileError?.message || profileError);
+    }
 
-      conversationMap[itemId].allMessages.push(msg);
+    const itemMap = (itemsData || []).reduce((map, item) => {
+      map[item.id] = item;
+      return map;
+    }, {});
+
+    const profileMap = (profilesData || []).reduce((map, profile) => {
+      map[profile.id] = profile;
+      return map;
+    }, {});
+
+    const mappedConversations = chatsData.map((chat) => {
+      const isCurrentUserFinder = chat.finder_id === user.id;
+      const otherUser = isCurrentUserFinder ? profileMap[chat.claimer_id] : profileMap[chat.finder_id];
+      const item = itemMap[chat.item_id];
+
+      return {
+        id: chat.id,
+        itemId: chat.item_id,
+        itemTitle: item?.title || "Item",
+        itemImageUrl: item?.image_url || null,
+        otherUserId: otherUser?.id,
+        otherUser: otherUser || { full_name: "Unknown User", avatar_url: null },
+        lastMessage: "New conversation",
+        lastMessageTime: new Date(chat.created_at || Date.now()),
+        allMessages: []
+      };
     });
 
-    const sortedConversations = Object.values(conversationMap)
-      .sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
-
-    setConversations(sortedConversations);
+    setConversations(mappedConversations);
   };
 
-  const selectConversation = (conv) => {
-    const sortedMessages = [...conv.allMessages].sort(
+  const fetchChatById = async (chatId) => {
+    if (!user) return null;
+
+    const { data: chatData, error } = await supabase
+      .from("chats")
+      .select('id, item_id, finder_id, claimer_id, status, created_at')
+      .eq("id", chatId)
+      .single();
+
+    if (error) {
+      console.error("fetchChatById error:", error?.message || error);
+      return null;
+    }
+
+    if (!chatData) return null;
+
+    const [itemResult, profilesResult] = await Promise.all([
+      supabase.from('items').select('id, title, image_url').eq('id', chatData.item_id).single(),
+      supabase.from('profiles').select('id, full_name, avatar_url').in('id', [chatData.finder_id, chatData.claimer_id])
+    ]);
+
+    if (itemResult.error) {
+      console.error('fetchChatById item error:', itemResult.error?.message || itemResult.error);
+    }
+    if (profilesResult.error) {
+      console.error('fetchChatById profiles error:', profilesResult.error?.message || profilesResult.error);
+    }
+
+    const item = itemResult.data;
+    const profileMap = (profilesResult.data || []).reduce((map, profile) => {
+      map[profile.id] = profile;
+      return map;
+    }, {});
+
+    const isCurrentUserFinder = chatData.finder_id === user.id;
+    const otherUser = isCurrentUserFinder ? profileMap[chatData.claimer_id] : profileMap[chatData.finder_id];
+
+    return {
+      id: chatData.id,
+      itemId: chatData.item_id,
+      itemTitle: item?.title || "Item",
+      itemImageUrl: item?.image_url || null,
+      otherUserId: otherUser?.id,
+      otherUser: otherUser || { full_name: "Unknown User", avatar_url: null },
+      lastMessage: "New conversation",
+      lastMessageTime: new Date(chatData.created_at || Date.now()),
+      allMessages: []
+    };
+  };
+
+  const fetchMessagesForChat = async (chatId) => {
+    const { data: messageData, error } = await supabase
+      .from('messages')
+      .select('*')
+      .eq('chat_id', chatId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      console.error('fetchMessagesForChat error:', error?.message || error);
+      return [];
+    }
+
+    return messageData || [];
+  };
+
+  const selectConversation = async (conv) => {
+    const messagesForConv = conv.allMessages.length > 0
+      ? conv.allMessages
+      : await fetchMessagesForChat(conv.id);
+
+    const sortedMessages = [...messagesForConv].sort(
       (a, b) => new Date(a.created_at) - new Date(b.created_at)
     );
 
     setSelectedConversation(conv);
     setMessages(sortedMessages);
     setView('chat');
+
+    // Mark as read logic
+    if (user) {
+      await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('chat_id', conv.id)
+        .eq('receiver_id', user.id)
+        .eq('is_read', false);
+    }
   };
 
   const backToList = () => {
@@ -135,10 +263,11 @@ export default function ChatPage() {
   const handleFileSelected = (file) => {
     const previewUrl = URL.createObjectURL(file);
     setShowPostModal(false);
-    router.push(`/cam?preview=${encodeURIComponent(previewUrl)}`);
+    router.push(`/post?preview=${encodeURIComponent(previewUrl)}`);
   };
 
   const sendMessage = async () => {
+    // Guard clauses to prevent empty messages or errors
     if (!newMessage.trim() || !selectedConversation || !user) return;
 
     try {
@@ -147,19 +276,47 @@ export default function ChatPage() {
         .insert({
           sender_id: user.id,
           receiver_id: selectedConversation.otherUserId,
-          item_id: selectedConversation.id,
-          content: newMessage.trim()
+          item_id: selectedConversation.itemId,
+          chat_id: selectedConversation.id, // This links the message to the "Folder"
+          content: newMessage.trim(),
+          is_read: false // Explicitly set for your future notification system
         });
 
       if (error) throw error;
 
       setNewMessage("");
-      fetchConversations();
+      // Note: You don't need to call fetchConversations() here because 
+      // your real-time subscription handles the refresh!
     } catch (error) {
       console.error("Error sending message:", error);
-      alert("Failed to send message");
     }
   };
+
+  // Temporary sample messages for preview when no real messages exist.
+  // Remove this block once real chat messages are being stored and displayed.
+  const displayMessages = (() => {
+    if (messages.length > 0 || !selectedConversation || !user) return messages;
+
+    const now = new Date();
+    const otherUserId = selectedConversation.otherUserId;
+
+    return [
+      {
+        id: 'dummy-other',
+        sender_id: otherUserId,
+        receiver_id: user.id,
+        content: 'Hello! This is a preview of the chat bubble style from the other person.',
+        created_at: new Date(now.getTime() - 60000).toISOString(),
+      },
+      {
+        id: 'dummy-you',
+        sender_id: user.id,
+        receiver_id: otherUserId,
+        content: 'Great! This is how your sent messages will appear.',
+        created_at: now.toISOString(),
+      },
+    ];
+  })();
 
   if (loading) {
     return (
@@ -199,7 +356,7 @@ export default function ChatPage() {
                   onClick={() => selectConversation(conv)}
                   className="w-full bg-black/30 backdrop-blur-xl border border-orange-500/20 rounded-2xl p-4 flex items-center gap-4 hover:bg-orange-500/10 transition-all text-left"
                 >
-                  <div className="w-12 h-12 bg-linear-to-br from-orange-500/20 to-orange-600/20 rounded-full flex items-center justify-center border border-orange-500/30 flex-shrink-0">
+                  <div className="w-12 h-12 bg-linear-to-br from-orange-500/20 to-orange-600/20 rounded-full flex items-center justify-center border border-orange-500/30 shrink-0">
                     {conv.otherUser?.avatar_url ? (
                       <img src={conv.otherUser.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                     ) : (
@@ -210,7 +367,7 @@ export default function ChatPage() {
                     <p className="font-bold text-left">{conv.otherUser?.full_name || "User"}</p>
                     <p className="text-sm text-orange-300/80 truncate">{conv.lastMessage}</p>
                   </div>
-                  <div className="text-xs text-orange-400/60 flex-shrink-0">
+                  <div className="text-xs text-orange-400/60 shrink-0">
                     {conv.lastMessageTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </motion.button>
@@ -242,7 +399,7 @@ export default function ChatPage() {
 
           <div className="flex-1 overflow-y-auto p-6 space-y-4 min-h-[calc(100vh-300px)]">
             <AnimatePresence>
-              {messages.map((msg) => (
+              {displayMessages.map((msg) => (
                 <motion.div
                   key={msg.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -252,7 +409,7 @@ export default function ChatPage() {
                 >
                   {msg.sender_id !== user.id ? (
                     <div className="max-w-[75%] flex gap-3">
-                      <div className="w-8 h-8 bg-linear-to-br from-orange-500/20 to-orange-600/20 rounded-full flex items-center justify-center border border-orange-500/30 flex-shrink-0">
+                      <div className="w-8 h-8 bg-linear-to-br from-orange-500/20 to-orange-600/20 rounded-full flex items-center justify-center border border-orange-500/30 shrink-0">
                         {selectedConversation?.otherUser?.avatar_url ? (
                           <img src={selectedConversation.otherUser.avatar_url} alt="" className="w-full h-full rounded-full object-cover" />
                         ) : (
@@ -274,7 +431,7 @@ export default function ChatPage() {
                     </div>
                   ) : (
                     <div className="max-w-[75%] flex gap-3 flex-row-reverse">
-                      <div className="w-8 h-8 bg-linear-to-br from-orange-500/20 to-orange-600/20 rounded-full flex items-center justify-center border border-orange-500/30 flex-shrink-0">
+                      <div className="w-8 h-8 bg-linear-to-br from-orange-500/20 to-orange-600/20 rounded-full flex items-center justify-center border border-orange-500/30 shrink-0">
                         <User size={16} className="text-orange-400" />
                       </div>
                       <div className="text-right">
@@ -294,7 +451,7 @@ export default function ChatPage() {
                 </motion.div>
               ))}
             </AnimatePresence>
-            {messages.length === 0 && (
+            {displayMessages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-64 text-orange-400/60">
                 <MessageCircle size={64} className="mb-4 opacity-30" />
                 <p className="text-lg font-medium">No messages yet</p>
