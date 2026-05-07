@@ -41,7 +41,22 @@ export default function ItemsPage() {
   const statusMap = { 'Active': 'Unclaimed', 'Resolved': 'Claimed' };
   const reverseStatusMap = { 'Unclaimed': 'Active', 'Claimed': 'Resolved' };
 
+  // Read ?search= from URL on mount (e.g. navigating from Home page search bar)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const q = params.get('search');
+    if (q) setSearchQuery(q);
+  }, []);
+
   useEffect(() => { fetchItems(); }, [activeTab]);
+
+  // Called by ItemDetailModal after a status toggle — keeps list in sync without refetch
+  const handleStatusUpdate = (itemId, newStatus) => {
+    const patch = (list) => list.map(i => i.id === itemId ? { ...i, status: newStatus } : i);
+    setItems(patch);
+    setUserItems(patch);
+    if (selectedItem?.id === itemId) setSelectedItem(prev => ({ ...prev, status: newStatus }));
+  };
 
   const handleItemClick = (item) => {
     setSelectedItem(item);
@@ -267,6 +282,7 @@ export default function ItemsPage() {
         item={selectedItem}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onStatusUpdate={handleStatusUpdate}
       />
 
       <ItemPostModal

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Search, Tag, Plus, MessageCircle, User, Mail, ChevronRight, LogOut, Trash2, Camera, Image, X, Send, Loader2, ArrowLeft } from 'lucide-react';
+import { Search, Tag, Plus, MessageCircle, User, Mail, ChevronRight, LogOut, Trash2, Camera, Image, X, Send, Loader2, ArrowLeft, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
@@ -20,6 +20,13 @@ export default function ProfilePage() {
     email: "",
     avatar_url: ""
   });
+
+  // Change password state
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMsg, setPasswordMsg] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const router = useRouter();
 
@@ -95,6 +102,25 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordMsg('');
+    if (newPassword.length < 6) { setPasswordMsg('Password must be at least 6 characters.'); return; }
+    if (newPassword !== confirmPassword) { setPasswordMsg('Passwords do not match.'); return; }
+    try {
+      setChangingPassword(true);
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setPasswordMsg('✅ Password updated successfully!');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => { setShowPasswordModal(false); setPasswordMsg(''); }, 1500);
+    } catch (err) {
+      setPasswordMsg(`❌ ${err.message}`);
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -218,6 +244,16 @@ export default function ProfilePage() {
 
         {/* Menu Sections */}
         <div className="rounded-3xl bg-black/40 border border-orange-500/30 overflow-hidden">
+          <button
+            onClick={() => setShowPasswordModal(true)}
+            className="w-full flex items-center justify-between px-6 py-5 border-b border-orange-500/20 hover:bg-orange-500/5 transition-all group text-orange-300"
+          >
+            <div className="flex items-center gap-4">
+              <Lock size={20} className="opacity-40" />
+              <span className="font-medium text-lg">Change Password</span>
+            </div>
+            <ChevronRight size={20} className="opacity-20" />
+          </button>
           <ActionRow icon={<Mail size={20} />} label="Notification Settings" />
 
           <button onClick={handleLogout} className="w-full flex items-center justify-between px-6 py-5 border-b border-orange-500/20 hover:bg-orange-500/5 transition-all group text-orange-300">
@@ -242,6 +278,38 @@ export default function ProfilePage() {
 
       {/* Modals */}
       <AnimatePresence>
+        {showPasswordModal && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center backdrop-blur-sm p-8">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-black/60 border border-orange-500/30 p-8 rounded-[2.5rem] w-full max-w-xs">
+              <h3 className="text-xl font-bold mb-1">Change Password</h3>
+              <p className="text-orange-300/50 text-xs mb-6">Must be at least 6 characters.</p>
+              <div className="space-y-3">
+                <input
+                  type="password"
+                  placeholder="New Password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  className="w-full bg-white/5 border border-orange-500/20 p-4 rounded-2xl text-white outline-none placeholder:text-white/30 focus:border-orange-500/50"
+                />
+                <input
+                  type="password"
+                  placeholder="Confirm Password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  className="w-full bg-white/5 border border-orange-500/20 p-4 rounded-2xl text-white outline-none placeholder:text-white/30 focus:border-orange-500/50"
+                />
+                {passwordMsg && <p className="text-xs text-center text-orange-300/80 px-2">{passwordMsg}</p>}
+                <button onClick={handleChangePassword} disabled={changingPassword} className="w-full py-4 bg-orange-500 hover:bg-orange-600 rounded-2xl font-bold disabled:opacity-50 transition-all">
+                  {changingPassword ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'Update Password'}
+                </button>
+                <button onClick={() => { setShowPasswordModal(false); setPasswordMsg(''); setNewPassword(''); setConfirmPassword(''); }} className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-white/50">
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         {showDeleteModal && (
           <div className="fixed inset-0 bg-black/80 z-100 flex items-center justify-center backdrop-blur-sm p-8">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-black/60 border border-orange-500/30 p-8 rounded-[2.5rem] w-full max-w-xs text-center">
