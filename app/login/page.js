@@ -115,6 +115,9 @@ export default function LoginPage() {
         <div style={{ background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, rgba(124, 45, 18, 0.2) 100%)' }} className="min-h-screen flex items-center justify-center p-4">
             <div className="w-full max-w-md bg-black/40 backdrop-blur-2xl border border-orange-500/20 rounded-3xl p-8 shadow-2xl shadow-orange-500/10">
                 <div className="text-center mb-8">
+                    <div className="flex justify-center mb-4">
+                        <img src="/logo.png" alt="FoundIt Logo" className="w-20 h-20 rounded-2xl mix-blend-screen drop-shadow-[0_0_15px_rgba(249,115,22,0.4)]" />
+                    </div>
                     <h1 className="text-5xl font-extrabold gradient-text mb-2 tracking-tight">FoundIt</h1>
                     <p className="text-orange-300/70 text-sm font-semibold">LSPU Lost and Found System</p>
                 </div>

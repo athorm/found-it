@@ -10,7 +10,7 @@
 
 ## Feature Improvements (Priority 2 - nice to have)
 - [x] Showing how many (numbers or dots if numbers cannot be done) messages in chat navbar. When all the messages are read, the bubble should disappear or just show nothing
-- [ ] When choosing lost on the drop down box of the post page.js, Instead of having the text on Item Title being "What did you find?" It changes automatically in real time to "What did you lose?"
+- [x] When choosing lost on the drop down box of the post page.js, Instead of having the text on Item Title being "What did you find?" It changes automatically in real time to "What did you lose?"
 <!-- - [x] Make the item picture in the Item Page when you click the image, it would enlarge the image for the user so that they can see the item better.
 <!-- - [x] When no active session in local host, changing it to /Home or any other pages it should go to login page instead of going to the page you are trying to visit. -->
 <!-- - [x] In Home page, instead of having a Go button change it to search icon button. So when the user presses the search button, it would show the matched search items in the item page. -->
@@ -31,8 +31,7 @@
 ## Future Features (Priority 3 - later)
 - [ ] Remove notification settings on profile
 - [ ] Suggest a way to verify if the user is a student of the school, 
-- [ ] Animations, still identifying where needed the most
-- [ ] Implementing logo on pages
+- [x] Implementing logo on pages such as in, login page, home page, item page, chat page, and profile page.
 - [ ] Choosing an appropriate and cohesive font text, font style, font size, with cohesion of the theme's orange palette and iOS feel, design. (This is a must)
 - [x] Instead of having the lost on the right side of item page.js, and the found on the left side. Switch them. So lost on the left, found on the right.
 - [ ] Make a loading process when loading who posted the item in ItemDetailModal.js
@@ -40,7 +39,7 @@
 
 
 ## Trying to implement this when we feel like it (Priority 3.5 - when have time)
-- [ ] Since the website is tailored for mobile view on users, add an admin desktop view that handles the item posting process. Approving the post if the item is appropriate and not a troll. Rejecting it if it is inappropriate or a troll. Use Supabase to also implement this so that admin users have access and authentication. Not all users can access this view, only admin users. Admin users would have a button on the desktop view that says "Admin View". When admin users click it, it would lead them to the admin desktop view. 
+- [ ] Since the website is tailored for mobile view on users, add an admin desktop view that handles the item posting process. Approving the post if the item is appropriate and not a troll. Rejecting it if it is inappropriate or a troll. Use Supabase to also implement this so that admin users have access and authentication. Not all users can access this view, only admin users. Admin users would have a button on the desktop view that says "Admin View". When admin users click it, it would lead them to the admin desktop view. And any admin functions/process that you can think of.
 
 
 ## Very Hard to Implement But Noted (Priority 4 - when have time or when the school accepts it)

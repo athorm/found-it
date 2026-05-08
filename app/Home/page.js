@@ -74,6 +74,13 @@ export default function HomePage() {
       </button>
 
       <div className="w-full max-w-md px-6 text-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex justify-center mb-6"
+        >
+          <img src="/logo.png" alt="FoundIt Logo" className="w-24 h-24 rounded-3xl mix-blend-screen drop-shadow-[0_0_24px_rgba(249,115,22,0.5)]" />
+        </motion.div>
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}

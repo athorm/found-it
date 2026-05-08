@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Search, Tag, Plus, MessageCircle, User, Mail, ChevronRight, LogOut, Trash2, Camera, Image, X, Send, Loader2, ArrowLeft, Lock } from 'lucide-react';
+import { Search, Tag, Plus, MessageCircle, User, ChevronRight, LogOut, Trash2, Camera, Image, X, Send, Loader2, ArrowLeft, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 
@@ -210,7 +210,7 @@ export default function ProfilePage() {
           <ArrowLeft size={24} />
         </button>
         <h1 className="text-3xl font-extrabold tracking-tight text-orange-400">Profile</h1>
-        <div className="w-10" />
+        <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-xl mix-blend-screen drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
       </div>
 
       <main className="px-6 mt-10 max-w-lg mx-auto space-y-8">
@@ -259,7 +259,7 @@ export default function ProfilePage() {
             </div>
             <ChevronRight size={20} className="opacity-20" />
           </button>
-          <ActionRow icon={<Mail size={20} />} label="Notification Settings" />
+
 
           <button onClick={handleLogout} className="w-full flex items-center justify-between px-6 py-5 border-b border-orange-500/20 hover:bg-orange-500/5 transition-all group text-orange-300">
             <div className="flex items-center gap-4">
@@ -369,17 +369,7 @@ export default function ProfilePage() {
   );
 }
 
-function ActionRow({ icon, label }) {
-  return (
-    <button className="w-full flex items-center justify-between px-6 py-5 border-b border-orange-500/20 hover:bg-orange-500/5 transition-colors">
-      <div className="flex items-center gap-4 text-orange-300">
-        <span className="opacity-40">{icon}</span>
-        <span className="font-medium text-lg">{label}</span>
-      </div>
-      <ChevronRight size={20} className="opacity-20" />
-    </button>
-  );
-}
+
 
 function NavIcon({ icon, label, active = false, onClick }) {
   return (
