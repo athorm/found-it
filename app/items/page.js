@@ -43,12 +43,20 @@ export default function ItemsPage() {
   const statusMap = { 'Active': 'Unclaimed', 'Resolved': 'Claimed' };
   const reverseStatusMap = { 'Unclaimed': 'Active', 'Claimed': 'Resolved' };
 
-  // Read ?search= from URL on mount (e.g. navigating from Home page search bar)
+  // Read ?search= from URL on mount and load view preference
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const q = params.get('search');
     if (q) setSearchQuery(q);
+
+    const savedViewMode = localStorage.getItem("itemsViewMode");
+    if (savedViewMode) setViewMode(savedViewMode);
   }, []);
+
+  // Save view mode preference whenever it changes
+  useEffect(() => {
+    localStorage.setItem("itemsViewMode", viewMode);
+  }, [viewMode]);
 
   useEffect(() => { fetchItems(); }, [activeTab]);
 
@@ -292,7 +300,10 @@ export default function ItemsPage() {
                           <div className="flex items-center justify-between mb-2">
                             <h3 className="font-bold text-sm tracking-tight line-clamp-1">{item.title}</h3>
                             <span className="text-[7px] font-black uppercase text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20">
-                              {statusMap[item.status] || item.status}
+                              {/* Context-aware: Lost→Found/Unfound, Found→Claimed/Unclaimed */}
+                              {item.status === 'Resolved'
+                                ? (item.category === 'Lost' ? 'Found' : 'Claimed')
+                                : 'Unclaimed'}
                             </span>
                           </div>
                           <div className="flex items-center gap-1.5 text-white/30">

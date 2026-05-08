@@ -15,6 +15,7 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
     const [isLightboxOpen, setIsLightboxOpen] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [loadingPoster, setLoadingPoster] = useState(false);
 
     const isOwner = user?.id === item?.user_id;
 
@@ -39,16 +40,22 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
     useEffect(() => {
         const fetchPosterProfile = async () => {
             if (!item?.user_id) { setPoster(null); return; }
-            const { data: profileData, error } = await supabase
-                .from('profiles')
-                .select('full_name, email, avatar_url')
-                .eq('id', item.user_id)
-                .single();
-            if (error) { console.error('Unable to load poster profile:', error.message || error); setPoster(null); return; }
-            setPoster(profileData);
+            try {
+                setLoadingPoster(true);
+                setPoster(null); // Clear previous poster to avoid stale data UI
+                const { data: profileData, error } = await supabase
+                    .from('profiles')
+                    .select('full_name, email, avatar_url')
+                    .eq('id', item.user_id)
+                    .single();
+                if (error) { console.error('Unable to load poster profile:', error.message || error); setPoster(null); return; }
+                setPoster(profileData);
+            } finally {
+                setLoadingPoster(false);
+            }
         };
         if (isOpen) fetchPosterProfile();
-    }, [isOpen, item?.user_id]);
+    }, [isOpen, item?.user_id, item?.id]);
 
     const handleContactOwner = async () => {
         if (!user) { alert('Please log in to message the poster.'); return; }
@@ -66,8 +73,8 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
                 .select().single();
             if (createError) throw createError;
             const initialMessage = item.category === 'Lost'
-              ? `Hi! I found something that might match your post "${item.title}" at ${item.location_tag}. Is this your item?`
-              : `Hi! I'm reaching out about your post "${item.title}" at ${item.location_tag}. Is this still available?`;
+                ? `Hi! I found something that might match your post "${item.title}" at ${item.location_tag}. Is this your item?`
+                : `Hi! I'm reaching out about your post "${item.title}" at ${item.location_tag}. Is this still available?`;
             const { error: msgError } = await supabase.from('messages').insert({
                 chat_id: newChat.id, item_id: item.id,
                 sender_id: user.id, receiver_id: item.user_id,
@@ -174,11 +181,21 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
                             {/* Poster Info */}
                             <div className="flex items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/5">
                                 <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center overflow-hidden">
-                                    {poster?.avatar_url ? <img src={poster.avatar_url} className="w-full h-full object-cover" alt="" /> : <User className="text-orange-500" />}
+                                    {loadingPoster ? (
+                                        <Loader2 size={20} className="text-orange-500/40 animate-spin" />
+                                    ) : poster?.avatar_url ? (
+                                        <img src={poster.avatar_url} className="w-full h-full object-cover" alt="" />
+                                    ) : (
+                                        <User className="text-orange-500" />
+                                    )}
                                 </div>
-                                <div>
+                                <div className="flex-1">
                                     <p className="text-[10px] uppercase tracking-widest text-white/30 font-bold">Posted By</p>
-                                    <p className="font-bold text-white">{poster?.full_name || "Loading..."}</p>
+                                    {loadingPoster ? (
+                                        <div className="h-4 w-24 bg-white/10 rounded animate-pulse mt-1" />
+                                    ) : (
+                                        <p className="font-bold text-white">{poster?.full_name || "Unknown User"}</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -196,7 +213,11 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
                                             : 'bg-orange-500 hover:bg-orange-600 text-white'
                                             }`}
                                     >
-                                        MARK AS {localStatus === 'Active' ? 'CLAIMED' : 'UNCLAIMED'}
+                                        {/* Context-aware label: Lost items say "FOUND/UNFOUND", Found items say "CLAIMED/UNCLAIMED" */}
+                                        MARK AS {localStatus === 'Active'
+                                            ? (item.category === 'Lost' ? 'FOUND' : 'CLAIMED')
+                                            : (item.category === 'Lost' ? 'UNFOUND' : 'UNCLAIMED')
+                                        }
                                     </button>
 
                                     <button
@@ -210,7 +231,7 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
                             ) : item.status === 'Resolved' ? (
                                 <div className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center gap-2 text-white/30 font-black tracking-widest text-xs">
                                     <Lock size={16} />
-                                    ITEM CLAIMED / RESOLVED
+                                    {item.category === 'Lost' ? 'ITEM FOUND' : 'ITEM CLAIMED'} / RESOLVED
                                 </div>
                             ) : (
                                 <button

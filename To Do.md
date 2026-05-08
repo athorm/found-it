@@ -34,8 +34,8 @@
 - [x] Implementing logo on pages such as in, login page, home page, item page, chat page, and profile page.
 - [ ] Choosing an appropriate and cohesive font text, font style, font size, with cohesion of the theme's orange palette and iOS feel, design. (This is a must)
 - [x] Instead of having the lost on the right side of item page.js, and the found on the left side. Switch them. So lost on the left, found on the right.
-- [ ] Make a loading process when loading who posted the item in ItemDetailModal.js
-- [ ] 
+- [x] Make a loading process when loading who posted the item in ItemDetailModal.js since I see a bug where the picture and the text is a different user because it was recently viewed on other items. 
+- [ ] When users on their conversation both press mark as resolved. It would automatically be updated on the list of item in pages. (Mark as Claimed). But the thing is that I feel that when on the lost page, when you posted a lost item and then you resolved it rather than marking it as claimed, it says mark as found to make it appropriate and connected so that users do not get confused. How do we implement this? Should we use supabase? 
 
 
 ## Trying to implement this when we feel like it (Priority 3.5 - when have time)
