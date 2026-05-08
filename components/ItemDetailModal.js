@@ -65,7 +65,9 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
                 .from('chats').insert({ item_id: item.id, finder_id: item.user_id, claimer_id: user.id, status: 'open' })
                 .select().single();
             if (createError) throw createError;
-            const initialMessage = `Hi! I'm reaching out about your post "${item.title}" at ${item.location_tag}. Is this still available?`;
+            const initialMessage = item.category === 'Lost'
+              ? `Hi! I found something that might match your post "${item.title}" at ${item.location_tag}. Is this your item?`
+              : `Hi! I'm reaching out about your post "${item.title}" at ${item.location_tag}. Is this still available?`;
             const { error: msgError } = await supabase.from('messages').insert({
                 chat_id: newChat.id, item_id: item.id,
                 sender_id: user.id, receiver_id: item.user_id,

@@ -31,6 +31,7 @@ export default function ItemPostModal({ open, onClose, onFileSelect }) {
                 <h2 className="text-xl font-bold mb-8">Report Found Item</h2>
 
                 <div className="grid grid-cols-2 gap-4">
+                    {/* Camera button — triggers capture="environment" (rear camera on real mobile) */}
                     <button
                         type="button"
                         onClick={() => cameraInputRef.current?.click()}
@@ -40,6 +41,7 @@ export default function ItemPostModal({ open, onClose, onFileSelect }) {
                         <span className="text-[10px] font-bold uppercase tracking-widest">Camera</span>
                     </button>
 
+                    {/* Gallery button — no capture attr → native photo library on real mobile */}
                     <button
                         type="button"
                         onClick={() => galleryInputRef.current?.click()}
@@ -50,6 +52,35 @@ export default function ItemPostModal({ open, onClose, onFileSelect }) {
                     </button>
                 </div>
 
+                {/* Subtle hint — extra low opacity, won't distract on mobile */}
+                <p className="mt-6 text-center text-[9px] text-white/20 uppercase tracking-widest leading-relaxed">
+                    On mobile · Camera opens device camera · Gallery opens photos
+                </p>
+
+                {/*
+                 * ─── HOW CAMERA / GALLERY WORKS ACROSS DEVICES ──────────────────
+                 *
+                 * REAL MOBILE BROWSER (Android Chrome / iOS Safari):
+                 *   "Camera"  → capture="environment"  → opens REAR camera directly
+                 *   "Gallery" → no capture attribute   → opens native photo library
+                 *
+                 * DESKTOP BROWSER or Chrome DevTools "Mobile View":
+                 *   Both buttons open a regular file-explorer window.
+                 *   DevTools only simulates screen size & touch events —
+                 *   it cannot simulate hardware camera/gallery access.
+                 *
+                 * TO TEST ON A REAL PHONE (no extra tools needed):
+                 *   1. ipconfig  →  find your PC's local IPv4 (e.g. 192.168.1.5)
+                 *   2. Open  http://192.168.1.5:3000  in Chrome on your phone
+                 *      (phone and PC must share the same Wi-Fi network)
+                 *   3. Camera and Gallery now use the phone's real hardware APIs.
+                 *
+                 * The capture attribute IS the correct W3C standard — no extra
+                 * libraries or paid services are needed.
+                 * ────────────────────────────────────────────────────────────────
+                 */}
+
+                {/* Camera input: capture="environment" = rear camera on mobile */}
                 <input
                     ref={cameraInputRef}
                     type="file"
@@ -58,6 +89,8 @@ export default function ItemPostModal({ open, onClose, onFileSelect }) {
                     className="hidden"
                     onChange={handleFileChange}
                 />
+
+                {/* Gallery input: no capture = photo library on mobile */}
                 <input
                     ref={galleryInputRef}
                     type="file"

@@ -128,12 +128,33 @@ export default function ChatPage() {
       .from('messages').select('*').eq('chat_id', conv.id).order('created_at', { ascending: true });
     if (!error) setMessages(history);
 
+    // Mark all unread messages in this chat as read (where current user is receiver).
+    // This decrements the NavBar unread badge via its realtime UPDATE subscription.
+    if (user) {
+      await supabase
+        .from('messages')
+        .update({ is_read: true })
+        .eq('chat_id', conv.id)
+        .eq('receiver_id', user.id)
+        .eq('is_read', false);
+    }
+
     if (channelRef.current) supabase.removeChannel(channelRef.current);
     const channel = supabase.channel(`room-${conv.id}`);
     channel.on(
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${conv.id}` },
-      (payload) => { setMessages((prev) => [...prev, payload.new]); }
+      (payload) => {
+        setMessages((prev) => [...prev, payload.new]);
+        // If this incoming message is for the current user, mark it read immediately
+        if (payload.new.receiver_id === user?.id) {
+          supabase
+            .from('messages')
+            .update({ is_read: true })
+            .eq('id', payload.new.id)
+            .then(() => {}); // fire-and-forget
+        }
+      }
     ).subscribe();
     channelRef.current = channel;
   };

@@ -242,7 +242,9 @@ function PostItemContent() {
           <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-400/80 ml-1">Item Title</label>
           <input
             className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-orange-500/30 transition-all placeholder:text-white/20"
-            placeholder="What did you find?" value={title} onChange={(e) => setTitle(e.target.value)}
+            placeholder={category === 'Lost' ? "What did you lose?" : "What did you find?"} 
+            value={title} 
+            onChange={(e) => setTitle(e.target.value)}
           />
         </div>
 
