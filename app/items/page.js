@@ -68,7 +68,7 @@ export default function ItemsPage() {
 
   useEffect(() => {
     window.onItemDeleted = handleItemDeleted;
-    
+
     // Real-time subscription for item updates (status changes, etc.)
     const channel = supabase
       .channel('items-realtime-updates')
@@ -83,7 +83,7 @@ export default function ItemsPage() {
       })
       .subscribe();
 
-    return () => { 
+    return () => {
       delete window.onItemDeleted;
       supabase.removeChannel(channel);
     };
@@ -341,4 +341,4 @@ export default function ItemsPage() {
       <NavBar activePage="items" onPlusClick={() => setShowPostModal(true)} />
     </div>
   );
-}
+}

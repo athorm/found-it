@@ -24,6 +24,12 @@ export default function ChatPage() {
   const channelRef = useRef(null);
   const messagesEndRef = useRef(null);
   const activeChannelRef = useRef(null);
+  // Guard: track whether we already auto-opened a conversation from the URL.
+  // Without this, every fetchConversations() call (triggered by global-updates
+  // on every message INSERT) would re-run selectConversation, which calls
+  // setMessages(history) and races with the room-channel realtime event,
+  // producing duplicate messages with the same id (duplicate key error).
+  const urlAutoOpenedRef = useRef(false);
   const [resolving, setResolving] = useState(false);
   const [visibleTimes, setVisibleTimes] = useState({});
 
@@ -51,11 +57,17 @@ export default function ChatPage() {
   }, [user]);
 
   useEffect(() => {
+    // Only auto-open once: subsequent conversations updates (from realtime)
+    // must NOT re-trigger selectConversation or we get duplicate-key crashes.
+    if (urlAutoOpenedRef.current) return;
     const urlParams = new URLSearchParams(window.location.search);
     const chatId = urlParams.get('id');
     if (chatId && conversations.length > 0) {
       const targetConv = conversations.find(c => c.id === chatId);
-      if (targetConv) selectConversation(targetConv);
+      if (targetConv) {
+        urlAutoOpenedRef.current = true; // lock — never run again this session
+        selectConversation(targetConv);
+      }
     }
   }, [conversations]);
 
@@ -126,7 +138,16 @@ export default function ChatPage() {
     setView('chat');
     const { data: history, error } = await supabase
       .from('messages').select('*').eq('chat_id', conv.id).order('created_at', { ascending: true });
-    if (!error) setMessages(history);
+    if (!error) {
+      // Deduplicate by id — guards against a racing realtime INSERT event that
+      // already appended the newest message before this fetch completed.
+      const seen = new Set();
+      setMessages((history ?? []).filter(m => {
+        if (seen.has(m.id)) return false;
+        seen.add(m.id);
+        return true;
+      }));
+    }
 
     // Mark all unread messages in this chat as read (where current user is receiver).
     // This decrements the NavBar unread badge via its realtime UPDATE subscription.
@@ -145,7 +166,11 @@ export default function ChatPage() {
       'postgres_changes',
       { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${conv.id}` },
       (payload) => {
-        setMessages((prev) => [...prev, payload.new]);
+        // Deduplicate: skip if we already added this message optimistically
+        // (happens for the sender's own messages via sendMessage).
+        setMessages((prev) =>
+          prev.some((m) => m.id === payload.new.id) ? prev : [...prev, payload.new]
+        );
         // If this incoming message is for the current user, mark it read immediately
         if (payload.new.receiver_id === user?.id) {
           supabase
@@ -163,15 +188,37 @@ export default function ChatPage() {
     if (!newMessage.trim() || !selectedConversation || !user) return;
     const content = newMessage.trim();
     setNewMessage("");
-    const { error } = await supabase.from("messages").insert({
-      sender_id: user.id,
-      receiver_id: selectedConversation.otherUserId,
-      chat_id: selectedConversation.id,
-      item_id: selectedConversation.itemId,
-      content,
-      is_read: false
-    }).select().single();
-    if (error) console.error("Supabase Insert Error:", error.message, error.details);
+
+    // BUG FIX: Supabase Realtime postgres_changes does NOT deliver INSERT events
+    // back to the client that performed the insert. This means the sender never
+    // saw their own message in real-time — they had to reload. Fix: capture the
+    // inserted row from the DB response and append it immediately (optimistic UI).
+    // The realtime channel still handles the OTHER user's incoming messages.
+    const { data: inserted, error } = await supabase
+      .from("messages")
+      .insert({
+        sender_id: user.id,
+        receiver_id: selectedConversation.otherUserId,
+        chat_id: selectedConversation.id,
+        item_id: selectedConversation.itemId,
+        content,
+        is_read: false
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Supabase Insert Error:", error.message, error.details);
+      return;
+    }
+
+    // Append own message immediately — deduplicate in case the realtime
+    // channel ever echoes the event back (edge case on some Supabase plans).
+    if (inserted) {
+      setMessages((prev) =>
+        prev.some((m) => m.id === inserted.id) ? prev : [...prev, inserted]
+      );
+    }
   };
 
   const handleDeleteChat = async () => {

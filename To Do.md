@@ -29,7 +29,7 @@
 
 
 ## Future Features (Priority 3 - later)
-- [ ] Remove notification settings on profile
+- [x] Remove notification settings on profile
 - [ ] Suggest a way to verify if the user is a student of the school, 
 - [x] Implementing logo on pages such as in, login page, home page, item page, chat page, and profile page.
 - [ ] Choosing an appropriate and cohesive font text, font style, font size, with cohesion of the theme's orange palette and iOS feel, design. (This is a must)
