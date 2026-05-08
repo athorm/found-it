@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Send, Loader2, AlertCircle, ChevronDown, Check, Maximize2 } from 'lucide-react';
 import ItemPostModal from '@/components/ItemPostModal';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import Cropper from 'react-easy-crop';
 
 // --- CUSTOM DROPDOWN COMPONENT ---
@@ -64,6 +65,7 @@ function PostItemContent() {
   const searchParams = useSearchParams();
   const preview = searchParams.get('preview');
   const router = useRouter();
+  const { user: authUser, authLoading } = useAuthGuard();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -175,6 +177,14 @@ function PostItemContent() {
 
   if (!preview) {
     return <ItemPostModal open={true} onClose={() => router.back()} onFileSelect={handleFileSelect} />;
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
 
   return (

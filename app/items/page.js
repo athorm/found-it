@@ -4,16 +4,18 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import {
   ArrowLeft, Search, Grid, List,
-  Clock, AlertCircle, ChevronRight, SlidersHorizontal, MapPin, Package
+  Clock, AlertCircle, ChevronRight, SlidersHorizontal, MapPin, Package, Bookmark, UserCircle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import NavBar from "@/components/NavBar";
 import ItemDetailModal from "@/components/ItemDetailModal";
 import ItemPostModal from "@/components/ItemPostModal";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 
 export default function ItemsPage() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("found");
+  const { user, authLoading } = useAuthGuard();
+  const [activeTab, setActiveTab] = useState("lost");
   const [viewMode, setViewMode] = useState("grid");
   const [showFilters, setShowFilters] = useState(false);
   const [viewUserPosts, setViewUserPosts] = useState(false);
@@ -58,6 +60,35 @@ export default function ItemsPage() {
     if (selectedItem?.id === itemId) setSelectedItem(prev => ({ ...prev, status: newStatus }));
   };
 
+  const handleItemDeleted = (itemId) => {
+    setItems(prev => prev.filter(i => i.id !== itemId));
+    setUserItems(prev => prev.filter(i => i.id !== itemId));
+    setSelectedItem(null);
+  };
+
+  useEffect(() => {
+    window.onItemDeleted = handleItemDeleted;
+    
+    // Real-time subscription for item updates (status changes, etc.)
+    const channel = supabase
+      .channel('items-realtime-updates')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'items' }, (payload) => {
+        const updateList = (prev) => prev.map(item => item.id === payload.new.id ? { ...item, ...payload.new } : item);
+        setItems(updateList);
+        setUserItems(updateList);
+        setSelectedItem(prev => (prev?.id === payload.new.id ? { ...prev, ...payload.new } : prev));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'items' }, (payload) => {
+        handleItemDeleted(payload.old.id);
+      })
+      .subscribe();
+
+    return () => { 
+      delete window.onItemDeleted;
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   const handleItemClick = (item) => {
     setSelectedItem(item);
     setIsModalOpen(true);
@@ -85,7 +116,10 @@ export default function ItemsPage() {
 
   const applyFilters = (list) => {
     return list.filter(item => {
-      const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const query = searchQuery.toLowerCase().trim();
+      if (query === 'claimed' || query === 'unclaimed') return false;
+      // Only search via title. If query is "claimed" or "unclaimed", it won't match status.
+      const matchesSearch = !query || (item.title && item.title.toLowerCase().includes(query));
       const matchesLocation = locationFilter === 'All' || (item.location_tag && item.location_tag.includes(locationFilter));
       const dbStatusFilter = reverseStatusMap[statusFilter] || 'All';
       const matchesStatus = statusFilter === 'All' || item.status === dbStatusFilter;
@@ -94,6 +128,14 @@ export default function ItemsPage() {
   };
 
   const currentDisplayList = applyFilters(viewUserPosts ? userItems : items);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] text-white pb-32 font-sans">
@@ -121,12 +163,12 @@ export default function ItemsPage() {
         <div className="relative flex bg-white/5 p-1.5 rounded-[1.5rem] border border-white/10 shadow-2xl backdrop-blur-md">
           <motion.div
             className="absolute inset-y-1.5 bg-orange-500 rounded-[1.1rem] shadow-[0_0_30px_rgba(249,115,22,0.4)]"
-            animate={{ x: activeTab === 'found' ? 0 : '100%' }}
+            animate={{ x: activeTab === 'lost' ? 0 : '100%' }}
             transition={{ type: "spring", stiffness: 350, damping: 30 }}
             style={{ width: 'calc(50% - 6px)' }}
           />
-          <button onClick={() => setActiveTab('found')} className={`relative z-10 flex-1 py-3 text-xs font-black tracking-widest transition-colors ${activeTab === 'found' ? 'text-white' : 'text-white/30'}`}>FOUND</button>
           <button onClick={() => setActiveTab('lost')} className={`relative z-10 flex-1 py-3 text-xs font-black tracking-widest transition-colors ${activeTab === 'lost' ? 'text-white' : 'text-white/30'}`}>LOST</button>
+          <button onClick={() => setActiveTab('found')} className={`relative z-10 flex-1 py-3 text-xs font-black tracking-widest transition-colors ${activeTab === 'found' ? 'text-white' : 'text-white/30'}`}>FOUND</button>
         </div>
 
         {/* CONTROLS */}
@@ -143,9 +185,11 @@ export default function ItemsPage() {
           </div>
           <button
             onClick={() => setViewUserPosts(!viewUserPosts)}
-            className={`p-4 rounded-2xl border transition-all ${viewUserPosts ? 'bg-orange-500 border-orange-400 text-white shadow-[0_0_20px_rgba(249,115,22,0.4)]' : 'bg-white/5 border-white/10 text-white/40'}`}
+            className={`p-4 rounded-2xl border transition-all flex items-center gap-2 ${viewUserPosts ? 'bg-orange-500 border-orange-400 text-white shadow-[0_0_20px_rgba(249,115,22,0.4)]' : 'bg-white/5 border-white/10 text-white/40'}`}
+            title="My Posts"
           >
-            <Clock size={22} />
+            <Bookmark size={22} fill={viewUserPosts ? "currentColor" : "none"} />
+            {viewUserPosts && <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">My Posts</span>}
           </button>
           <button
             onClick={() => setShowFilters(!showFilters)}
@@ -264,11 +308,14 @@ export default function ItemsPage() {
                     ))
                   ) : (
                     <motion.div
+                      key="empty-state"
                       initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                       className="col-span-2 flex flex-col items-center justify-center py-20 text-white/20"
                     >
                       <Package size={48} strokeWidth={1} className="mb-4" />
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em]">No items posted yet</p>
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em]">
+                        {viewUserPosts ? "You haven't posted any items yet" : `No ${activeTab} items found`}
+                      </p>
                     </motion.div>
                   )}
                 </AnimatePresence>
@@ -294,4 +341,4 @@ export default function ItemsPage() {
       <NavBar activePage="items" onPlusClick={() => setShowPostModal(true)} />
     </div>
   );
-}
+}

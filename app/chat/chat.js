@@ -2,13 +2,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Send, Loader2, User, Trash2, X } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User, Trash2, X, CheckCircle2, AlertCircle, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import NavBar from "@/components/NavBar";
 import ItemPostModal from "@/components/ItemPostModal";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 
 export default function ChatPage() {
   const router = useRouter();
+  const { user: authUser, authLoading } = useAuthGuard();
   const [user, setUser] = useState(null);
   const [view, setView] = useState('list');
   const [selectedConversation, setSelectedConversation] = useState(null);
@@ -22,6 +24,7 @@ export default function ChatPage() {
   const channelRef = useRef(null);
   const messagesEndRef = useRef(null);
   const activeChannelRef = useRef(null);
+  const [resolving, setResolving] = useState(false);
   const [visibleTimes, setVisibleTimes] = useState({});
 
   const toggleTime = (msgId) => {
@@ -37,6 +40,7 @@ export default function ChatPage() {
         .channel("global-updates")
         .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => fetchConversations())
         .on("postgres_changes", { event: "*", schema: "public", table: "chats" }, () => fetchConversations())
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "items" }, () => fetchConversations())
         .subscribe();
       return () => {
         supabase.removeChannel(listChannel);
@@ -71,7 +75,7 @@ export default function ChatPage() {
     if (!user) return;
     const { data: chatsData, error } = await supabase
       .from("chats")
-      .select(`id, item_id, finder_id, claimer_id, created_at, messages(content, created_at, sender_id)`)
+      .select(`id, item_id, finder_id, claimer_id, created_at, finder_confirmed_resolved, claimer_confirmed_resolved, messages(content, created_at, sender_id)`)
       .or(`finder_id.eq.${user.id},claimer_id.eq.${user.id}`);
     if (error) { console.error("fetchConversations error:", error); return; }
 
@@ -79,7 +83,7 @@ export default function ChatPage() {
     const profileIds = [...new Set(chatsData.flatMap(c => [c.finder_id, c.claimer_id]).filter(Boolean))];
 
     const [{ data: itemsData }, { data: profilesData }] = await Promise.all([
-      supabase.from('items').select('id, title').in('id', itemIds),
+      supabase.from('items').select('id, title, status').in('id', itemIds),
       supabase.from('profiles').select('id, full_name, avatar_url').in('id', profileIds)
     ]);
 
@@ -103,10 +107,18 @@ export default function ChatPage() {
         lastMessageTime: new Date(latestMsg?.created_at || chat.created_at),
         // Track if current user is the item finder (poster) so we can show delete button
         isFinder,
+        finderConfirmed: chat.finder_confirmed_resolved,
+        claimerConfirmed: chat.claimer_confirmed_resolved,
+        isResolved: (chat.finder_confirmed_resolved && chat.claimer_confirmed_resolved) || itemMap[chat.item_id]?.status === 'Resolved'
       };
     }).sort((a, b) => b.lastMessageTime - a.lastMessageTime);
 
     setConversations(mapped);
+    setSelectedConversation(prev => {
+      if (!prev) return prev;
+      const updated = mapped.find(c => c.id === prev.id);
+      return updated ? updated : prev;
+    });
   };
 
   const selectConversation = async (conv) => {
@@ -159,6 +171,59 @@ export default function ChatPage() {
     }
   };
 
+  const handleResolve = async (confirm = true) => {
+    if (!selectedConversation || !user) return;
+    try {
+      setResolving(true);
+      const isFinder = selectedConversation.isFinder;
+      const updateData = isFinder
+        ? { finder_confirmed_resolved: confirm }
+        : { claimer_confirmed_resolved: confirm };
+
+      const { data: updatedChat, error } = await supabase
+        .from('chats')
+        .update(updateData)
+        .eq('id', selectedConversation.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (!updatedChat) throw new Error("Could not update chat. RLS might be blocking this action.");
+
+      // If this confirmation makes it fully resolved, update the item status
+      const otherConfirmed = isFinder
+        ? selectedConversation.claimerConfirmed
+        : selectedConversation.finderConfirmed;
+
+      if (confirm && otherConfirmed) {
+        const { error: rpcError } = await supabase.rpc('mark_item_resolved', {
+          target_item_id: selectedConversation.itemId
+        });
+        if (rpcError) {
+          console.error("Error marking item resolved details:", rpcError);
+          throw new Error("RPC Error: " + (rpcError.message || JSON.stringify(rpcError)));
+        }
+
+        // Send a system message
+        await supabase.from('messages').insert({
+          sender_id: user.id,
+          receiver_id: selectedConversation.otherUserId,
+          chat_id: selectedConversation.id,
+          item_id: selectedConversation.itemId,
+          content: "✅ Both users have confirmed. This item is now marked as Resolved.",
+          is_read: false
+        });
+      }
+
+      await fetchConversations();
+    } catch (err) {
+      console.error("Resolution error:", err);
+      alert("Failed to update resolution status: " + err.message);
+    } finally {
+      setResolving(false);
+    }
+  };
+
   // Fix: forward file selection to /post page (was missing onFileSelect before)
   const handleFileSelected = (file) => {
     const previewUrl = URL.createObjectURL(file);
@@ -179,13 +244,21 @@ export default function ChatPage() {
     </div>
   );
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] text-white flex flex-col font-sans overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] text-white flex flex-col font-sans overflow-hidden">
 
       {view === 'list' ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 overflow-y-auto pb-24">
           <div className="p-6">
-            <h1 className="text-2xl font-bold bg-linear-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">Messages</h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">Messages</h1>
           </div>
           <div className="px-6 space-y-4">
             {conversations.length === 0 && (
@@ -241,6 +314,47 @@ export default function ChatPage() {
             </div>
           </div>
 
+          {/* RESOLUTION BAR */}
+          <div className="px-4 py-2 bg-black/20 border-b border-orange-500/5">
+            {selectedConversation?.isResolved ? (
+              <div className="flex items-center justify-center gap-2 py-2 text-green-400">
+                <CheckCircle2 size={16} />
+                <span className="text-[10px] font-black uppercase tracking-widest">Transaction Resolved</span>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between py-1">
+                <div className="flex items-center gap-2">
+                  <AlertCircle size={14} className="text-orange-500/40" />
+                  <span className="text-[9px] text-white/30 font-bold uppercase tracking-tight">
+                    {selectedConversation?.isFinder
+                      ? (selectedConversation?.finderConfirmed ? "Waiting for claimer..." : "Is this item resolved?")
+                      : (selectedConversation?.claimerConfirmed ? "Waiting for finder..." : "Is this item resolved?")
+                    }
+                  </span>
+                </div>
+
+                {((selectedConversation?.isFinder && !selectedConversation?.finderConfirmed) ||
+                  (!selectedConversation?.isFinder && !selectedConversation?.claimerConfirmed)) ? (
+                  <button
+                    onClick={() => handleResolve(true)}
+                    disabled={resolving}
+                    className="px-4 py-1.5 bg-orange-500/10 hover:bg-orange-500 text-orange-400 hover:text-white border border-orange-500/20 rounded-full text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                  >
+                    {resolving ? "Updating..." : "Mark as Resolved"}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => handleResolve(false)}
+                    disabled={resolving}
+                    className="text-[9px] text-orange-500/40 hover:text-orange-500 font-bold uppercase tracking-widest transition-all underline underline-offset-4"
+                  >
+                    Cancel Request
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* CHAT AREA */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-transparent">
             {messages.map((msg) => {
@@ -277,16 +391,23 @@ export default function ChatPage() {
 
           {/* INPUT */}
           <div className="p-4 border-t border-white/5 bg-black/40 backdrop-blur-lg">
-            <div className="flex items-center gap-2 bg-white/5 rounded-full px-4 py-1 border border-white/10 focus-within:border-orange-500/40 transition-all">
-              <input
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Message"
-                className="flex-1 bg-transparent py-3 focus:outline-none text-sm"
-                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              />
-              <button onClick={sendMessage} className="text-orange-500 p-2"><Send size={20} /></button>
-            </div>
+            {selectedConversation?.isResolved ? (
+              <div className="flex items-center justify-center gap-3 py-4 bg-white/5 border border-white/10 rounded-full text-white/30">
+                <Lock size={16} />
+                <span className="text-xs font-black uppercase tracking-widest">Messaging Disabled</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 bg-white/5 rounded-full px-4 py-1 border border-white/10 focus-within:border-orange-500/40 transition-all">
+                <input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Message"
+                  className="flex-1 bg-transparent py-3 focus:outline-none text-sm"
+                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                />
+                <button onClick={sendMessage} className="text-orange-500 p-2"><Send size={20} /></button>
+              </div>
+            )}
           </div>
         </div>
       )}

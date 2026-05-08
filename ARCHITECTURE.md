@@ -524,4 +524,45 @@ npm run start # Production server
 
 ---
 
+## 10. FUTURE IMPROVEMENTS (from Priority 3)
+
+These improvements are planned for future implementation:
+
+### 10.1 Notification System
+**Current**: No notification system
+**Plan**:
+- Supabase Edge Functions for push notifications
+- Browser Push API integration
+- In-app notification center
+
+### 10.2 Image Optimization
+**Current**: No image compression
+**Plan**:
+- Use Next.js Image component for automatic optimization
+- Compress images before upload
+- Implement responsive image sizes
+
+### 10.3 Caching Layer
+**Current**: No caching
+**Plan**:
+- Redis cache for frequently accessed items
+- Reduce database load
+- Improve response times
+
+### 10.4 Typing Indicators
+**Current**: No real-time presence
+**Plan**:
+- Real-time typing indicators in chat
+- Show when users are typing or online
+- Improve chat user experience
+
+### 10.5 File Type Validation
+**Current**: No file type validation
+**Plan**:
+- Server-side MIME type checking
+- Block non-image file uploads
+- Improve security and storage management
+
+---
+
 ## End of Architecture Document

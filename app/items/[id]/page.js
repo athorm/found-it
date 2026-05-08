@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, MapPin, Clock, User, MessageCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, User, MessageCircle, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import NavBar from "@/components/NavBar";
 import ItemPostModal from "@/components/ItemPostModal";
@@ -285,6 +285,11 @@ export default function ItemDetailPage() {
                         >
                             MARK AS {item.status === 'Active' ? 'CLAIMED' : 'UNCLAIMED'}
                         </button>
+                    </div>
+                ) : item.status === 'Resolved' ? (
+                    <div className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center gap-2 text-white/30 font-black tracking-widest text-xs">
+                        <Lock size={16} />
+                        ITEM CLAIMED / RESOLVED
                     </div>
                 ) : (
                     <button

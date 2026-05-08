@@ -145,3 +145,7 @@ ON public.chats
 FOR INSERT 
 TO authenticated 
 WITH CHECK (auth.uid() = claimer_id);
+
+ALTER TABLE public.chats 
+ADD COLUMN IF NOT EXISTS finder_confirmed_resolved BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS claimer_confirmed_resolved BOOLEAN DEFAULT FALSE;

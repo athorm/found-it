@@ -5,6 +5,7 @@ import { Search, Info, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import NavBar from "@/components/NavBar";
 import ItemPostModal from "@/components/ItemPostModal";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 
 // Info modal content
 const INFO_SECTIONS = [
@@ -35,6 +36,7 @@ export default function HomePage() {
   const [showPostModal, setShowPostModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const router = useRouter();
+  const { user, authLoading } = useAuthGuard();
 
   const handleFileSelected = (file) => {
     const previewUrl = URL.createObjectURL(file);
@@ -50,6 +52,14 @@ export default function HomePage() {
       router.push("/items");
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen text-white pb-60 font-sans selection:bg-orange-500/30 flex flex-col items-center justify-center bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233]">
@@ -74,21 +84,25 @@ export default function HomePage() {
         <motion.p className="text-orange-300/70 mt-4 text-lg font-medium">Reuniting items with owners</motion.p>
 
         {/* Search bar: navigates to /items?search= on Enter or button click */}
-        <div className="relative group my-12">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-orange-400" size={20} />
+        <div className="relative group my-12 max-w-sm mx-auto">
+          <Search 
+            className="absolute left-5 top-1/2 -translate-y-1/2 text-orange-400 group-focus-within:scale-110 transition-transform duration-300" 
+            size={20} 
+          />
           <input
             type="text"
             placeholder="Search items..."
-            className="w-full bg-white/10 backdrop-blur-xl border border-orange-500/30 rounded-3xl py-5 pl-16 pr-16 outline-none focus:ring-4 focus:ring-orange-500/30 text-white placeholder:text-white/30"
+            className="w-full bg-white/[0.05] backdrop-blur-2xl border border-white/10 rounded-[2rem] py-5 pl-14 pr-16 outline-none focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 text-white text-left placeholder:text-white/20 transition-all duration-300 shadow-2xl"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
           <button
             onClick={handleSearch}
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl px-3 py-1.5 text-xs font-black tracking-widest transition-all active:scale-95"
+            className="absolute right-3 top-1/2 -translate-y-1/2 bg-orange-500 hover:bg-orange-600 text-white rounded-[1.2rem] p-3 transition-all active:scale-90 shadow-lg shadow-orange-500/30"
+            aria-label="Search"
           >
-            GO
+            <Search size={18} strokeWidth={3} />
           </button>
         </div>
       </div>

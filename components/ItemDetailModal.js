@@ -2,7 +2,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, MapPin, User, MessageCircle, ExternalLink } from "lucide-react";
+import { X, MapPin, User, MessageCircle, ExternalLink, Trash2, Maximize2, AlertTriangle, Loader2, Lock } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
@@ -12,6 +12,9 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
     const [user, setUser] = useState(null);
     // Local status enables optimistic UI update without needing a page refresh
     const [localStatus, setLocalStatus] = useState(item?.status);
+    const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     const isOwner = user?.id === item?.user_id;
 
@@ -91,12 +94,32 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
         }
     };
 
+    const handleDeleteItem = async () => {
+        try {
+            setDeleting(true);
+            const { error } = await supabase.from('items').delete().eq('id', item.id);
+            if (error) throw error;
+
+            // If there's an image, we could delete it too, but let's keep it simple for now
+            // as per the "zero-debt" and "maintain stability" goal.
+
+            setShowDeleteConfirm(false);
+            onClose();
+            if (window.onItemDeleted) window.onItemDeleted(item.id);
+        } catch (error) {
+            console.error("Error deleting item:", error);
+            alert("Failed to delete item.");
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     if (!item) return null;
 
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+                <div key="detail-modal-overlay" className="fixed inset-0 z-100 flex items-center justify-center p-4">
                     <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         onClick={onClose}
@@ -109,9 +132,20 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
                         className="relative w-full max-w-lg bg-[#121212] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl"
                     >
                         {/* Header Image */}
-                        <div className="relative aspect-video w-full">
-                            <img src={item.image_url} className="w-full h-full object-cover" alt={item.title} />
-                            <button onClick={onClose} className="absolute top-4 right-4 p-2 bg-black/50 backdrop-blur-md rounded-full text-white/70 hover:text-white">
+                        <div className="relative aspect-video w-full group cursor-pointer" onClick={() => setIsLightboxOpen(true)}>
+                            <img src={item.image_url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt={item.title} />
+
+                            {/* Tap to enlarge hint */}
+                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <div className="bg-black/50 backdrop-blur-md p-3 rounded-full border border-white/20">
+                                    <Maximize2 size={24} className="text-white" />
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onClose(); }}
+                                className="absolute top-4 right-4 p-2 bg-black/50 backdrop-blur-md rounded-full text-white/70 hover:text-white z-10"
+                            >
                                 <X size={20} />
                             </button>
                         </div>
@@ -162,6 +196,19 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
                                     >
                                         MARK AS {localStatus === 'Active' ? 'CLAIMED' : 'UNCLAIMED'}
                                     </button>
+
+                                    <button
+                                        onClick={() => setShowDeleteConfirm(true)}
+                                        className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/30 rounded-2xl font-bold text-xs tracking-widest transition-all mt-2 flex items-center justify-center gap-2"
+                                    >
+                                        <Trash2 size={14} />
+                                        DELETE POST
+                                    </button>
+                                </div>
+                            ) : item.status === 'Resolved' ? (
+                                <div className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center gap-2 text-white/30 font-black tracking-widest text-xs">
+                                    <Lock size={16} />
+                                    ITEM CLAIMED / RESOLVED
                                 </div>
                             ) : (
                                 <button
@@ -172,6 +219,59 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
                                     MESSAGE POSTER
                                 </button>
                             )}
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+            {/* Lightbox Modal */}
+            {isLightboxOpen && (
+                <div key="lightbox-overlay" className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95" onClick={() => setIsLightboxOpen(false)}>
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        className="relative w-full h-full flex items-center justify-center p-4"
+                    >
+                        <img src={item.image_url} className="max-w-full max-h-full object-contain rounded-lg" alt={item.title} />
+                        <button className="absolute top-8 right-8 p-3 bg-white/10 hover:bg-white/20 rounded-full backdrop-blur-md border border-white/10 transition-all">
+                            <X size={24} className="text-white" />
+                        </button>
+                    </motion.div>
+                </div>
+            )}
+
+            {/* Delete Confirmation Modal */}
+            {showDeleteConfirm && (
+                <div key="delete-confirm-overlay" className="fixed inset-0 z-[210] flex items-center justify-center p-6">
+                    <motion.div
+                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                        className="absolute inset-0 bg-black/90 backdrop-blur-sm"
+                        onClick={() => setShowDeleteConfirm(false)}
+                    />
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="relative bg-[#1a1a1a] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-2xl shadow-red-900/20"
+                    >
+                        <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <AlertTriangle size={32} className="text-red-500" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">Delete this post?</h3>
+                        <p className="text-white/40 text-sm mb-8 leading-relaxed">This action cannot be undone. All information and images for this item will be removed.</p>
+                        <div className="space-y-3">
+                            <button
+                                onClick={handleDeleteItem}
+                                disabled={deleting}
+                                className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black tracking-widest text-xs transition-all active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                {deleting ? <Loader2 size={16} className="animate-spin" /> : <><Trash2 size={16} /> YES, DELETE POST</>}
+                            </button>
+                            <button
+                                onClick={() => setShowDeleteConfirm(false)}
+                                className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/60 rounded-2xl font-bold text-xs tracking-widest transition-all"
+                            >
+                                CANCEL
+                            </button>
                         </div>
                     </motion.div>
                 </div>

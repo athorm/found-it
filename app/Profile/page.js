@@ -1,10 +1,13 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Search, Tag, Plus, MessageCircle, User, Mail, ChevronRight, LogOut, Trash2, Camera, Image, X, Send, Loader2, ArrowLeft, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
+
 export default function ProfilePage() {
+  const { user: authUser, authLoading } = useAuthGuard();
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -61,8 +64,10 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    getProfile();
-  }, [getProfile]);
+    if (authUser) {
+      getProfile();
+    }
+  }, [authUser, getProfile]);
 
   const handleUpload = async (event) => {
     try {
@@ -190,7 +195,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) return (
+  if (authLoading || loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center text-white bg-black">
       <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4" />
       <p className="font-medium opacity-50">Loading profile...</p>
