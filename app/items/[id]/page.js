@@ -2,10 +2,11 @@
 import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, MapPin, Clock, User, MessageCircle } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, User, MessageCircle, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 import NavBar from "@/components/NavBar";
 import ItemPostModal from "@/components/ItemPostModal";
+
 
 export default function ItemDetailPage() {
     const router = useRouter();
@@ -115,29 +116,27 @@ export default function ItemDetailPage() {
         }
 
         try {
-            // 1. Check if a chat already exists for this exact item and user pair
+            // 1. Check for existing chat between these users for this specific item
             const { data: existingChats, error: fetchError } = await supabase
                 .from('chats')
                 .select('id')
                 .eq('item_id', item.id)
-                // The user clicking the button is the 'claimer', the owner is the 'finder' (or vice versa depending on your schema)
                 .or(`claimer_id.eq.${user.id},finder_id.eq.${user.id}`);
 
             if (fetchError) throw fetchError;
 
-            // If a chat exists, just route to it and stop
             if (existingChats && existingChats.length > 0) {
                 router.push(`/chat?id=${existingChats[0].id}`);
                 return;
             }
 
-            // 2. If no chat exists, create a new one
+            // 2. Create new chat record
             const { data: newChat, error: createError } = await supabase
                 .from('chats')
                 .insert({
                     item_id: item.id,
-                    finder_id: item.user_id, // The poster
-                    claimer_id: user.id,     // The person messaging
+                    finder_id: item.user_id,
+                    claimer_id: user.id,
                     status: 'open'
                 })
                 .select()
@@ -145,10 +144,11 @@ export default function ItemDetailPage() {
 
             if (createError) throw createError;
 
-            // 3. Send the automatic first message containing the item details
-            const initialMessage = `Hi! I am reaching out regarding your post: "${item.title}".`;
+            // 3. Prepare the automated initial message using post data
+            const initialMessage = `Hi! I'm reaching out about your post "${item.title}" at ${item.location_tag}. Is this still available?`;
 
-            await supabase.from('messages').insert({
+            // --- THE FIX: We added "const { error: msgError }" here to define the variable[cite: 5] ---
+            const { error: msgError } = await supabase.from('messages').insert({
                 chat_id: newChat.id,
                 item_id: item.id,
                 sender_id: user.id,
@@ -157,12 +157,14 @@ export default function ItemDetailPage() {
                 is_read: false
             });
 
-            // 4. Redirect to the newly created chat
+            if (msgError) throw msgError;
+
+            // 4. Redirect the user to the chat page with the new ID[cite: 6]
             router.push(`/chat?id=${newChat.id}`);
 
         } catch (error) {
-            console.error("Error handling chat:", error);
-            alert("Could not start conversation.");
+            console.error("Detailed Chat Error:", error.message || error);
+            alert(`Could not start conversation: ${error.message || 'Unknown error'}`);
         }
     };
 
@@ -249,7 +251,24 @@ export default function ItemDetailPage() {
                         )}
                     </div>
                 </motion.div>
-
+                {/* Poster Info Card */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-4 p-5 bg-black/40 rounded-[2rem] border border-orange-500/20"
+                >
+                    <div className="w-14 h-14 rounded-full bg-orange-500/20 flex items-center justify-center overflow-hidden border border-orange-500/30">
+                        {owner?.avatar_url ? (
+                            <img src={owner.avatar_url} className="w-full h-full object-cover" alt={owner.full_name} />
+                        ) : (
+                            <User className="text-orange-500" size={24} />
+                        )}
+                    </div>
+                    <div>
+                        <p className="text-[10px] uppercase tracking-widest text-orange-400/60 font-bold">Posted By</p>
+                        <p className="font-bold text-xl text-white">{owner?.full_name || "LSPU Student"}</p>
+                    </div>
+                </motion.div>
                 {/* Owner Info */}
                 {isOwner ? (
                     <div className="space-y-3 w-full">
@@ -266,6 +285,11 @@ export default function ItemDetailPage() {
                         >
                             MARK AS {item.status === 'Active' ? 'CLAIMED' : 'UNCLAIMED'}
                         </button>
+                    </div>
+                ) : item.status === 'Resolved' ? (
+                    <div className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center gap-2 text-white/30 font-black tracking-widest text-xs">
+                        <Lock size={16} />
+                        ITEM CLAIMED / RESOLVED
                     </div>
                 ) : (
                     <button

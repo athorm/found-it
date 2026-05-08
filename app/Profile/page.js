@@ -1,10 +1,13 @@
 'use client';
 import React, { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Search, Tag, Plus, MessageCircle, User, Mail, ChevronRight, LogOut, Trash2, Camera, Image, X, Send, Loader2, ArrowLeft } from 'lucide-react';
+import { Search, Tag, Plus, MessageCircle, User, ChevronRight, LogOut, Trash2, Camera, Image, X, Send, Loader2, ArrowLeft, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
+
 export default function ProfilePage() {
+  const { user: authUser, authLoading } = useAuthGuard();
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -20,6 +23,13 @@ export default function ProfilePage() {
     email: "",
     avatar_url: ""
   });
+
+  // Change password state
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMsg, setPasswordMsg] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const router = useRouter();
 
@@ -54,8 +64,10 @@ export default function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    getProfile();
-  }, [getProfile]);
+    if (authUser) {
+      getProfile();
+    }
+  }, [authUser, getProfile]);
 
   const handleUpload = async (event) => {
     try {
@@ -95,6 +107,25 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push('/login');
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordMsg('');
+    if (newPassword.length < 6) { setPasswordMsg('Password must be at least 6 characters.'); return; }
+    if (newPassword !== confirmPassword) { setPasswordMsg('Passwords do not match.'); return; }
+    try {
+      setChangingPassword(true);
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setPasswordMsg('✅ Password updated successfully!');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => { setShowPasswordModal(false); setPasswordMsg(''); }, 1500);
+    } catch (err) {
+      setPasswordMsg(`❌ ${err.message}`);
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -164,7 +195,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) return (
+  if (authLoading || loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center text-white bg-black">
       <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4" />
       <p className="font-medium opacity-50">Loading profile...</p>
@@ -179,7 +210,7 @@ export default function ProfilePage() {
           <ArrowLeft size={24} />
         </button>
         <h1 className="text-3xl font-extrabold tracking-tight text-orange-400">Profile</h1>
-        <div className="w-10" />
+        <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-xl mix-blend-screen drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
       </div>
 
       <main className="px-6 mt-10 max-w-lg mx-auto space-y-8">
@@ -218,7 +249,17 @@ export default function ProfilePage() {
 
         {/* Menu Sections */}
         <div className="rounded-3xl bg-black/40 border border-orange-500/30 overflow-hidden">
-          <ActionRow icon={<Mail size={20} />} label="Notification Settings" />
+          <button
+            onClick={() => setShowPasswordModal(true)}
+            className="w-full flex items-center justify-between px-6 py-5 border-b border-orange-500/20 hover:bg-orange-500/5 transition-all group text-orange-300"
+          >
+            <div className="flex items-center gap-4">
+              <Lock size={20} className="opacity-40" />
+              <span className="font-medium text-lg">Change Password</span>
+            </div>
+            <ChevronRight size={20} className="opacity-20" />
+          </button>
+
 
           <button onClick={handleLogout} className="w-full flex items-center justify-between px-6 py-5 border-b border-orange-500/20 hover:bg-orange-500/5 transition-all group text-orange-300">
             <div className="flex items-center gap-4">
@@ -242,6 +283,38 @@ export default function ProfilePage() {
 
       {/* Modals */}
       <AnimatePresence>
+        {showPasswordModal && (
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center backdrop-blur-sm p-8">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-black/60 border border-orange-500/30 p-8 rounded-[2.5rem] w-full max-w-xs">
+              <h3 className="text-xl font-bold mb-1">Change Password</h3>
+              <p className="text-orange-300/50 text-xs mb-6">Must be at least 6 characters.</p>
+              <div className="space-y-3">
+                <input
+                  type="password"
+                  placeholder="New Password"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  className="w-full bg-white/5 border border-orange-500/20 p-4 rounded-2xl text-white outline-none placeholder:text-white/30 focus:border-orange-500/50"
+                />
+                <input
+                  type="password"
+                  placeholder="Confirm Password"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  className="w-full bg-white/5 border border-orange-500/20 p-4 rounded-2xl text-white outline-none placeholder:text-white/30 focus:border-orange-500/50"
+                />
+                {passwordMsg && <p className="text-xs text-center text-orange-300/80 px-2">{passwordMsg}</p>}
+                <button onClick={handleChangePassword} disabled={changingPassword} className="w-full py-4 bg-orange-500 hover:bg-orange-600 rounded-2xl font-bold disabled:opacity-50 transition-all">
+                  {changingPassword ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'Update Password'}
+                </button>
+                <button onClick={() => { setShowPasswordModal(false); setPasswordMsg(''); setNewPassword(''); setConfirmPassword(''); }} className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-white/50">
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
         {showDeleteModal && (
           <div className="fixed inset-0 bg-black/80 z-100 flex items-center justify-center backdrop-blur-sm p-8">
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-black/60 border border-orange-500/30 p-8 rounded-[2.5rem] w-full max-w-xs text-center">
@@ -296,17 +369,7 @@ export default function ProfilePage() {
   );
 }
 
-function ActionRow({ icon, label }) {
-  return (
-    <button className="w-full flex items-center justify-between px-6 py-5 border-b border-orange-500/20 hover:bg-orange-500/5 transition-colors">
-      <div className="flex items-center gap-4 text-orange-300">
-        <span className="opacity-40">{icon}</span>
-        <span className="font-medium text-lg">{label}</span>
-      </div>
-      <ChevronRight size={20} className="opacity-20" />
-    </button>
-  );
-}
+
 
 function NavIcon({ icon, label, active = false, onClick }) {
   return (

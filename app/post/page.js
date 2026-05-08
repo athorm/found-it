@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Send, Loader2, AlertCircle, ChevronDown, Check, Maximize2 } from 'lucide-react';
 import ItemPostModal from '@/components/ItemPostModal';
+import { useAuthGuard } from '@/hooks/useAuthGuard';
 import Cropper from 'react-easy-crop';
 
 // --- CUSTOM DROPDOWN COMPONENT ---
@@ -64,6 +65,7 @@ function PostItemContent() {
   const searchParams = useSearchParams();
   const preview = searchParams.get('preview');
   const router = useRouter();
+  const { user: authUser, authLoading } = useAuthGuard();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -177,6 +179,14 @@ function PostItemContent() {
     return <ItemPostModal open={true} onClose={() => router.back()} onFileSelect={handleFileSelect} />;
   }
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen text-white p-6 bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233]">
       <header className="flex items-center gap-4 mb-8">
@@ -232,7 +242,9 @@ function PostItemContent() {
           <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-400/80 ml-1">Item Title</label>
           <input
             className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl outline-none focus:border-orange-500/30 transition-all placeholder:text-white/20"
-            placeholder="What did you find?" value={title} onChange={(e) => setTitle(e.target.value)}
+            placeholder={category === 'Lost' ? "What did you lose?" : "What did you find?"} 
+            value={title} 
+            onChange={(e) => setTitle(e.target.value)}
           />
         </div>
 
