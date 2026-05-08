@@ -1,17 +1,41 @@
 "use client";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Camera, Image, X } from "lucide-react";
+import { Camera, Image as ImageIcon, X, Loader2 } from "lucide-react";
+import { compressImage } from "@/utils/imageCompression";
 
 export default function ItemPostModal({ open, onClose, onFileSelect }) {
     const cameraInputRef = useRef(null);
     const galleryInputRef = useRef(null);
 
-    const handleFileChange = (e) => {
+    const [compressing, setCompressing] = useState(false);
+
+    const handleFileChange = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        onFileSelect(file);
-        onClose();
+
+        try {
+            setCompressing(true);
+            // Compress image to ~70% quality and max 1200px dimension
+            const compressedFile = await compressImage(file, {
+                maxWidth: 1200,
+                maxHeight: 1200,
+                quality: 0.7
+            });
+            
+            console.log(`Original size: ${(file.size / 1024).toFixed(2)}KB`);
+            console.log(`Compressed size: ${(compressedFile.size / 1024).toFixed(2)}KB`);
+            
+            onFileSelect(compressedFile);
+            onClose();
+        } catch (error) {
+            console.error("Compression error:", error);
+            // Fallback to original file if compression fails
+            onFileSelect(file);
+            onClose();
+        } finally {
+            setCompressing(false);
+        }
     };
 
     if (!open) return null;
@@ -30,12 +54,19 @@ export default function ItemPostModal({ open, onClose, onFileSelect }) {
 
                 <h2 className="text-xl font-bold mb-8">Report Found Item</h2>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 relative">
+                    {compressing && (
+                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] rounded-2xl">
+                            <Loader2 className="w-8 h-8 text-orange-500 animate-spin mb-2" />
+                            <span className="text-[10px] font-bold text-orange-500 uppercase tracking-widest">Optimizing...</span>
+                        </div>
+                    )}
                     {/* Camera button — triggers capture="environment" (rear camera on real mobile) */}
                     <button
                         type="button"
+                        disabled={compressing}
                         onClick={() => cameraInputRef.current?.click()}
-                        className="flex flex-col items-center gap-3 rounded-2xl border border-orange-500/20 bg-white/5 p-6 text-left transition hover:bg-orange-500/10"
+                        className="flex flex-col items-center gap-3 rounded-2xl border border-orange-500/20 bg-white/5 p-6 text-left transition hover:bg-orange-500/10 disabled:opacity-50"
                     >
                         <Camera size={32} className="text-orange-500" />
                         <span className="text-[10px] font-bold uppercase tracking-widest">Camera</span>
@@ -44,10 +75,11 @@ export default function ItemPostModal({ open, onClose, onFileSelect }) {
                     {/* Gallery button — no capture attr → native photo library on real mobile */}
                     <button
                         type="button"
+                        disabled={compressing}
                         onClick={() => galleryInputRef.current?.click()}
-                        className="flex flex-col items-center gap-3 rounded-2xl border border-orange-500/20 bg-white/5 p-6 text-left transition hover:bg-orange-500/10"
+                        className="flex flex-col items-center gap-3 rounded-2xl border border-orange-500/20 bg-white/5 p-6 text-left transition hover:bg-orange-500/10 disabled:opacity-50"
                     >
-                        <Image size={32} className="text-orange-500" />
+                        <ImageIcon size={32} className="text-orange-500" />
                         <span className="text-[10px] font-bold uppercase tracking-widest">Gallery</span>
                     </button>
                 </div>
