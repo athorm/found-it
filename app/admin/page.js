@@ -15,9 +15,9 @@ import { ITEM_CATEGORIES } from '@/app/Home/page';
 
 /* ─────────────────────────── STATUS TABS ─────────────────────────── */
 const TABS = [
-    { key: 'pending', label: 'Pending', icon: Clock, color: 'text-yellow-400', bg: 'bg-yellow-500' },
-    { key: 'approved', label: 'Approved', icon: CheckCircle, color: 'text-green-400', bg: 'bg-green-500' },
-    { key: 'rejected', label: 'Rejected', icon: XCircle, color: 'text-red-400', bg: 'bg-red-500' },
+    { key: 'pending', label: 'Pending', icon: Clock, color: 'text-orange-400', bg: 'bg-orange-500' },
+    { key: 'approved', label: 'Approved', icon: CheckCircle, color: 'text-orange-400', bg: 'bg-orange-500' },
+    { key: 'rejected', label: 'Rejected', icon: XCircle, color: 'text-orange-400', bg: 'bg-orange-500' },
     { key: 'all', label: 'All Items', icon: Package, color: 'text-orange-400', bg: 'bg-orange-500' },
 ];
 
@@ -118,14 +118,14 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                             <button
                                 onClick={() => onApprove(item.id)}
                                 disabled={processing}
-                                className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                                className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white border-2 border-transparent rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                             >
                                 <CheckCircle size={14} /> APPROVE
                             </button>
                             <button
                                 onClick={() => onReject(item.id)}
                                 disabled={processing}
-                                className="flex-1 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                                className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-2 border-red-500/30 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                             >
                                 <XCircle size={14} /> REJECT
                             </button>
@@ -135,7 +135,7 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                         <button
                             onClick={() => onApprove(item.id)}
                             disabled={processing}
-                            className="flex-1 py-3 bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-500/30 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                            className="flex-1 py-2.5 bg-green-600/10 hover:bg-green-600/20 text-green-400 border-2 border-green-500/30 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                         >
                             <CheckCircle size={14} /> RE-APPROVE
                         </button>
@@ -144,7 +144,7 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                         <button
                             onClick={() => onReject(item.id)}
                             disabled={processing}
-                            className="flex-1 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400/60 border border-red-500/20 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                            className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400/60 border-2 border-red-500/20 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                         >
                             <XCircle size={14} /> REVOKE
                         </button>
@@ -152,7 +152,7 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                     <button
                         onClick={() => onDelete(item.id)}
                         disabled={processing}
-                        className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl transition-all active:scale-95 disabled:opacity-50"
+                        className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-2 border-red-500/20 rounded-xl transition-all active:scale-95 disabled:opacity-50"
                         title="Delete permanently"
                     >
                         <Trash2 size={14} />
@@ -530,7 +530,11 @@ export default function AdminPage() {
                     </button>
                 </div>
 
-                {adminSection === 'users' ? <AdminUsersSection /> : (<>
+                <div className={adminSection === 'users' ? 'block' : 'hidden'}>
+                    <AdminUsersSection />
+                </div>
+
+                <div className={`${adminSection === 'posts' ? 'block' : 'hidden'} space-y-8`}>
                 {/* ─── STAT CARDS ─── */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatCard label="Pending Review" count={stats.pending} icon={Clock} color="text-yellow-400" active={activeTab === 'pending'} onClick={() => setActiveTab('pending')} />
@@ -757,7 +761,7 @@ export default function AdminPage() {
                         )}
                     </AnimatePresence>
                 </div>
-            </>)}
+                </div>
             </main>
 
             {/* ─── TOAST ─── */}
