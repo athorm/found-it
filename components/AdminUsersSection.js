@@ -187,9 +187,9 @@ export default function AdminUsersSection() {
             {/* Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[{ label: 'Pending', count: stats.pending, icon: Clock, color: 'text-yellow-400', tab: 'pending' },
-                  { label: 'Verified', count: stats.approved, icon: CheckCircle, color: 'text-green-400', tab: 'approved' },
-                  { label: 'Rejected', count: stats.rejected, icon: XCircle, color: 'text-red-400', tab: 'rejected' },
-                  { label: 'Total Users', count: stats.total, icon: Users, color: 'text-orange-400', tab: 'all' }
+                { label: 'Verified', count: stats.approved, icon: CheckCircle, color: 'text-green-400', tab: 'approved' },
+                { label: 'Rejected', count: stats.rejected, icon: XCircle, color: 'text-red-400', tab: 'rejected' },
+                { label: 'Total Users', count: stats.total, icon: Users, color: 'text-orange-400', tab: 'all' }
                 ].map(s => (
                     <button key={s.tab} onClick={() => setActiveTab(s.tab)}
                         className={`p-5 rounded-2xl border transition-all text-left ${activeTab === s.tab ? 'bg-orange-500/10 border-orange-500/40' : 'bg-white/[0.03] border-white/10 hover:border-white/20'}`}>
@@ -218,18 +218,18 @@ export default function AdminUsersSection() {
                 </div>
             </div>
 
-                {/* Select all */}
-                {filtered.length > 0 && (
-                    <div className="flex items-center gap-3">
-                        <button onClick={toggleSelectAll}
-                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedUsers.size === filtered.length && filtered.length > 0 ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20 hover:border-orange-500/60'}`}>
-                            {selectedUsers.size === filtered.length && filtered.length > 0 && <CheckCircle size={14} className="text-white" />}
-                        </button>
-                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
-                            {selectedUsers.size > 0 ? `${selectedUsers.size} selected` : 'Select all'}
-                        </span>
-                    </div>
-                )}
+            {/* Select all */}
+            {filtered.length > 0 && (
+                <div className="flex items-center gap-3">
+                    <button onClick={toggleSelectAll}
+                        className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedUsers.size === filtered.length && filtered.length > 0 ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20 hover:border-orange-500/60'}`}>
+                        {selectedUsers.size === filtered.length && filtered.length > 0 && <CheckCircle size={14} className="text-white" />}
+                    </button>
+                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                        {selectedUsers.size > 0 ? `${selectedUsers.size} selected` : 'Select all'}
+                    </span>
+                </div>
+            )}
 
             {/* Users Grid */}
             <div className="relative min-h-[400px]">
@@ -246,44 +246,44 @@ export default function AdminUsersSection() {
                                     onClick={() => toggleSelect(u.id)}
                                     className={`bg-white/[0.04] border rounded-3xl p-5 flex flex-col h-full hover:border-orange-500/30 transition-all cursor-pointer ${selectedUsers.has(u.id) ? 'border-orange-500/60 ring-2 ring-orange-500/30' : 'border-white/10'}`}>
                                     <div className="space-y-4 mb-4">
-                                    {/* User header */}
-                                    <div className="flex items-center gap-3">
-                                        <button onClick={(e) => { e.stopPropagation(); toggleSelect(u.id); }}
-                                            className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${selectedUsers.has(u.id) ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20'}`}>
-                                            {selectedUsers.has(u.id) && <CheckCircle size={12} className="text-white" />}
-                                        </button>
-                                        <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                            {u.avatar_url ? <img src={u.avatar_url} className="w-full h-full object-cover" alt="" /> : <User size={20} className="text-orange-500" />}
+                                        {/* User header */}
+                                        <div className="flex items-center gap-3">
+                                            <button onClick={(e) => { e.stopPropagation(); toggleSelect(u.id); }}
+                                                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${selectedUsers.has(u.id) ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20'}`}>
+                                                {selectedUsers.has(u.id) && <CheckCircle size={12} className="text-white" />}
+                                            </button>
+                                            <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                                {u.avatar_url ? <img src={u.avatar_url} className="w-full h-full object-cover" alt="" /> : <User size={20} className="text-orange-500" />}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-bold text-white truncate">{u.full_name || 'Unknown'}</p>
+                                                <p className="text-[10px] text-white/30 font-mono">{u.student_number || 'N/A'}</p>
+                                            </div>
+                                            <span className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${statusColors[u.verification_status]}`}>{u.verification_status}</span>
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-bold text-white truncate">{u.full_name || 'Unknown'}</p>
-                                            <p className="text-[10px] text-white/30 font-mono">{u.student_number || 'N/A'}</p>
+                                        {/* Email */}
+                                        <div className="flex items-center gap-2 text-white/30">
+                                            <Mail size={12} className="text-orange-500" />
+                                            <span className="text-[10px] font-bold truncate">{u.email}</span>
                                         </div>
-                                        <span className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${statusColors[u.verification_status]}`}>{u.verification_status}</span>
+                                        {/* Document preview button */}
+                                        {u.verification_doc_signed_url && (
+                                            <button onClick={() => setPreviewDocUrl(u.verification_doc_signed_url)}
+                                                className="w-full flex items-center gap-2 p-3 bg-white/[0.03] rounded-xl border border-white/5 hover:border-orange-500/30 transition-all text-left">
+                                                <FileText size={16} className="text-orange-500 flex-shrink-0" />
+                                                <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">View Document</span>
+                                                <Eye size={14} className="ml-auto text-white/20" />
+                                            </button>
+                                        )}
+                                        {/* Rejection reason */}
+                                        {u.verification_status === 'rejected' && u.verification_rejection_reason && (
+                                            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
+                                                <p className="text-[8px] font-black uppercase tracking-widest text-red-400 mb-1">Rejection Reason</p>
+                                                <p className="text-white/50 text-[10px] line-clamp-2">{u.verification_rejection_reason}</p>
+                                            </div>
+                                        )}
                                     </div>
-                                    {/* Email */}
-                                    <div className="flex items-center gap-2 text-white/30">
-                                        <Mail size={12} className="text-orange-500" />
-                                        <span className="text-[10px] font-bold truncate">{u.email}</span>
-                                    </div>
-                                    {/* Document preview button */}
-                                    {u.verification_doc_signed_url && (
-                                        <button onClick={() => setPreviewDocUrl(u.verification_doc_signed_url)}
-                                            className="w-full flex items-center gap-2 p-3 bg-white/[0.03] rounded-xl border border-white/5 hover:border-orange-500/30 transition-all text-left">
-                                            <FileText size={16} className="text-orange-500 flex-shrink-0" />
-                                            <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">View Document</span>
-                                            <Eye size={14} className="ml-auto text-white/20" />
-                                        </button>
-                                    )}
-                                    {/* Rejection reason */}
-                                    {u.verification_status === 'rejected' && u.verification_rejection_reason && (
-                                        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
-                                            <p className="text-[8px] font-black uppercase tracking-widest text-red-400 mb-1">Rejection Reason</p>
-                                            <p className="text-white/50 text-[10px] line-clamp-2">{u.verification_rejection_reason}</p>
-                                        </div>
-                                    )}
-                                    </div>
-                                    
+
                                     <div className="mt-auto space-y-4 pt-2">
                                         {/* Timestamp */}
                                         <p className="text-[10px] text-white/20 font-bold tracking-widest uppercase">
@@ -291,32 +291,32 @@ export default function AdminUsersSection() {
                                         </p>
                                         {/* Actions */}
                                         <div className="flex gap-2" onClick={e => e.stopPropagation()}>
-                                        {u.verification_status === 'pending' && (<>
-                                            <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
-                                                className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                <CheckCircle size={12} /> APPROVE
+                                            {u.verification_status === 'pending' && (<>
+                                                <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
+                                                    className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    <CheckCircle size={12} /> APPROVE
+                                                </button>
+                                                <button onClick={() => setRejectTarget(u.id)} disabled={processing}
+                                                    className="flex-1 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    <XCircle size={12} /> REJECT
+                                                </button>
+                                            </>)}
+                                            {u.verification_status === 'rejected' && (
+                                                <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
+                                                    className="flex-1 py-2.5 bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    <CheckCircle size={12} /> APPROVE
+                                                </button>
+                                            )}
+                                            {u.verification_status === 'approved' && (
+                                                <button onClick={() => setRejectTarget(u.id)} disabled={processing}
+                                                    className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400/60 border border-red-500/20 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    <XCircle size={12} /> REVOKE
+                                                </button>
+                                            )}
+                                            <button onClick={() => setDeleteTarget(u.id)} disabled={processing}
+                                                className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl transition-all disabled:opacity-50" title="Delete account">
+                                                <Trash2 size={12} />
                                             </button>
-                                            <button onClick={() => setRejectTarget(u.id)} disabled={processing}
-                                                className="flex-1 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                <XCircle size={12} /> REJECT
-                                            </button>
-                                        </>)}
-                                        {u.verification_status === 'rejected' && (
-                                            <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
-                                                className="flex-1 py-2.5 bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                <CheckCircle size={12} /> APPROVE
-                                            </button>
-                                        )}
-                                        {u.verification_status === 'approved' && (
-                                            <button onClick={() => setRejectTarget(u.id)} disabled={processing}
-                                                className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400/60 border border-red-500/20 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                <XCircle size={12} /> REVOKE
-                                            </button>
-                                        )}
-                                        <button onClick={() => setDeleteTarget(u.id)} disabled={processing}
-                                            className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl transition-all disabled:opacity-50" title="Delete account">
-                                            <Trash2 size={12} />
-                                        </button>
                                         </div>
                                     </div>
                                 </motion.div>
