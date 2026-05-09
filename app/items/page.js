@@ -4,13 +4,16 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import {
   ArrowLeft, Search, Grid, List,
-  Clock, AlertCircle, ChevronRight, SlidersHorizontal, MapPin, Package, Bookmark, UserCircle
+  Clock, AlertCircle, ChevronRight, SlidersHorizontal, MapPin, Package, Bookmark, UserCircle, XCircle, X, Calendar
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import NavBar from "@/components/NavBar";
 import ItemDetailModal from "@/components/ItemDetailModal";
 import ItemPostModal from "@/components/ItemPostModal";
+import MarqueeTitle from "@/components/MarqueeTitle";
+import CustomDateRangePicker from "@/components/CustomDateRangePicker";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { ITEM_CATEGORIES } from "@/app/Home/page";
 
 export default function ItemsPage() {
   const router = useRouter();
@@ -26,6 +29,9 @@ export default function ItemsPage() {
 
   const [locationFilter, setLocationFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [categoryFilter, setCategoryFilter] = useState('All');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const [selectedItem, setSelectedItem] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,11 +49,16 @@ export default function ItemsPage() {
   const statusMap = { 'Active': 'Unclaimed', 'Resolved': 'Claimed' };
   const reverseStatusMap = { 'Unclaimed': 'Active', 'Claimed': 'Resolved' };
 
-  // Read ?search= from URL on mount and load view preference
+  // Read ?search= and ?item_category= from URL on mount and load view preference
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const q = params.get('search');
+    const cat = params.get('item_category');
     if (q) setSearchQuery(q);
+    if (cat) {
+      setCategoryFilter(cat);
+      setShowFilters(true); // auto-open filters when navigating with a category
+    }
 
     const savedViewMode = localStorage.getItem("itemsViewMode");
     if (savedViewMode) setViewMode(savedViewMode);
@@ -126,16 +137,35 @@ export default function ItemsPage() {
     return list.filter(item => {
       const query = searchQuery.toLowerCase().trim();
       if (query === 'claimed' || query === 'unclaimed') return false;
-      // Only search via title. If query is "claimed" or "unclaimed", it won't match status.
-      const matchesSearch = !query || (item.title && item.title.toLowerCase().includes(query));
+      // Search title, description, and item_category
+      const matchesSearch = !query || (
+        (item.title && item.title.toLowerCase().includes(query)) ||
+        (item.description && item.description.toLowerCase().includes(query)) ||
+        (item.item_category && item.item_category.toLowerCase().includes(query))
+      );
       const matchesLocation = locationFilter === 'All' || (item.location_tag && item.location_tag.includes(locationFilter));
       const dbStatusFilter = reverseStatusMap[statusFilter] || 'All';
       const matchesStatus = statusFilter === 'All' || item.status === dbStatusFilter;
-      return matchesSearch && matchesLocation && matchesStatus;
+      const matchesCategory = categoryFilter === 'All' || item.item_category === categoryFilter;
+      const itemDate = new Date(item.created_at);
+      const matchesDateFrom = !dateFrom || itemDate >= new Date(dateFrom);
+      const matchesDateTo = !dateTo || itemDate <= new Date(dateTo + 'T23:59:59');
+      return matchesSearch && matchesLocation && matchesStatus && matchesCategory && matchesDateFrom && matchesDateTo;
     });
   };
 
   const currentDisplayList = applyFilters(viewUserPosts ? userItems : items);
+
+  // Check if any filter is active (to show a badge on the filter button)
+  const hasActiveFilters = locationFilter !== 'All' || statusFilter !== 'All' || categoryFilter !== 'All' || dateFrom || dateTo;
+
+  const clearAllFilters = () => {
+    setLocationFilter('All');
+    setStatusFilter('All');
+    setCategoryFilter('All');
+    setDateFrom('');
+    setDateTo('');
+  };
 
   if (authLoading) {
     return (
@@ -201,9 +231,13 @@ export default function ItemsPage() {
           </button>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`p-4 rounded-2xl border transition-all ${showFilters ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/10 text-orange-500'}`}
+            className={`relative p-4 rounded-2xl border transition-all ${showFilters ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/10 text-orange-500'}`}
           >
             <SlidersHorizontal size={22} />
+            {/* Active filter indicator dot */}
+            {hasActiveFilters && !showFilters && (
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full border-2 border-[#0a0a0a] shadow-lg" />
+            )}
           </button>
 
           <AnimatePresence>
@@ -215,28 +249,129 @@ export default function ItemsPage() {
                 transition={{ duration: 0.2 }}
                 className="absolute top-full right-0 mt-2 z-50 w-80 bg-[#121212]/95 border border-white/10 rounded-[2rem] backdrop-blur-2xl shadow-2xl"
               >
-                <div className="p-6 space-y-6">
+                <div className="p-6 space-y-5">
+                  {/* Header with clear button */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black">Filters</span>
+                    {hasActiveFilters && (
+                      <button
+                        onClick={clearAllFilters}
+                        className="flex items-center gap-1 text-[10px] text-orange-400/70 hover:text-orange-400 font-bold transition-colors"
+                      >
+                        <X size={12} /> Clear all
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Item Category — Horizontal scroll */}
                   <div>
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-4 block">Location</label>
-                    <div className="flex flex-wrap gap-2">
-                      {locations.map(loc => (
-                        <button key={loc} onClick={() => setLocationFilter(loc)} className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${locationFilter === loc ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
-                      ))}
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-3 block">Item Type</label>
+                    <div className="relative overflow-hidden rounded-xl -mx-1">
+                      <div className="flex gap-2 px-1 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        <button
+                          onClick={() => setCategoryFilter('All')}
+                          className={`flex-shrink-0 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}
+                        >
+                          All
+                        </button>
+                        {ITEM_CATEGORIES.map(cat => (
+                          <button
+                            key={cat.value}
+                            onClick={() => setCategoryFilter(cat.value)}
+                            className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}
+                          >
+                            <span className="text-xs">{cat.emoji}</span>
+                            {cat.label}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
+
+                  {/* Location */}
                   <div>
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-4 block">Status</label>
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-3 block">Location</label>
+                    <div className="relative overflow-hidden rounded-xl -mx-1">
+                      <div className="flex gap-2 px-1 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                        {locations.map(loc => (
+                          <button key={loc} onClick={() => setLocationFilter(loc)} className={`flex-shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Status */}
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-3 block">Status</label>
                     <div className="flex gap-2">
                       {statuses.map(stat => (
                         <button key={stat} onClick={() => setStatusFilter(stat)} className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${statusFilter === stat ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/5 text-white/40'}`}>{stat}</button>
                       ))}
                     </div>
                   </div>
+
+                  {/* Date Range */}
+                  <div>
+                    <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-3 block">Date Posted</label>
+                    <CustomDateRangePicker 
+                      dateFrom={dateFrom} setDateFrom={setDateFrom}
+                      dateTo={dateTo} setDateTo={setDateTo}
+                    />
+                  </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
+
+        {/* Active filter chips — shown below controls */}
+        <AnimatePresence>
+          {hasActiveFilters && !showFilters && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="flex flex-wrap gap-2"
+            >
+              {categoryFilter !== 'All' && (
+                <button
+                  onClick={() => setCategoryFilter('All')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all"
+                >
+                  {ITEM_CATEGORIES.find(c => c.value === categoryFilter)?.emoji} {categoryFilter}
+                  <X size={10} className="opacity-60" />
+                </button>
+              )}
+              {locationFilter !== 'All' && (
+                <button
+                  onClick={() => setLocationFilter('All')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all"
+                >
+                  <MapPin size={10} /> {locationFilter}
+                  <X size={10} className="opacity-60" />
+                </button>
+              )}
+              {statusFilter !== 'All' && (
+                <button
+                  onClick={() => setStatusFilter('All')}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all"
+                >
+                  {statusFilter}
+                  <X size={10} className="opacity-60" />
+                </button>
+              )}
+              {(dateFrom || dateTo) && (
+                <button
+                  onClick={() => { setDateFrom(''); setDateTo(''); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all"
+                >
+                  <Calendar size={10} /> {dateFrom || '...'} — {dateTo || '...'}
+                  <X size={10} className="opacity-60" />
+                </button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* CONTENT AREA WITH LOADING & ANIMATION[cite: 3] */}
         <div className="relative min-h-[400px]">
@@ -294,18 +429,49 @@ export default function ItemsPage() {
 
                           {/* iOS-STYLE OVERLAY SHIMMER ON HOVER */}
                           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                          {/* Item category badge on image (grid only) */}
+                          {viewMode === "grid" && item.item_category && item.item_category !== 'Other' && (
+                            <span className="absolute top-3 left-3 px-2 py-0.5 bg-black/50 backdrop-blur-md border border-white/10 rounded-lg text-[8px] font-black uppercase tracking-widest text-white/70">
+                              {ITEM_CATEGORIES.find(c => c.value === item.item_category)?.emoji} {item.item_category}
+                            </span>
+                          )}
                         </div>
 
-                        <div className={`flex-1 ${viewMode === "list" ? "py-1" : "p-5"}`}>
+                        <div className={`flex-1 min-w-0 ${viewMode === "list" ? "py-1" : "p-5"}`}>
                           <div className="flex items-center justify-between mb-2">
-                            <h3 className="font-bold text-sm tracking-tight line-clamp-1">{item.title}</h3>
-                            <span className="text-[7px] font-black uppercase text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20">
+                            <div className="flex-1 min-w-0 mr-2">
+                                <MarqueeTitle text={item.title} className="font-bold text-sm tracking-tight" />
+                            </div>
+                            <span className="text-[7px] font-black uppercase text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20 shrink-0">
                               {/* Context-aware: Lost→Found/Unfound, Found→Claimed/Unclaimed */}
                               {item.status === 'Resolved'
                                 ? (item.category === 'Lost' ? 'Found' : 'Claimed')
                                 : 'Unclaimed'}
                             </span>
                           </div>
+
+                          {/* Moderation badge — only shown for the user's own pending/rejected posts */}
+                          {viewUserPosts && item.moderation_status && item.moderation_status !== 'approved' && (
+                            <div className={`flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest w-fit ${
+                              item.moderation_status === 'pending'
+                                ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20'
+                                : 'bg-red-500/15 text-red-400 border border-red-500/20'
+                            }`}>
+                              {item.moderation_status === 'pending'
+                                ? <><Clock size={10} /> Pending Review</>
+                                : <><XCircle size={10} /> Rejected</>
+                              }
+                            </div>
+                          )}
+
+                          {/* Category tag (list view) */}
+                          {viewMode === "list" && item.item_category && item.item_category !== 'Other' && (
+                            <span className="text-[8px] font-bold text-orange-400/60 uppercase tracking-widest mb-1 block">
+                              {ITEM_CATEGORIES.find(c => c.value === item.item_category)?.emoji} {item.item_category}
+                            </span>
+                          )}
+
                           <div className="flex items-center gap-1.5 text-white/30">
                             <MapPin size={10} className="text-orange-500" />
                             <span className="text-[9px] font-bold uppercase tracking-widest">{item.location_tag}</span>

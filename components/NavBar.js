@@ -1,11 +1,13 @@
 "use client";
-import { Search, Tag, Plus, MessageCircle, User } from "lucide-react";
+import { Search, Tag, Plus, MessageCircle, User, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function NavBar({ activePage, onPlusClick }) {
     const [unreadCount, setUnreadCount] = useState(0);
+    const [isAdmin, setIsAdmin] = useState(false);
+    const [isDesktop, setIsDesktop] = useState(false);
 
     const handlePlusClick = () => {
         if (onPlusClick) {
@@ -15,38 +17,72 @@ export default function NavBar({ activePage, onPlusClick }) {
         }
     };
 
+    // Detect desktop viewport
     useEffect(() => {
-        const fetchUnreadCount = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+        const checkDesktop = () => setIsDesktop(window.innerWidth >= 1024);
+        checkDesktop();
+        window.addEventListener('resize', checkDesktop);
+        return () => window.removeEventListener('resize', checkDesktop);
+    }, []);
 
-            const { count, error } = await supabase
-                .from('messages')
-                .select('*', { count: 'exact', head: true })
-                .eq('receiver_id', user.id)
-                .eq('is_read', false);
+    // Fetch user data (Admin status & Unread messages)
+    useEffect(() => {
+        let channel;
 
-            if (!error) setUnreadCount(count || 0);
+        const initializeUserData = async () => {
+            try {
+                // Fetch user once to prevent concurrent lock acquisitions
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+                if (authError || !user) return;
+
+                // 1. Check if admin
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .maybeSingle();
+
+                if (profile?.role === 'admin') {
+                    setIsAdmin(true);
+                }
+
+                // 2. Fetch unread count
+                const fetchUnreadCount = async () => {
+                    const { count, error } = await supabase
+                        .from('messages')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('receiver_id', user.id)
+                        .eq('is_read', false);
+
+                    if (!error) setUnreadCount(count || 0);
+                };
+
+                await fetchUnreadCount();
+
+                // 3. Subscribe to new messages
+                channel = supabase
+                    .channel(`unread-messages-navbar-${Date.now()}`)
+                    .on('postgres_changes', { 
+                        event: 'INSERT', 
+                        schema: 'public', 
+                        table: 'messages' 
+                    }, () => fetchUnreadCount())
+                    .on('postgres_changes', { 
+                        event: 'UPDATE', 
+                        schema: 'public', 
+                        table: 'messages' 
+                    }, () => fetchUnreadCount())
+                    .subscribe();
+            } catch (error) {
+                console.error("Error initializing user data in NavBar:", error);
+            }
         };
 
-        fetchUnreadCount();
+        initializeUserData();
 
-        // Subscribe to new messages
-        const channel = supabase
-            .channel('unread-messages')
-            .on('postgres_changes', { 
-                event: 'INSERT', 
-                schema: 'public', 
-                table: 'messages' 
-            }, () => fetchUnreadCount())
-            .on('postgres_changes', { 
-                event: 'UPDATE', 
-                schema: 'public', 
-                table: 'messages' 
-            }, () => fetchUnreadCount())
-            .subscribe();
-
-        return () => { supabase.removeChannel(channel); };
+        return () => { 
+            if (channel) supabase.removeChannel(channel); 
+        };
     }, []);
 
     return (
@@ -62,6 +98,20 @@ export default function NavBar({ activePage, onPlusClick }) {
             </motion.button>
             <NavIcon icon={<MessageCircle size={22} />} label="Chat" active={activePage === 'chat'} onClick={() => window.location.href = '/chat'} badgeCount={unreadCount} />
             <NavIcon icon={<User size={22} />} label="Profile" active={activePage === 'profile'} onClick={() => window.location.href = '/Profile'} />
+
+            {/* Admin View button — only visible on desktop for admin users */}
+            {isAdmin && isDesktop && (
+                <motion.button
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    whileTap={{ scale: 0.92 }}
+                    onClick={() => window.location.href = '/admin'}
+                    className="absolute -top-14 right-4 flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase shadow-lg shadow-orange-500/30 transition-all border-2 border-orange-400/50"
+                >
+                    <Shield size={14} strokeWidth={3} />
+                    Admin View
+                </motion.button>
+            )}
         </nav>
     );
 }

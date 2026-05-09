@@ -43,7 +43,7 @@ export default function ChatPage() {
     if (user) {
       fetchConversations();
       const listChannel = supabase
-        .channel("global-updates")
+        .channel(`global-updates-${Date.now()}`)
         .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => fetchConversations())
         .on("postgres_changes", { event: "*", schema: "public", table: "chats" }, () => fetchConversations())
         .on("postgres_changes", { event: "UPDATE", schema: "public", table: "items" }, () => fetchConversations())
@@ -258,21 +258,11 @@ export default function ChatPage() {
       if (error) throw error;
       if (!updatedChat) throw new Error("Could not update chat. RLS might be blocking this action.");
 
-      // If this confirmation makes it fully resolved, update the item status
-      const otherConfirmed = isFinder
-        ? selectedConversation.claimerConfirmed
-        : selectedConversation.finderConfirmed;
-
-      if (confirm && otherConfirmed) {
-        const { error: rpcError } = await supabase.rpc('mark_item_resolved', {
-          target_item_id: selectedConversation.itemId
-        });
-        if (rpcError) {
-          console.error("Error marking item resolved details:", rpcError);
-          throw new Error("RPC Error: " + (rpcError.message || JSON.stringify(rpcError)));
-        }
-
-        // Send a system message
+      // The DB trigger (trg_auto_resolve_item) automatically sets
+      // items.status = 'Resolved' when both flags are true. We just
+      // need to send a system message when that happens so both users
+      // see confirmation in the chat thread.
+      if (confirm && updatedChat.finder_confirmed_resolved && updatedChat.claimer_confirmed_resolved) {
         await supabase.from('messages').insert({
           sender_id: user.id,
           receiver_id: selectedConversation.otherUserId,
@@ -304,6 +294,8 @@ export default function ChatPage() {
     setView('list');
     setSelectedConversation(null);
     setMessages([]);
+    // Re-fetch conversations so the list shows the latest messages
+    fetchConversations();
   };
 
   if (loading) return (

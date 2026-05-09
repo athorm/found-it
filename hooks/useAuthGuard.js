@@ -1,5 +1,8 @@
 // hooks/useAuthGuard.js
 // Single source of truth for route protection.
+// Now also checks verification_status — unverified users get redirected
+// to /pending-verification instead of seeing protected content.
+//
 // Usage in any protected page:
 //   const { user, authLoading } = useAuthGuard();
 //   if (authLoading) return <Spinner />;
@@ -25,6 +28,21 @@ export function useAuthGuard() {
         router.replace("/login");
         return;
       }
+
+      // Check verification status
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("verification_status")
+        .eq("id", session.user.id)
+        .maybeSingle();
+
+      if (!mounted) return;
+
+      if (profile && profile.verification_status !== 'approved') {
+        router.replace("/pending-verification");
+        return;
+      }
+
       setUser(session.user);
       setAuthLoading(false);
     };
@@ -37,8 +55,21 @@ export function useAuthGuard() {
       if (!session) {
         router.replace("/login");
       } else {
-        setUser(session.user);
-        setAuthLoading(false);
+        // Re-check verification on auth change
+        supabase
+          .from("profiles")
+          .select("verification_status")
+          .eq("id", session.user.id)
+          .maybeSingle()
+          .then(({ data: profile }) => {
+            if (!mounted) return;
+            if (profile && profile.verification_status !== 'approved') {
+              router.replace("/pending-verification");
+            } else {
+              setUser(session.user);
+              setAuthLoading(false);
+            }
+          });
       }
     });
 
