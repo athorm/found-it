@@ -35,11 +35,13 @@
 - [ ] Choosing an appropriate and cohesive font text, font style, font size, with cohesion of the theme's orange palette and iOS feel, design. (This is a must)
 - [x] Instead of having the lost on the right side of item page.js, and the found on the left side. Switch them. So lost on the left, found on the right.
 - [x] Make a loading process when loading who posted the item in ItemDetailModal.js since I see a bug where the picture and the text is a different user because it was recently viewed on other items. 
-- [ ] When users on their conversation both press mark as resolved. It would automatically be updated on the list of item in pages. (Mark as Claimed). But the thing is that I feel that when on the lost page, when you posted a lost item and then you resolved it rather than marking it as claimed, it says mark as found to make it appropriate and connected so that users do not get confused. How do we implement this? Should we use supabase? 
+- [x] When users on their conversation both press mark as resolved. It would automatically be updated on the list of item in pages. (Mark as Claimed). But the thing is that I feel that when on the lost page, when you posted a lost item and then you resolved it rather than marking it as claimed, it says mark as found to make it appropriate and connected so that users do not get confused. How do we implement this? Should we use supabase? 
 
 
 ## Trying to implement this when we feel like it (Priority 3.5 - when have time)
-- [ ] Since the website is tailored for mobile view on users, add an admin desktop view that handles the item posting process. Approving the post if the item is appropriate and not a troll. Rejecting it if it is inappropriate or a troll. Use Supabase to also implement this so that admin users have access and authentication. Not all users can access this view, only admin users. Admin users would have a button on the desktop view that says "Admin View". When admin users click it, it would lead them to the admin desktop view. And any admin functions/process that you can think of.
+- [x] Since the website is tailored for mobile view on users. We create profiles for admin users with access. Add an admin desktop view that handles the item posting process so normal users cannot post items directly but instead admin users can. Approving the post if the item is appropriate and not a troll. Rejecting it if it is inappropriate or a troll. Use Supabase to also implement this so that admin users have access and authentication. Not all users can access this view, only admin users. Admin users would have a button on the desktop view that says "Admin View". When admin users click it, it would lead them to the admin desktop view. And any admin functions/process that you can think of.
+- [x] Recent Feed Plan see RECENT_FEED_PLAN.md
+- [ ] 
 
 
 ## Very Hard to Implement But Noted (Priority 4 - when have time or when the school accepts it)

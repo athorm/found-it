@@ -31,12 +31,12 @@ TASK — Add a "Recently Reported" section:
 1. MOCK DATA
    Add a const MOCK_ITEMS array (6 items, before the component):
    [
-     { id: 1, name: "Key Ring", status: "Just Found",      emoji: "🔑", location: "Library"         },
-     { id: 2, name: "iPhone 13",  status: "Awaiting Owner", emoji: "📱", location: "Cafeteria"       },
-     { id: 3, name: "Blue Wallet",status: "Just Found",     emoji: "👛", location: "Gym"              },
-     { id: 4, name: "AirPods",    status: "Awaiting Owner", emoji: "🎧", location: "Room 204"         },
-     { id: 5, name: "Notebook",   status: "Just Found",     emoji: "📓", location: "Quad"             },
-     { id: 6, name: "Umbrella",   status: "Awaiting Owner", emoji: "☂️",  location: "Main Gate"       },
+     { id: 1, name: "Key Ring", status: "Just Found", location: "Library"         },
+     { id: 2, name: "iPhone 13",  status: "Awaiting Owner", location: "Cafeteria"       },
+     { id: 3, name: "Blue Wallet",status: "Just Found", location: "Gym"              },
+     { id: 4, name: "AirPods",    status: "Awaiting Owner", location: "Room 204"         },
+     { id: 5, name: "Notebook",   status: "Just Found", location: "Quad"             },
+     { id: 6, name: "Umbrella",   status: "Awaiting Owner",  location: "Main Gate"       },
    ]
 
 2. SECTION LAYOUT

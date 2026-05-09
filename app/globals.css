@@ -41,3 +41,21 @@ body {
 .shadow-orange {
   box-shadow: 0 0 30px rgba(255, 107, 53, 0.3);
 }
+
+/* Custom Animation for Marquee Title */
+@keyframes marquee-scroll {
+  0% { transform: translateX(0); }
+  10% { transform: translateX(0); } /* Pause at start */
+  45% { transform: translateX(calc(-100% + 100px)); } /* Scroll to end (approx 100px is the width of the container, we just use a trick to scroll far enough) */
+  55% { transform: translateX(calc(-100% + 100px)); } /* Pause at end */
+  90% { transform: translateX(0); } /* Scroll back */
+  100% { transform: translateX(0); }
+}
+
+.animate-marquee-scroll {
+  display: inline-block;
+  animation: marquee-scroll 6s linear infinite;
+  /* Add hardware acceleration */
+  transform: translateZ(0);
+  will-change: transform;
+}

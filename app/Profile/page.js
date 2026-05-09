@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Search, Tag, Plus, MessageCircle, User, ChevronRight, LogOut, Trash2, Camera, Image, X, Send, Loader2, ArrowLeft, Lock } from 'lucide-react';
+import { Search, Tag, Plus, MessageCircle, User, ChevronRight, LogOut, Trash2, Camera, Image, X, Send, Loader2, ArrowLeft, Lock, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 
@@ -30,6 +30,7 @@ export default function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordMsg, setPasswordMsg] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const router = useRouter();
 
@@ -41,7 +42,7 @@ export default function ProfilePage() {
       if (user) {
         const { data, error } = await supabase
           .from('profiles')
-          .select('full_name, student_number, email, avatar_url')
+          .select('full_name, student_number, email, avatar_url, role')
           .eq('id', user.id)
           .maybeSingle();
 
@@ -54,6 +55,7 @@ export default function ProfilePage() {
             email: data.email || user.email,
             avatar_url: data.avatar_url || ""
           });
+          setIsAdmin(data.role === 'admin');
         }
       }
     } catch (error) {
@@ -131,13 +133,18 @@ export default function ProfilePage() {
   const handleDeleteAccount = async () => {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { alert('You must be logged in.'); return; }
 
-      if (user) {
-        await supabase.from('profiles').delete().eq('id', user.id);
-        await supabase.auth.signOut();
-        router.push('/login');
-      }
+      const res = await fetch('/api/account/delete', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to delete account');
+
+      await supabase.auth.signOut();
+      router.push('/login');
     } catch (error) {
       alert("Error deleting account: " + error.message);
     } finally {
@@ -243,12 +250,29 @@ export default function ProfilePage() {
               <p className="text-orange-300/60 text-xs font-medium tracking-wide">
                 {profile.email}
               </p>
+              {isAdmin && (
+                <div className="mt-2 inline-flex items-center gap-1.5 text-orange-400 text-[10px] uppercase tracking-widest font-black bg-orange-500/15 px-3 py-1 rounded-full border border-orange-500/30">
+                  <Shield size={12} /> Admin
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
 
         {/* Menu Sections */}
         <div className="rounded-3xl bg-black/40 border border-orange-500/30 overflow-hidden">
+          {isAdmin && (
+            <button
+              onClick={() => router.push('/admin')}
+              className="w-full flex items-center justify-between px-6 py-5 border-b border-orange-500/20 hover:bg-orange-500/5 transition-all group text-orange-300"
+            >
+              <div className="flex items-center gap-4">
+                <Shield size={20} className="opacity-40" />
+                <span className="font-medium text-lg">Admin Dashboard</span>
+              </div>
+              <ChevronRight size={20} className="opacity-20" />
+            </button>
+          )}
           <button
             onClick={() => setShowPasswordModal(true)}
             className="w-full flex items-center justify-between px-6 py-5 border-b border-orange-500/20 hover:bg-orange-500/5 transition-all group text-orange-300"

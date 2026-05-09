@@ -149,3 +149,67 @@ WITH CHECK (auth.uid() = claimer_id);
 ALTER TABLE public.chats 
 ADD COLUMN IF NOT EXISTS finder_confirmed_resolved BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS claimer_confirmed_resolved BOOLEAN DEFAULT FALSE;
+
+-- Auto-resolve trigger: when both users confirm resolution in the chat,
+-- automatically mark the linked item as 'Resolved'.
+-- This eliminates client-side race conditions where stale React state
+-- could skip the RPC call.
+CREATE OR REPLACE FUNCTION public.auto_resolve_item_on_chat_update()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public
+AS $function$
+BEGIN
+  IF NEW.finder_confirmed_resolved = TRUE AND NEW.claimer_confirmed_resolved = TRUE THEN
+    UPDATE items
+    SET status = 'Resolved'
+    WHERE id = NEW.item_id
+      AND status = 'Active';
+  END IF;
+  RETURN NEW;
+END;
+$function$;
+
+DROP TRIGGER IF EXISTS trg_auto_resolve_item ON public.chats;
+CREATE TRIGGER trg_auto_resolve_item
+  AFTER UPDATE ON public.chats
+  FOR EACH ROW
+  EXECUTE FUNCTION public.auto_resolve_item_on_chat_update();
+
+-- ============================================================
+-- Migration: fix_cascades_for_deletion (2026-05-09)
+-- Ensures full cascade cleanup when deleting users/items
+-- ============================================================
+
+-- messages.chat_id: NO ACTION → CASCADE
+ALTER TABLE public.messages DROP CONSTRAINT IF EXISTS messages_chat_id_fkey;
+ALTER TABLE public.messages ADD CONSTRAINT messages_chat_id_fkey
+  FOREIGN KEY (chat_id) REFERENCES public.chats(id) ON DELETE CASCADE;
+
+-- chats.finder_id/claimer_id: NO ACTION → CASCADE (references auth.users)
+ALTER TABLE public.chats DROP CONSTRAINT IF EXISTS chats_finder_id_fkey;
+ALTER TABLE public.chats ADD CONSTRAINT chats_finder_id_fkey
+  FOREIGN KEY (finder_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+ALTER TABLE public.chats DROP CONSTRAINT IF EXISTS chats_claimer_id_fkey;
+ALTER TABLE public.chats ADD CONSTRAINT chats_claimer_id_fkey
+  FOREIGN KEY (claimer_id) REFERENCES auth.users(id) ON DELETE CASCADE;
+
+-- items.finder_id: SET NULL on user deletion
+ALTER TABLE public.items DROP CONSTRAINT IF EXISTS items_finder_id_fkey;
+ALTER TABLE public.items ADD CONSTRAINT items_finder_id_fkey
+  FOREIGN KEY (finder_id) REFERENCES auth.users(id) ON DELETE SET NULL;
+
+-- items.reviewed_by: SET NULL
+ALTER TABLE public.items DROP CONSTRAINT IF EXISTS items_reviewed_by_fkey;
+ALTER TABLE public.items ADD CONSTRAINT items_reviewed_by_fkey
+  FOREIGN KEY (reviewed_by) REFERENCES auth.users(id) ON DELETE SET NULL;
+
+-- profiles.verification_reviewed_by: SET NULL
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_verification_reviewed_by_fkey;
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_verification_reviewed_by_fkey
+  FOREIGN KEY (verification_reviewed_by) REFERENCES auth.users(id) ON DELETE SET NULL;
+
+-- Admin RLS policies for deletion cleanup
+CREATE POLICY "Admins can delete any profile" ON public.profiles FOR DELETE TO authenticated USING (is_admin());
+CREATE POLICY "Admins can delete any chat" ON public.chats FOR DELETE TO authenticated USING (is_admin());
+CREATE POLICY "Admins can delete any message" ON public.messages FOR DELETE TO authenticated USING (is_admin());

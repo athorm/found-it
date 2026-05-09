@@ -3,10 +3,11 @@ import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Send, Loader2, AlertCircle, ChevronDown, Check, Maximize2 } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, AlertCircle, ChevronDown, Check, Maximize2, Clock, Info } from 'lucide-react';
 import ItemPostModal from '@/components/ItemPostModal';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import Cropper from 'react-easy-crop';
+import { ITEM_CATEGORIES } from '@/app/Home/page';
 
 // --- CUSTOM DROPDOWN COMPONENT ---
 function CustomSelect({ label, value, options, onChange, placeholder = "Select" }) {
@@ -18,12 +19,12 @@ function CustomSelect({ label, value, options, onChange, placeholder = "Select" 
 
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center justify-between text-white focus:border-orange-500/50 transition-all active:scale-[0.98]"
+        className="w-full bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center justify-between text-white focus:border-orange-500/50 transition-all active:scale-[0.98] gap-2"
       >
-        <span className={value ? "text-white" : "text-white/20"}>
+        <span className={`truncate text-left flex-1 ${value ? "text-white" : "text-white/20"}`}>
           {value ? options.find(opt => opt.value === value)?.label || value : placeholder}
         </span>
-        <motion.div animate={{ rotate: isOpen ? 180 : 0 }}>
+        <motion.div animate={{ rotate: isOpen ? 180 : 0 }} className="flex-shrink-0">
           <ChevronDown size={16} className="text-orange-400" />
         </motion.div>
       </button>
@@ -46,10 +47,10 @@ function CustomSelect({ label, value, options, onChange, placeholder = "Select" 
                       onChange(opt.value);
                       setIsOpen(false);
                     }}
-                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm text-white hover:bg-orange-500/20 transition-colors group"
+                    className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm text-white hover:bg-orange-500/20 transition-colors group gap-2"
                   >
-                    {opt.label}
-                    {value === opt.value && <Check size={14} className="text-orange-400" />}
+                    <span className="truncate text-left flex-1">{opt.label}</span>
+                    {value === opt.value && <Check size={14} className="text-orange-400 flex-shrink-0" />}
                   </button>
                 ))}
               </div>
@@ -70,9 +71,11 @@ function PostItemContent() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Found');
+  const [itemCategory, setItemCategory] = useState('');
   const [locationTag, setLocationTag] = useState('');
   const [specificLocation, setSpecificLocation] = useState('');
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   // --- CROP & PREVIEW STATES ---[cite: 4]
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -162,12 +165,16 @@ function PostItemContent() {
         image_url: publicUrl,
         user_id: user.id,
         category,
+        item_category: itemCategory || 'Other',
         location_tag: specificLocation ? `${locationTag} - ${specificLocation}` : locationTag,
         status: 'Active'
+        // moderation_status defaults to 'pending' via DB column default
       }]);
 
       if (dbError) throw dbError;
-      router.push('/Home');
+      setSubmitted(true);
+      // Brief delay so user sees the confirmation before redirect
+      setTimeout(() => router.push('/items'), 2500);
     } catch (err) {
       alert(`Error: ${err.message}`);
     } finally {
@@ -187,14 +194,40 @@ function PostItemContent() {
     );
   }
 
+  // Submitted confirmation screen
+  if (submitted) {
+    return (
+      <div className="min-h-screen text-white flex flex-col items-center justify-center p-6 bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233]">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="text-center space-y-4"
+        >
+          <div className="w-20 h-20 bg-orange-500/20 rounded-full flex items-center justify-center mx-auto">
+            <Clock size={36} className="text-orange-400" />
+          </div>
+          <h2 className="text-2xl font-black">Submitted for Review</h2>
+          <p className="text-white/50 text-sm max-w-xs mx-auto">Your post will be reviewed by an admin before appearing publicly. You&apos;ll see it in your posts shortly.</p>
+          <div className="w-8 h-8 border-3 border-orange-500/20 border-t-orange-500 rounded-full animate-spin mx-auto mt-6" />
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen text-white p-6 bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233]">
-      <header className="flex items-center gap-4 mb-8">
+      <header className="flex items-center gap-4 mb-4">
         <button onClick={() => router.back()} className="text-orange-400 p-2 bg-white/5 rounded-full">
           <ArrowLeft size={20} />
         </button>
         <h1 className="text-2xl font-bold tracking-tight">Post Report</h1>
       </header>
+
+      {/* Admin review info banner */}
+      <div className="flex items-center gap-3 p-3 mb-6 bg-orange-500/10 border border-orange-500/20 rounded-2xl">
+        <Info size={16} className="text-orange-400 flex-shrink-0" />
+        <p className="text-[11px] text-orange-300/70 font-medium">Your post will be reviewed by an admin before appearing publicly.</p>
+      </div>
 
       {/* INTERACTIVE IMAGE CONTAINER[cite: 4] */}
       <div className="relative w-full h-56 rounded-[2.5rem] overflow-hidden border border-white/10 mb-8 shadow-2xl group bg-black">
@@ -256,21 +289,29 @@ function PostItemContent() {
             onChange={setCategory}
           />
           <CustomSelect
-            label="General Area"
-            value={locationTag}
-            options={[
-              { label: 'Shed', value: 'Shed' },
-              { label: 'Activity Center', value: 'Activity Center' },
-              { label: 'ER Bldg.', value: 'ER Bldg.' },
-              { label: 'ENB Bldg.', value: 'ENB Bldg.' },
-              { label: 'Volleyball Court', value: 'Volleyball Court' },
-              { label: 'Basketball Court', value: 'Basketball Court' },
-              { label: 'Admin Bldg.', value: 'Admin Bldg.' },
-              { label: 'Quadrangle', value: 'Quadrangle' }
-            ]}
-            onChange={setLocationTag}
+            label="Item Type"
+            value={itemCategory}
+            options={ITEM_CATEGORIES.map(c => ({ label: `${c.emoji} ${c.label}`, value: c.value }))}
+            onChange={setItemCategory}
+            placeholder="Select type"
           />
         </div>
+
+        <CustomSelect
+          label="General Area"
+          value={locationTag}
+          options={[
+            { label: 'Shed', value: 'Shed' },
+            { label: 'Activity Center', value: 'Activity Center' },
+            { label: 'ER Bldg.', value: 'ER Bldg.' },
+            { label: 'ENB Bldg.', value: 'ENB Bldg.' },
+            { label: 'Volleyball Court', value: 'Volleyball Court' },
+            { label: 'Basketball Court', value: 'Basketball Court' },
+            { label: 'Admin Bldg.', value: 'Admin Bldg.' },
+            { label: 'Quadrangle', value: 'Quadrangle' }
+          ]}
+          onChange={setLocationTag}
+        />
 
         <div className="space-y-1">
           <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-orange-400/80 ml-1">Specific Details</label>
