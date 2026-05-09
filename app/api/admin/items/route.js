@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { getSupabaseAdmin } from '@/lib/supabaseAdmin'
+import { sendItemApproved, sendItemRejected } from '@/lib/mailer'
 
 /**
  * Extracts and validates the user from the Authorization header.
@@ -78,7 +79,7 @@ export async function GET(request) {
 /**
  * PATCH /api/admin/items
  * Body: { itemId, action: 'approve' | 'reject' }
- * Updates the item's moderation_status and records the reviewer.
+ * Updates the item's moderation_status, records the reviewer, and emails the poster.
  */
 export async function PATCH(request) {
     try {
@@ -106,11 +107,31 @@ export async function PATCH(request) {
                 reviewed_at: new Date().toISOString(),
             })
             .in('id', ids)
-            .select()
+            .select('*, profiles:user_id(full_name, email)')
 
         if (updateError) {
             console.error('Admin item update error:', updateError)
             return NextResponse.json({ error: 'Failed to update item(s)' }, { status: 500 })
+        }
+
+        // Send email notifications to poster(s) — fire-and-forget, don't block the response
+        if (updatedItems && updatedItems.length > 0) {
+            for (const item of updatedItems) {
+                const posterEmail = item.profiles?.email;
+                const posterName = item.profiles?.full_name;
+                if (posterEmail) {
+                    try {
+                        if (newStatus === 'approved') {
+                            await sendItemApproved(posterEmail, posterName, item.title);
+                        } else {
+                            await sendItemRejected(posterEmail, posterName, item.title);
+                        }
+                    } catch (emailErr) {
+                        // Log but don't fail the moderation action
+                        console.error(`Failed to send moderation email to ${posterEmail}:`, emailErr);
+                    }
+                }
+            }
         }
 
         return NextResponse.json({

@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAdminGuard } from '@/hooks/useAdminGuard';
@@ -42,7 +42,7 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className={`bg-white/[0.04] border rounded-3xl overflow-hidden hover:border-orange-500/30 transition-all duration-300 group flex flex-col h-full ${selected ? 'border-orange-500/60 ring-2 ring-orange-500/30' : 'border-white/10'}`}
+            className={`bg-white/4 border rounded-3xl overflow-hidden hover:border-orange-500/30 transition-all duration-300 group flex flex-col h-full ${selected ? 'border-orange-500/60 ring-2 ring-orange-500/30' : 'border-white/10'}`}
         >
             {/* Image + Status Badge + Checkbox */}
             <div className="relative aspect-video w-full cursor-pointer overflow-hidden" onClick={() => onPreview(item)}>
@@ -52,7 +52,7 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                     {selected && <CheckCircle size={14} className="text-white" />}
                 </button>
                 <img src={item.image_url} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
 
                 {/* Hover overlay */}
                 <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -63,16 +63,22 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
             {/* Details */}
             <div className="p-5 space-y-4 flex-1 flex flex-col">
                 <div>
-                    <div className="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden">
-                        <span className={`flex-shrink-0 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border ${statusColors[item.moderation_status]}`}>
-                            {item.moderation_status}
-                        </span>
-                        <span className="flex-shrink-0 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest bg-orange-500/20 text-orange-400 border border-orange-500/30">
-                            {item.category}
-                        </span>
-                        <span className={`flex-shrink-0 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border ${item.status === 'Resolved' ? 'bg-blue-500/15 text-blue-400 border-blue-500/30' : 'bg-white/5 text-white/40 border-white/10'}`}>
-                            {item.status === 'Resolved' ? 'RESOLVED' : 'UNRESOLVED'}
-                        </span>
+                    <div className="overflow-hidden mb-2">
+                        <motion.div 
+                            drag="x"
+                            dragConstraints={{ left: -200, right: 0 }}
+                            className="flex items-center gap-1.5 pb-1 cursor-grab active:cursor-grabbing w-max"
+                        >
+                            <span className={`shrink-0 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border ${statusColors[item.moderation_status]}`}>
+                                {item.moderation_status}
+                            </span>
+                            <span className="shrink-0 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                                {item.category}
+                            </span>
+                            <span className={`shrink-0 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border ${item.status === 'Resolved' ? 'bg-blue-500/15 text-blue-400 border-blue-500/30' : 'bg-white/5 text-white/40 border-white/10'}`}>
+                                {item.status === 'Resolved' ? 'RESOLVED' : 'UNRESOLVED'}
+                            </span>
+                        </motion.div>
                     </div>
                     <h3 className="font-bold text-white text-lg tracking-tight line-clamp-1">{item.title}</h3>
                     <p className="text-white/40 text-xs mt-1 line-clamp-2">{item.description || 'No description'}</p>
@@ -92,8 +98,8 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                 {/* ─── FOOTER SECTION ─── */}
                 <div className="mt-auto space-y-4 pt-4 border-t border-white/5">
                     {/* Poster info */}
-                    <div className="flex items-center gap-3 p-3 bg-white/[0.03] rounded-xl border border-white/5">
-                        <div className="w-9 h-9 rounded-full bg-orange-500/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    <div className="flex items-center gap-3 p-3 bg-white/3 rounded-xl border border-white/5">
+                        <div className="w-9 h-9 rounded-full bg-orange-500/20 flex items-center justify-center overflow-hidden shrink-0">
                             {poster?.avatar_url ? (
                                 <img src={poster.avatar_url} className="w-full h-full object-cover" alt="" />
                             ) : (
@@ -114,49 +120,49 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                     {/* Action buttons */}
                     <div className="flex gap-2">
                         {isPending && (
-                        <>
+                            <>
+                                <button
+                                    onClick={() => onApprove(item.id)}
+                                    disabled={processing}
+                                    className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white border-2 border-transparent rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    <CheckCircle size={14} /> APPROVE
+                                </button>
+                                <button
+                                    onClick={() => onReject(item.id)}
+                                    disabled={processing}
+                                    className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-2 border-red-500/30 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    <XCircle size={14} /> REJECT
+                                </button>
+                            </>
+                        )}
+                        {isRejected && (
                             <button
                                 onClick={() => onApprove(item.id)}
                                 disabled={processing}
-                                className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white border-2 border-transparent rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                                className="flex-1 py-2.5 bg-green-600/10 hover:bg-green-600/20 text-green-400 border-2 border-green-500/30 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                             >
-                                <CheckCircle size={14} /> APPROVE
+                                <CheckCircle size={14} /> RE-APPROVE
                             </button>
+                        )}
+                        {isApproved && (
                             <button
                                 onClick={() => onReject(item.id)}
                                 disabled={processing}
-                                className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-2 border-red-500/30 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                                className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400/60 border-2 border-red-500/20 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                             >
-                                <XCircle size={14} /> REJECT
+                                <XCircle size={14} /> REVOKE
                             </button>
-                        </>
-                    )}
-                    {isRejected && (
+                        )}
                         <button
-                            onClick={() => onApprove(item.id)}
+                            onClick={() => onDelete(item.id)}
                             disabled={processing}
-                            className="flex-1 py-2.5 bg-green-600/10 hover:bg-green-600/20 text-green-400 border-2 border-green-500/30 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                            className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-2 border-red-500/20 rounded-xl transition-all active:scale-95 disabled:opacity-50"
+                            title="Delete permanently"
                         >
-                            <CheckCircle size={14} /> RE-APPROVE
+                            <Trash2 size={14} />
                         </button>
-                    )}
-                    {isApproved && (
-                        <button
-                            onClick={() => onReject(item.id)}
-                            disabled={processing}
-                            className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400/60 border-2 border-red-500/20 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
-                        >
-                            <XCircle size={14} /> REVOKE
-                        </button>
-                    )}
-                    <button
-                        onClick={() => onDelete(item.id)}
-                        disabled={processing}
-                        className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-2 border-red-500/20 rounded-xl transition-all active:scale-95 disabled:opacity-50"
-                        title="Delete permanently"
-                    >
-                        <Trash2 size={14} />
-                    </button>
                     </div>
                 </div>
             </div>
@@ -168,7 +174,7 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
 function PreviewModal({ item, onClose }) {
     if (!item) return null;
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-6">
             <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 onClick={onClose}
@@ -215,7 +221,7 @@ function StatCard({ label, count, icon: Icon, color, active, onClick }) {
     return (
         <button
             onClick={onClick}
-            className={`p-5 rounded-2xl border transition-all text-left ${active ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_30px_rgba(249,115,22,0.15)]' : 'bg-white/[0.03] border-white/10 hover:border-white/20'
+            className={`p-5 rounded-2xl border transition-all text-left ${active ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_30px_rgba(249,115,22,0.15)]' : 'bg-white/3 border-white/10 hover:border-white/20'
                 }`}
         >
             <div className="flex items-center justify-between mb-3">
@@ -230,7 +236,7 @@ function StatCard({ label, count, icon: Icon, color, active, onClick }) {
 /* ─────────────────────────── DELETE CONFIRMATION ────────────────── */
 function DeleteConfirmModal({ onConfirm, onCancel, processing, message }) {
     return (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-110 flex items-center justify-center p-6">
             <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="absolute inset-0 bg-black/90 backdrop-blur-sm"
@@ -296,6 +302,26 @@ export default function AdminPage() {
 
     // Stats
     const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, total: 0 });
+
+    // Refs for drag constraints calculation
+    const typeScrollRef = useRef(null);
+    const [typeConstraints, setTypeConstraints] = useState({ left: 0, right: 0 });
+    const locScrollRef = useRef(null);
+    const [locConstraints, setLocConstraints] = useState({ left: 0, right: 0 });
+
+    useEffect(() => {
+        if (typeScrollRef.current) {
+            const width = typeScrollRef.current.scrollWidth - typeScrollRef.current.offsetWidth;
+            setTypeConstraints({ left: -Math.max(0, width), right: 0 });
+        }
+    }, [showFilters]);
+
+    useEffect(() => {
+        if (locScrollRef.current) {
+            const width = locScrollRef.current.scrollWidth - locScrollRef.current.offsetWidth;
+            setLocConstraints({ left: -Math.max(0, width), right: 0 });
+        }
+    }, [showFilters]);
 
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
@@ -476,7 +502,7 @@ export default function AdminPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] text-white font-sans">
+        <div className="min-h-screen bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] bg-fixed text-white font-sans">
             {/* ─── HEADER ─── */}
             <header className="sticky top-0 z-50 bg-black/60 backdrop-blur-2xl border-b border-white/5">
                 <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -535,232 +561,272 @@ export default function AdminPage() {
                 </div>
 
                 <div className={`${adminSection === 'posts' ? 'block' : 'hidden'} space-y-8`}>
-                {/* ─── STAT CARDS ─── */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <StatCard label="Pending Review" count={stats.pending} icon={Clock} color="text-yellow-400" active={activeTab === 'pending'} onClick={() => setActiveTab('pending')} />
-                    <StatCard label="Approved" count={stats.approved} icon={CheckCircle} color="text-green-400" active={activeTab === 'approved'} onClick={() => setActiveTab('approved')} />
-                    <StatCard label="Rejected" count={stats.rejected} icon={XCircle} color="text-red-400" active={activeTab === 'rejected'} onClick={() => setActiveTab('rejected')} />
-                    <StatCard label="Total Items" count={stats.total} icon={Package} color="text-orange-400" active={activeTab === 'all'} onClick={() => setActiveTab('all')} />
-                </div>
-
-                {/* ─── TABS + SEARCH + FILTERS ─── */}
-                <div className="relative w-full z-[60]">
-                    <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
-                        <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md">
-                            {TABS.map(tab => (
-                                <button
-                                    key={tab.key}
-                                    onClick={() => setActiveTab(tab.key)}
-                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${activeTab === tab.key
-                                        ? `${tab.bg} text-white shadow-lg`
-                                        : 'text-white/30 hover:text-white/50'
-                                        }`}
-                                >
-                                    <tab.icon size={14} />
-                                    {tab.label}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="flex items-center gap-4 lg:ml-auto w-full lg:w-auto flex-1 lg:justify-end">
-                            <div className="relative flex-1 max-w-md">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500/50" size={18} />
-                                <input
-                                    type="text"
-                                    placeholder="Search by title, poster, student ID..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full bg-white/[0.04] border border-white/10 py-3 pl-11 pr-4 rounded-xl outline-none text-sm focus:border-orange-500/50 transition-all placeholder:text-white/20"
-                                />
-                            </div>
-
-                            {/* Filter toggle */}
-                            <button onClick={() => setShowFilters(!showFilters)}
-                                className={`relative p-3 rounded-xl border transition-all flex-shrink-0 ${showFilters ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/10 text-orange-500'}`}>
-                                <Filter size={18} />
-                                {hasActiveFilters && !showFilters && <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full border-2 border-[#0a0a0a]" />}
-                            </button>
-                        </div>
+                    {/* ─── STAT CARDS ─── */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <StatCard label="Pending Review" count={stats.pending} icon={Clock} color="text-yellow-400" active={activeTab === 'pending'} onClick={() => setActiveTab('pending')} />
+                        <StatCard label="Approved" count={stats.approved} icon={CheckCircle} color="text-green-400" active={activeTab === 'approved'} onClick={() => setActiveTab('approved')} />
+                        <StatCard label="Rejected" count={stats.rejected} icon={XCircle} color="text-red-400" active={activeTab === 'rejected'} onClick={() => setActiveTab('rejected')} />
+                        <StatCard label="Total Items" count={stats.total} icon={Package} color="text-orange-400" active={activeTab === 'all'} onClick={() => setActiveTab('all')} />
                     </div>
 
-                    {/* ─── FILTER OVERLAY ─── */}
-                    <AnimatePresence>
-                        {showFilters && (
-                            <motion.div 
-                                initial={{ opacity: 0, scale: 0.95, y: -10 }} 
-                                animate={{ opacity: 1, scale: 1, y: 0 }} 
-                                exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                                transition={{ duration: 0.2 }}
-                                className="absolute top-full right-0 mt-2 z-50 w-full max-w-md bg-[#121212]/95 border border-white/10 rounded-[2rem] backdrop-blur-2xl shadow-2xl p-6 space-y-5"
-                            >
-                                <div className="flex items-center justify-between">
-                                    <span className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black">Filters</span>
-                                    {hasActiveFilters && <button onClick={() => { setCategoryFilter('All'); setItemTypeFilter('All'); setStatusFilter('All'); setLocationFilter('All'); setDateFrom(''); setDateTo(''); }}
-                                        className="flex items-center gap-1 text-[10px] text-orange-400/70 hover:text-orange-400 font-bold transition-colors"><X size={12} /> Clear all</button>}
-                                </div>
-                            {/* Category */}
-                            <div>
-                                <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Category</label>
-                                <div className="flex gap-2">
-                                    {['All', 'Lost', 'Found'].map(c => (
-                                        <button key={c} onClick={() => setCategoryFilter(c)}
-                                            className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${categoryFilter === c ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{c}</button>
-                                    ))}
-                                </div>
-                            </div>
-                            {/* Resolution Status */}
-                            <div>
-                                <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Resolution</label>
-                                <div className="flex gap-2">
-                                    {['All', 'Active', 'Resolved'].map(s => (
-                                        <button key={s} onClick={() => setStatusFilter(s)}
-                                            className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${statusFilter === s ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
-                                            {s === 'Active' ? 'Unresolved' : s}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            {/* Item Type */}
-                            <div>
-                                <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Item Type</label>
-                                <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden">
-                                    <button onClick={() => setItemTypeFilter('All')}
-                                        className={`flex-shrink-0 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${itemTypeFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
-                                        All
+                    {/* ─── TABS + SEARCH + FILTERS ─── */}
+                    <div className="relative w-full z-60">
+                        <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
+                            <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md">
+                                {TABS.map(tab => (
+                                    <button
+                                        key={tab.key}
+                                        onClick={() => setActiveTab(tab.key)}
+                                        className={`flex items-center gap-2 px-5 py-2.5 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${activeTab === tab.key
+                                            ? `${tab.bg} text-white shadow-lg`
+                                            : 'text-white/30 hover:text-white/50'
+                                            }`}
+                                    >
+                                        <tab.icon size={14} />
+                                        {tab.label}
                                     </button>
-                                    {ITEM_CATEGORIES.map(cat => (
-                                        <button key={cat.value} onClick={() => setItemTypeFilter(cat.value)}
-                                            className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${itemTypeFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
-                                            <span>{cat.emoji}</span> {cat.label}
-                                        </button>
-                                    ))}
+                                ))}
+                            </div>
+
+                            <div className="flex items-center gap-4 lg:ml-auto w-full lg:w-auto flex-1 lg:justify-end">
+                                <div className="relative flex-1 max-w-md">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500/50" size={18} />
+                                    <input
+                                        type="text"
+                                        placeholder="Search by title, poster, student ID..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="w-full bg-white/4 border border-white/10 py-3 pl-11 pr-4 rounded-xl outline-none text-sm focus:border-orange-500/50 transition-all placeholder:text-white/20"
+                                    />
                                 </div>
-                            </div>
-                            {/* Location */}
-                            <div>
-                                <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Location</label>
-                                <div className="flex gap-2 overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden">
-                                    <button onClick={() => setLocationFilter('All')}
-                                        className={`flex-shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${locationFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>All</button>
-                                    {LOCATIONS.map(loc => (
-                                        <button key={loc} onClick={() => setLocationFilter(loc)}
-                                            className={`flex-shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
-                                    ))}
-                                </div>
-                            </div>
-                            {/* Date Range */}
-                            <div>
-                                <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Date Range</label>
-                                <CustomDateRangePicker 
-                                    dateFrom={dateFrom} setDateFrom={setDateFrom}
-                                    dateTo={dateTo} setDateTo={setDateTo}
-                                />
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-                </div>
 
-                {/* ─── ACTIVE FILTER CHIPS ─── */}
-                <AnimatePresence>
-                    {hasActiveFilters && !showFilters && (
-                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                            className="flex flex-wrap gap-2">
-                            {categoryFilter !== 'All' && (
-                                <button onClick={() => setCategoryFilter('All')}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
-                                    {categoryFilter} <X size={10} className="opacity-60" />
+                                {/* Filter toggle */}
+                                <button onClick={() => setShowFilters(!showFilters)}
+                                    className={`relative p-3 rounded-xl border transition-all shrink-0 ${showFilters ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/10 text-orange-500'}`}>
+                                    <Filter size={18} />
+                                    {hasActiveFilters && !showFilters && <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full border-2 border-[#0a0a0a]" />}
                                 </button>
-                            )}
-                            {statusFilter !== 'All' && (
-                                <button onClick={() => setStatusFilter('All')}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
-                                    {statusFilter === 'Active' ? 'Unresolved' : 'Resolved'} <X size={10} className="opacity-60" />
-                                </button>
-                            )}
-                            {itemTypeFilter !== 'All' && (
-                                <button onClick={() => setItemTypeFilter('All')}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
-                                    {ITEM_CATEGORIES.find(c => c.value === itemTypeFilter)?.emoji} {itemTypeFilter} <X size={10} className="opacity-60" />
-                                </button>
-                            )}
-                            {locationFilter !== 'All' && (
-                                <button onClick={() => setLocationFilter('All')}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
-                                    <MapPin size={10} /> {locationFilter} <X size={10} className="opacity-60" />
-                                </button>
-                            )}
-                            {(dateFrom || dateTo) && (
-                                <button onClick={() => { setDateFrom(''); setDateTo(''); }}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
-                                    <Calendar size={10} /> {dateFrom || '...'} — {dateTo || '...'} <X size={10} className="opacity-60" />
-                                </button>
-                            )}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                            </div>
+                        </div>
 
-                {/* ─── SELECT ALL / COUNT ─── */}
-                {filteredItems.length > 0 && (
-                    <div className="flex items-center gap-3">
-                        <button onClick={toggleSelectAll}
-                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedItems.size === filteredItems.length && filteredItems.length > 0 ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20 hover:border-orange-500/60'}`}>
-                            {selectedItems.size === filteredItems.length && filteredItems.length > 0 && <CheckCircle size={14} className="text-white" />}
-                        </button>
-                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
-                            {selectedItems.size > 0 ? `${selectedItems.size} selected` : 'Select all'}
-                        </span>
-                    </div>
-                )}
-
-                {/* ─── ITEMS GRID ─── */}
-                <div className="relative min-h-[400px]">
-                    <AnimatePresence mode="wait">
-                        {loading ? (
-                            <motion.div
-                                key="loader"
-                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                className="flex flex-col items-center justify-center pt-20 gap-4"
-                            >
-                                <div className="w-10 h-10 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
-                                <p className="text-[10px] font-black tracking-widest text-orange-500/40 uppercase">Loading items...</p>
-                            </motion.div>
-                        ) : filteredItems.length > 0 ? (
-                            <motion.div
-                                key="grid"
-                                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                            >
-                                <AnimatePresence>
-                                    {filteredItems.map(item => (
-                                        <AdminItemCard
-                                            key={item.id}
-                                            item={item}
-                                            selected={selectedItems.has(item.id)}
-                                            onToggleSelect={toggleSelect}
-                                            onApprove={(id) => handleModerate(id, 'approve')}
-                                            onReject={(id) => handleModerate(id, 'reject')}
-                                            onDelete={(id) => setDeleteTarget(id)}
-                                            onPreview={setPreviewItem}
-                                            processing={processing}
+                        {/* ─── FILTER OVERLAY ─── */}
+                        <AnimatePresence>
+                            {showFilters && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="absolute top-full right-0 mt-2 z-50 w-full max-w-md md:max-w-lg bg-[#121212]/95 border border-white/10 rounded-4xl backdrop-blur-2xl shadow-2xl p-6 space-y-5"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black">Filters</span>
+                                        {hasActiveFilters && <button onClick={() => { setCategoryFilter('All'); setItemTypeFilter('All'); setStatusFilter('All'); setLocationFilter('All'); setDateFrom(''); setDateTo(''); }}
+                                            className="flex items-center gap-1 text-[10px] text-orange-400/70 hover:text-orange-400 font-bold transition-colors"><X size={12} /> Clear all</button>}
+                                    </div>
+                                    {/* Category */}
+                                    <div>
+                                        <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Category</label>
+                                        <div className="flex gap-2">
+                                            {['All', 'Lost', 'Found'].map(c => (
+                                                <button key={c} onClick={() => setCategoryFilter(c)}
+                                                    className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${categoryFilter === c ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{c}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {/* Resolution Status */}
+                                    <div>
+                                        <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Resolution</label>
+                                        <div className="flex gap-2">
+                                            {['All', 'Active', 'Resolved'].map(s => (
+                                                <button key={s} onClick={() => setStatusFilter(s)}
+                                                    className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${statusFilter === s ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
+                                                    {s === 'Active' ? 'Unresolved' : s}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    {/* Item Type */}
+                                    <div>
+                                        <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Item Type</label>
+                                        <div className="relative overflow-hidden rounded-xl -mx-1">
+                                            {/* Mobile: horizontal drag scroll */}
+                                            <div className="md:hidden" ref={typeScrollRef}>
+                                                <motion.div 
+                                                    drag="x"
+                                                    dragConstraints={typeConstraints}
+                                                    className="flex gap-2 px-1 pb-1 cursor-grab active:cursor-grabbing w-max"
+                                                >
+                                                    <button onClick={() => setItemTypeFilter('All')}
+                                                        className={`shrink-0 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${itemTypeFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
+                                                        All
+                                                    </button>
+                                                    {ITEM_CATEGORIES.map(cat => (
+                                                        <button key={cat.value} onClick={() => setItemTypeFilter(cat.value)}
+                                                            className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${itemTypeFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
+                                                            <span>{cat.emoji}</span> {cat.label}
+                                                        </button>
+                                                    ))}
+                                                </motion.div>
+                                            </div>
+                                            {/* Desktop: wrapping grid */}
+                                            <div className="hidden md:flex flex-wrap gap-2 px-1 pb-1">
+                                                <button onClick={() => setItemTypeFilter('All')}
+                                                    className={`px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${itemTypeFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
+                                                    All
+                                                </button>
+                                                {ITEM_CATEGORIES.map(cat => (
+                                                    <button key={cat.value} onClick={() => setItemTypeFilter(cat.value)}
+                                                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${itemTypeFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
+                                                        <span>{cat.emoji}</span> {cat.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {/* Location */}
+                                    <div>
+                                        <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Location</label>
+                                        <div className="relative overflow-hidden rounded-xl -mx-1">
+                                            {/* Mobile: horizontal drag scroll */}
+                                            <div className="md:hidden" ref={locScrollRef}>
+                                                <motion.div 
+                                                    drag="x"
+                                                    dragConstraints={locConstraints}
+                                                    className="flex gap-2 px-1 pb-1 cursor-grab active:cursor-grabbing w-max"
+                                                >
+                                                    <button onClick={() => setLocationFilter('All')}
+                                                        className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${locationFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>All</button>
+                                                    {LOCATIONS.map(loc => (
+                                                        <button key={loc} onClick={() => setLocationFilter(loc)}
+                                                            className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
+                                                    ))}
+                                                </motion.div>
+                                            </div>
+                                            {/* Desktop: wrapping grid */}
+                                            <div className="hidden md:flex flex-wrap gap-2 px-1 pb-1">
+                                                <button onClick={() => setLocationFilter('All')}
+                                                    className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${locationFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>All</button>
+                                                {LOCATIONS.map(loc => (
+                                                    <button key={loc} onClick={() => setLocationFilter(loc)}
+                                                        className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {/* Date Range */}
+                                    <div>
+                                        <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Date Range</label>
+                                        <CustomDateRangePicker
+                                            dateFrom={dateFrom} setDateFrom={setDateFrom}
+                                            dateTo={dateTo} setDateTo={setDateTo}
                                         />
-                                    ))}
-                                </AnimatePresence>
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key="empty"
-                                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                className="flex flex-col items-center justify-center py-20 text-white/20"
-                            >
-                                <Package size={48} strokeWidth={1} className="mb-4" />
-                                <p className="text-[10px] font-black uppercase tracking-[0.2em]">
-                                    {searchQuery ? 'No items match your search' : `No ${activeTab === 'all' ? '' : activeTab} items`}
-                                </p>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    {/* ─── ACTIVE FILTER CHIPS ─── */}
+                    <AnimatePresence>
+                        {hasActiveFilters && !showFilters && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                                className="flex flex-wrap gap-2">
+                                {categoryFilter !== 'All' && (
+                                    <button onClick={() => setCategoryFilter('All')}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
+                                        {categoryFilter} <X size={10} className="opacity-60" />
+                                    </button>
+                                )}
+                                {statusFilter !== 'All' && (
+                                    <button onClick={() => setStatusFilter('All')}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
+                                        {statusFilter === 'Active' ? 'Unresolved' : 'Resolved'} <X size={10} className="opacity-60" />
+                                    </button>
+                                )}
+                                {itemTypeFilter !== 'All' && (
+                                    <button onClick={() => setItemTypeFilter('All')}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
+                                        {ITEM_CATEGORIES.find(c => c.value === itemTypeFilter)?.emoji} {itemTypeFilter} <X size={10} className="opacity-60" />
+                                    </button>
+                                )}
+                                {locationFilter !== 'All' && (
+                                    <button onClick={() => setLocationFilter('All')}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
+                                        <MapPin size={10} /> {locationFilter} <X size={10} className="opacity-60" />
+                                    </button>
+                                )}
+                                {(dateFrom || dateTo) && (
+                                    <button onClick={() => { setDateFrom(''); setDateTo(''); }}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
+                                        <Calendar size={10} /> {dateFrom || '...'} — {dateTo || '...'} <X size={10} className="opacity-60" />
+                                    </button>
+                                )}
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </div>
+
+                    {/* ─── SELECT ALL / COUNT ─── */}
+                    {filteredItems.length > 0 && (
+                        <div className="flex items-center gap-3">
+                            <button onClick={toggleSelectAll}
+                                className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedItems.size === filteredItems.length && filteredItems.length > 0 ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20 hover:border-orange-500/60'}`}>
+                                {selectedItems.size === filteredItems.length && filteredItems.length > 0 && <CheckCircle size={14} className="text-white" />}
+                            </button>
+                            <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                                {selectedItems.size > 0 ? `${selectedItems.size} selected` : 'Select all'}
+                            </span>
+                        </div>
+                    )}
+
+                    {/* ─── ITEMS GRID ─── */}
+                    <div className="relative min-h-[400px]">
+                        <AnimatePresence mode="wait">
+                            {loading ? (
+                                <motion.div
+                                    key="loader"
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                    className="flex flex-col items-center justify-center pt-20 gap-4"
+                                >
+                                    <div className="w-10 h-10 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
+                                    <p className="text-[10px] font-black tracking-widest text-orange-500/40 uppercase">Loading items...</p>
+                                </motion.div>
+                            ) : filteredItems.length > 0 ? (
+                                <motion.div
+                                    key="grid"
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                                >
+                                    <AnimatePresence>
+                                        {filteredItems.map(item => (
+                                            <AdminItemCard
+                                                key={item.id}
+                                                item={item}
+                                                selected={selectedItems.has(item.id)}
+                                                onToggleSelect={toggleSelect}
+                                                onApprove={(id) => handleModerate(id, 'approve')}
+                                                onReject={(id) => handleModerate(id, 'reject')}
+                                                onDelete={(id) => setDeleteTarget(id)}
+                                                onPreview={setPreviewItem}
+                                                processing={processing}
+                                            />
+                                        ))}
+                                    </AnimatePresence>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="empty"
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                    className="flex flex-col items-center justify-center py-20 text-white/20"
+                                >
+                                    <Package size={48} strokeWidth={1} className="mb-4" />
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em]">
+                                        {searchQuery ? 'No items match your search' : `No ${activeTab === 'all' ? '' : activeTab} items`}
+                                    </p>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
                 </div>
             </main>
 

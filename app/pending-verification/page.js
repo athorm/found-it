@@ -211,9 +211,9 @@ export default function PendingVerificationPage() {
                             ) : (
                                 <div className="relative flex items-center gap-3 p-4 bg-white/[0.05] border border-orange-500/30 rounded-2xl">
                                     {filePreview ? (
-                                        <img src={filePreview} alt="" className="w-14 h-14 rounded-xl object-cover border border-white/10 flex-shrink-0" />
+                                        <img src={filePreview} alt="" className="w-14 h-14 rounded-xl object-cover border border-white/10 shrink-0" />
                                     ) : (
-                                        <div className="w-14 h-14 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0 border border-red-500/20">
+                                        <div className="w-14 h-14 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0 border border-red-500/20">
                                             <FileText size={24} className="text-red-400" />
                                         </div>
                                     )}

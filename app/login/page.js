@@ -322,10 +322,10 @@ export default function LoginPage() {
                                         <img
                                             src={filePreview}
                                             alt="Verification preview"
-                                            className="w-14 h-14 rounded-xl object-cover border border-white/10 flex-shrink-0"
+                                            className="w-14 h-14 rounded-xl object-cover border border-white/10 shrink-0"
                                         />
                                     ) : (
-                                        <div className="w-14 h-14 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0 border border-red-500/20">
+                                        <div className="w-14 h-14 rounded-xl bg-red-500/10 flex items-center justify-center shrink-0 border border-red-500/20">
                                             <FileText size={24} className="text-red-400" />
                                         </div>
                                     )}
@@ -338,7 +338,7 @@ export default function LoginPage() {
                                     <button
                                         type="button"
                                         onClick={removeFile}
-                                        className="p-2 bg-red-500/10 hover:bg-red-500/20 rounded-lg text-red-400 transition-colors flex-shrink-0"
+                                        className="p-2 bg-red-500/10 hover:bg-red-500/20 rounded-lg text-red-400 transition-colors shrink-0"
                                     >
                                         <X size={14} />
                                     </button>

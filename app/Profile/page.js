@@ -210,7 +210,7 @@ export default function ProfilePage() {
   );
 
   return (
-    <div className="min-h-screen text-white pb-20 font-sans bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233]">
+    <div className="min-h-screen text-white pb-20 font-sans bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233]">
       {/* Header */}
       <div className="sticky top-0 z-20 backdrop-blur-md bg-black/40 border-b border-orange-500/20 px-6 pt-4 pb-6 flex items-center justify-between">
         <button onClick={() => router.push('/Home')} className="p-2 hover:bg-white/5 rounded-full transition text-orange-400">

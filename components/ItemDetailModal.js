@@ -2,7 +2,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, MapPin, User, MessageCircle, ExternalLink, Trash2, Maximize2, AlertTriangle, Loader2, Lock } from "lucide-react";
+import { X, MapPin, User, MessageCircle, ExternalLink, Trash2, Maximize2, AlertTriangle, Loader2, Lock, Clock, XCircle } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
@@ -206,6 +206,34 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
                                         <User size={16} />
                                         YOU POSTED THIS ITEM
                                     </div>
+
+                                    {/* Moderation status banner — only visible to the owner when not approved */}
+                                    {item.moderation_status && item.moderation_status !== 'approved' && (
+                                        <div className={`w-full p-4 rounded-2xl border flex items-start gap-3 ${
+                                            item.moderation_status === 'pending'
+                                                ? 'bg-yellow-500/10 border-yellow-500/30'
+                                                : 'bg-red-500/10 border-red-500/30'
+                                        }`}>
+                                            {item.moderation_status === 'pending' ? (
+                                                <Clock size={18} className="text-yellow-400 shrink-0 mt-0.5" />
+                                            ) : (
+                                                <XCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
+                                            )}
+                                            <div>
+                                                <p className={`text-xs font-black uppercase tracking-widest ${
+                                                    item.moderation_status === 'pending' ? 'text-yellow-400' : 'text-red-400'
+                                                }`}>
+                                                    {item.moderation_status === 'pending' ? 'Pending Review' : 'Post Rejected'}
+                                                </p>
+                                                <p className="text-[11px] text-white/40 mt-1 leading-relaxed">
+                                                    {item.moderation_status === 'pending'
+                                                        ? 'Your post is awaiting admin approval. It is not visible to other users yet.'
+                                                        : 'This post was rejected by an admin and is not visible to other users.'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
+
                                     <button
                                         onClick={handleToggleStatus}
                                         className={`w-full py-4 rounded-2xl font-black tracking-widest transition-all shadow-lg ${localStatus === 'Active'
@@ -248,7 +276,7 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
             )}
             {/* Lightbox Modal */}
             {isLightboxOpen && (
-                <div key="lightbox-overlay" className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95" onClick={() => setIsLightboxOpen(false)}>
+                <div key="lightbox-overlay" className="fixed inset-0 z-200 flex items-center justify-center bg-black/95" onClick={() => setIsLightboxOpen(false)}>
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -265,7 +293,7 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
 
             {/* Delete Confirmation Modal */}
             {showDeleteConfirm && (
-                <div key="delete-confirm-overlay" className="fixed inset-0 z-[210] flex items-center justify-center p-6">
+                <div key="delete-confirm-overlay" className="fixed inset-0 z-210 flex items-center justify-center p-6">
                     <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                         className="absolute inset-0 bg-black/90 backdrop-blur-sm"

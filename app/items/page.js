@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import {
@@ -36,6 +36,35 @@ export default function ItemsPage() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
+  
+  // Refs for drag constraints calculation
+  const categoryScrollRef = useRef(null);
+  const [categoryConstraints, setCategoryConstraints] = useState({ left: 0, right: 0 });
+  const locationScrollRef = useRef(null);
+  const [locationConstraints, setLocationConstraints] = useState({ left: 0, right: 0 });
+
+  // Updated constraints calculation with resize listener and stability delay
+  useEffect(() => {
+    const updateConstraints = () => {
+      if (categoryScrollRef.current) {
+        const width = categoryScrollRef.current.scrollWidth - categoryScrollRef.current.offsetWidth;
+        setCategoryConstraints({ left: -Math.max(0, width), right: 0 });
+      }
+      if (locationScrollRef.current) {
+        const width = locationScrollRef.current.scrollWidth - locationScrollRef.current.offsetWidth;
+        setLocationConstraints({ left: -Math.max(0, width), right: 0 });
+      }
+    };
+
+    updateConstraints();
+    window.addEventListener('resize', updateConstraints);
+    const timers = [setTimeout(updateConstraints, 100), setTimeout(updateConstraints, 500)];
+
+    return () => {
+      window.removeEventListener('resize', updateConstraints);
+      timers.forEach(clearTimeout);
+    };
+  }, [showFilters]); // Recalculate when filter panel opens or window resizes
 
   const handleFileSelected = (file) => {
     const previewUrl = URL.createObjectURL(file);
@@ -176,7 +205,7 @@ export default function ItemsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] text-white pb-32 font-sans">
+    <div className="min-h-screen bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] bg-fixed text-white pb-32 font-sans">
 
       {/* HEADER */}
       <header className="sticky top-0 z-50 bg-transparent backdrop-blur-xl border-b border-white/5 p-5">
@@ -247,7 +276,7 @@ export default function ItemsPage() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="absolute top-full right-0 mt-2 z-50 w-80 bg-[#121212]/95 border border-white/10 rounded-[2rem] backdrop-blur-2xl shadow-2xl"
+                className="absolute top-full right-0 mt-2 z-50 w-80 md:w-[450px] bg-[#121212]/95 border border-white/10 rounded-[2rem] backdrop-blur-2xl shadow-2xl"
               >
                 <div className="p-6 space-y-5">
                   {/* Header with clear button */}
@@ -267,10 +296,36 @@ export default function ItemsPage() {
                   <div>
                     <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-3 block">Item Type</label>
                     <div className="relative overflow-hidden rounded-xl -mx-1">
-                      <div className="flex gap-2 px-1 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                      {/* Mobile: horizontal drag scroll */}
+                      <div className="md:hidden" ref={categoryScrollRef}>
+                        <motion.div 
+                          drag="x"
+                          dragConstraints={categoryConstraints}
+                          className="flex gap-2 px-1 pb-2 cursor-grab active:cursor-grabbing w-max"
+                        >
+                          <button
+                            onClick={() => setCategoryFilter('All')}
+                            className={`shrink-0 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}
+                          >
+                            All
+                          </button>
+                          {ITEM_CATEGORIES.map(cat => (
+                            <button
+                              key={cat.value}
+                              onClick={() => setCategoryFilter(cat.value)}
+                              className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}
+                            >
+                              <span className="text-xs">{cat.emoji}</span>
+                              {cat.label}
+                            </button>
+                          ))}
+                        </motion.div>
+                      </div>
+                      {/* Desktop: wrapping grid */}
+                      <div className="hidden md:flex flex-wrap gap-2 px-1 pb-2">
                         <button
                           onClick={() => setCategoryFilter('All')}
-                          className={`flex-shrink-0 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}
+                          className={`px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}
                         >
                           All
                         </button>
@@ -278,7 +333,7 @@ export default function ItemsPage() {
                           <button
                             key={cat.value}
                             onClick={() => setCategoryFilter(cat.value)}
-                            className={`flex-shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}
+                            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}
                           >
                             <span className="text-xs">{cat.emoji}</span>
                             {cat.label}
@@ -292,9 +347,22 @@ export default function ItemsPage() {
                   <div>
                     <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-3 block">Location</label>
                     <div className="relative overflow-hidden rounded-xl -mx-1">
-                      <div className="flex gap-2 px-1 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                      {/* Mobile: horizontal drag scroll */}
+                      <div className="md:hidden" ref={locationScrollRef}>
+                        <motion.div 
+                          drag="x"
+                          dragConstraints={locationConstraints}
+                          className="flex gap-2 px-1 pb-2 cursor-grab active:cursor-grabbing w-max"
+                        >
+                          {locations.map(loc => (
+                            <button key={loc} onClick={() => setLocationFilter(loc)} className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
+                          ))}
+                        </motion.div>
+                      </div>
+                      {/* Desktop: wrapping grid */}
+                      <div className="hidden md:flex flex-wrap gap-2 px-1 pb-2">
                         {locations.map(loc => (
-                          <button key={loc} onClick={() => setLocationFilter(loc)} className={`flex-shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
+                          <button key={loc} onClick={() => setLocationFilter(loc)} className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
                         ))}
                       </div>
                     </div>
@@ -391,7 +459,7 @@ export default function ItemsPage() {
               <motion.div
                 key="list"
                 layout
-                className={viewMode === "grid" ? "grid grid-cols-2 gap-4" : "space-y-4"}
+                className={viewMode === "grid" ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "space-y-4"}
               >
                 <AnimatePresence mode="popLayout">
                   {currentDisplayList.length > 0 ? (
@@ -419,7 +487,7 @@ export default function ItemsPage() {
                         className={`group bg-white/[0.04] border border-white/10 rounded-[2.2rem] overflow-hidden hover:border-orange-500/40 transition-colors duration-300 backdrop-blur-sm shadow-xl cursor-pointer active:bg-white/[0.08] ${viewMode === "list" ? "flex p-3 gap-5 items-center" : "flex flex-col"
                           }`}
                       >
-                        <div className={`relative flex-shrink-0 overflow-hidden ${viewMode === "list" ? "w-24 h-24 rounded-[1.5rem]" : "aspect-square w-full"
+                        <div className={`relative shrink-0 overflow-hidden ${viewMode === "list" ? "w-24 h-24 rounded-[1.5rem]" : "aspect-square w-full"
                           }`}>
                           <img
                             src={item.image_url}
@@ -428,7 +496,7 @@ export default function ItemsPage() {
                           />
 
                           {/* iOS-STYLE OVERLAY SHIMMER ON HOVER */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                           {/* Item category badge on image (grid only) */}
                           {viewMode === "grid" && item.item_category && item.item_category !== 'Other' && (
