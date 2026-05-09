@@ -9,6 +9,62 @@ import MarqueeTitle from "@/components/MarqueeTitle";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { supabase } from "@/lib/supabase";
 
+// ─── Dynamic Greeting Engine ───
+// Returns a context-aware greeting based on the current hour and day of week.
+function getGreeting() {
+  const hour = new Date().getHours();
+  const day = new Date().getDay(); // 0 = Sunday, 6 = Saturday
+  const isWeekend = day === 0 || day === 6;
+
+  if (isWeekend) {
+    if (hour >= 5 && hour < 12) return "Happy weekend morning ☀️";
+    if (hour >= 12 && hour < 17) return "Enjoying the weekend? 🎉";
+    return "Weekend vibes 🌙";
+  }
+
+  if (hour >= 5 && hour < 12) return "Good morning ☀️";
+  if (hour >= 12 && hour < 17) return "Good afternoon 👋";
+  if (hour >= 17 && hour < 21) return "Good evening 🌅";
+  return "Burning the midnight oil? 🌙";
+}
+
+// Returns an engaging subtitle that rotates based on time/day.
+function getSubtitle() {
+  const hour = new Date().getHours();
+  const day = new Date().getDay();
+  const isWeekend = day === 0 || day === 6;
+
+  const pool = isWeekend
+    ? [
+        "Check if your item has been found this week!",
+        "Browse what students have reported recently.",
+        "Help someone get their belongings back 🤝",
+      ]
+    : hour >= 5 && hour < 12
+      ? [
+          "Start the day by helping someone find their item!",
+          "Lost something yesterday? Let's check.",
+          "New items are posted every morning 📬",
+        ]
+      : hour >= 12 && hour < 17
+        ? [
+            "Lost something on campus? Let's find it.",
+            "Someone might have found what you're looking for!",
+            "Reuniting items with their owners 🔍",
+          ]
+        : [
+            "Check if your lost item was reported today.",
+            "Evening check — any new found items?",
+            "Don't forget to check before heading home 🏠",
+          ];
+
+  // Pick one based on the day-of-year so it changes daily but stays consistent within a day
+  const dayOfYear = Math.floor(
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
+  );
+  return pool[dayOfYear % pool.length];
+}
+
 // Emoji map for item categories (used by Recent Feed cards)
 const CATEGORY_EMOJI = {
   Electronics: "📱", Wallets: "👛", "IDs & Cards": "🪪",
@@ -186,7 +242,7 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <p className="text-white/40 text-sm font-medium mb-1">Welcome back,</p>
+            <p className="text-white/40 text-sm font-medium mb-1">{getGreeting()}</p>
             <h1 className="text-4xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-orange-400 via-orange-500 to-orange-600 drop-shadow-2xl">
               {userName}! 👋
             </h1>
@@ -200,7 +256,7 @@ export default function HomePage() {
             FoundIt
           </motion.h1>
         )}
-        <motion.p className="text-orange-300/70 mt-4 text-lg font-medium">Reuniting items with owners</motion.p>
+        <motion.p className="text-orange-300/70 mt-4 text-lg font-medium">{getSubtitle()}</motion.p>
 
         {/* Search bar: navigates to /items?search= on Enter or button click */}
         <div className="relative group my-8 max-w-sm mx-auto">

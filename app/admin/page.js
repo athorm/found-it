@@ -7,7 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowLeft, Shield, CheckCircle, XCircle, Trash2, Clock,
     Package, Search, RefreshCw, AlertTriangle, Loader2,
-    Eye, ChevronDown, MapPin, User, Filter, Users, Calendar, X
+    Eye, ChevronDown, MapPin, User, Filter, Users, Calendar, X,
+    Flag, Ban, MessageSquare
 } from 'lucide-react';
 import AdminUsersSection from '@/components/AdminUsersSection';
 import CustomDateRangePicker from '@/components/CustomDateRangePicker';
@@ -277,7 +278,7 @@ export default function AdminPage() {
     const router = useRouter();
     const { user, isAdmin, guardLoading } = useAdminGuard();
 
-    const [adminSection, setAdminSection] = useState('posts'); // 'posts' | 'users'
+    const [adminSection, setAdminSection] = useState('posts'); // 'posts' | 'users' | 'reports'
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
@@ -303,6 +304,12 @@ export default function AdminPage() {
     // Stats
     const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, total: 0 });
 
+    // Reports
+    const [reports, setReports] = useState([]);
+    const [reportsLoading, setReportsLoading] = useState(false);
+    const [reportProcessing, setReportProcessing] = useState(null); // report id being processed
+    const [expandedReport, setExpandedReport] = useState(null);
+
     // Refs for drag constraints calculation
     const typeScrollRef = useRef(null);
     const [typeConstraints, setTypeConstraints] = useState({ left: 0, right: 0 });
@@ -326,6 +333,50 @@ export default function AdminPage() {
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3000);
+    };
+
+    const fetchReports = async () => {
+        if (!user) return;
+        setReportsLoading(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch('/api/admin/reports', {
+                headers: { Authorization: `Bearer ${session.access_token}` },
+            });
+            const json = await res.json();
+            if (res.ok) setReports(json.reports || []);
+        } catch (err) {
+            console.error('fetchReports error:', err);
+        } finally {
+            setReportsLoading(false);
+        }
+    };
+
+    const handleReportAction = async (reportId, status, reportedUserId, banUser = false) => {
+        setReportProcessing(reportId);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch('/api/admin/reports', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({
+                    reportId,
+                    status,
+                    banUser,
+                    banReason: 'Reported and verified by admin for community guideline violations.',
+                }),
+            });
+            if (!res.ok) throw new Error('Failed to update report');
+            showToast(status === 'valid' ? (banUser ? 'Report validated & user banned' : 'Report marked as valid') : 'Report dismissed');
+            fetchReports();
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            setReportProcessing(null);
+        }
     };
 
     const getAuthHeaders = async () => {
@@ -518,8 +569,10 @@ export default function AdminPage() {
                                 <Shield size={20} className="text-black" strokeWidth={3} />
                             </div>
                             <div>
-                                <h1 className="text-xl font-black tracking-tight">Admin Dashboard</h1>
-                                <p className="text-[10px] text-orange-400/50 font-bold uppercase tracking-widest">{adminSection === 'posts' ? 'Post Moderation' : 'User Verification'}</p>
+                                <h1 className="text-lg sm:text-xl font-black tracking-tight">Admin Dashboard</h1>
+                                <p className="text-[10px] text-orange-400/50 font-bold uppercase tracking-widest">
+                                    {adminSection === 'posts' ? 'Post Moderation' : adminSection === 'users' ? 'User Verification' : 'User Reports'}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -527,7 +580,7 @@ export default function AdminPage() {
                     <div className="flex items-center gap-3">
                         {/* Pending count badge */}
                         {stats.pending > 0 && (
-                            <div className="flex items-center gap-2 px-4 py-2 bg-yellow-500/15 border border-yellow-500/30 rounded-xl">
+                            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-yellow-500/15 border border-yellow-500/30 rounded-xl">
                                 <Clock size={14} className="text-yellow-400" />
                                 <span className="text-xs font-black text-yellow-400">{stats.pending} pending</span>
                             </div>
@@ -545,7 +598,8 @@ export default function AdminPage() {
 
             <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
                 {/* ─── SECTION SWITCHER ─── */}
-                <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-fit">
+                <div className="overflow-x-auto -mx-1 px-1 pb-1">
+                    <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-fit min-w-full sm:min-w-0">
                     <button onClick={() => setAdminSection('posts')}
                         className={`flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'posts' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
                         <Package size={16} /> Posts
@@ -554,10 +608,154 @@ export default function AdminPage() {
                         className={`flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'users' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
                         <Users size={16} /> Users
                     </button>
+                    <button onClick={() => { setAdminSection('reports'); fetchReports(); }}
+                        className={`relative flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'reports' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
+                        <Flag size={16} /> Reports
+                        {reports.filter(r => r.status === 'pending').length > 0 && (
+                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] font-black text-white flex items-center justify-center">
+                                {reports.filter(r => r.status === 'pending').length}
+                            </span>
+                        )}
+                    </button>
+                    </div>
                 </div>
 
                 <div className={adminSection === 'users' ? 'block' : 'hidden'}>
                     <AdminUsersSection />
+                </div>
+
+                {/* ─── REPORTS SECTION ─── */}
+                <div className={adminSection === 'reports' ? 'block' : 'hidden'}>
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-lg font-black text-white">User Reports</h2>
+                                <p className="text-xs text-white/30 mt-0.5">Review reported users and take action</p>
+                            </div>
+                            <button onClick={fetchReports} className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-white/40 hover:text-orange-400">
+                                <RefreshCw size={16} className={reportsLoading ? 'animate-spin' : ''} />
+                            </button>
+                        </div>
+
+                        {reportsLoading ? (
+                            <div className="flex items-center justify-center py-16">
+                                <Loader2 className="animate-spin text-orange-400" size={28} />
+                            </div>
+                        ) : reports.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-16 text-white/20 border border-white/5 rounded-3xl">
+                                <Flag size={32} className="mb-3 opacity-30" />
+                                <p className="text-sm font-black uppercase tracking-widest">No reports yet</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {reports.map(report => (
+                                    <div key={report.id}
+                                        className={`bg-white/[0.04] border rounded-3xl overflow-hidden transition-all ${
+                                            report.status === 'pending' ? 'border-red-500/20' :
+                                            report.status === 'valid' ? 'border-green-500/20' : 'border-white/10'
+                                        }`}>
+                                        <div className="p-6">
+                                            {/* Header row */}
+                                            <div className="flex items-start justify-between gap-4 mb-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
+                                                        <User size={16} className="text-red-400" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-black text-sm text-white">{report.reported_user?.full_name || 'Unknown'}</p>
+                                                        <p className="text-[10px] text-white/30">{report.reported_user?.student_number}</p>
+                                                    </div>
+                                                </div>
+                                                <span className={`shrink-0 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                                                    report.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' :
+                                                    report.status === 'valid' ? 'bg-green-500/10 text-green-400 border-green-500/30' :
+                                                    'bg-white/5 text-white/30 border-white/10'
+                                                }`}>
+                                                    {report.status}
+                                                </span>
+                                            </div>
+
+                                            {/* Reason */}
+                                            <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 mb-4">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-1">Reason</p>
+                                                <p className="text-white/70 text-sm">{report.reason}</p>
+                                            </div>
+
+                                            {/* Meta */}
+                                            <div className="flex flex-wrap gap-3 text-[10px] text-white/30 mb-4">
+                                                <span>Reporter: <span className="text-white/50">{report.reporter?.full_name}</span></span>
+                                                <span>·</span>
+                                                <span>{new Date(report.created_at).toLocaleDateString()}</span>
+                                                {report.status !== 'pending' && report.reviewer && (
+                                                    <><span>·</span><span>Reviewed by <span className="text-white/50">{report.reviewer.full_name}</span></span></>
+                                                )}
+                                            </div>
+
+                                            {/* Chat preview toggle */}
+                                            {report.chatMessages?.length > 0 && (
+                                                <button
+                                                    onClick={() => setExpandedReport(expandedReport === report.id ? null : report.id)}
+                                                    className="flex items-center gap-2 text-[10px] text-orange-400/60 hover:text-orange-400 font-bold uppercase tracking-widest mb-3 transition-colors"
+                                                >
+                                                    <MessageSquare size={12} />
+                                                    {expandedReport === report.id ? 'Hide' : 'View'} Chat Context ({report.chatMessages.length} msgs)
+                                                </button>
+                                            )}
+
+                                            <AnimatePresence>
+                                                {expandedReport === report.id && report.chatMessages?.length > 0 && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0, height: 0 }}
+                                                        animate={{ opacity: 1, height: 'auto' }}
+                                                        exit={{ opacity: 0, height: 0 }}
+                                                        className="mb-4 bg-black/30 border border-white/5 rounded-2xl p-4 max-h-48 overflow-y-auto space-y-2"
+                                                    >
+                                                        {report.chatMessages.map(msg => (
+                                                            <div key={msg.id} className={`flex ${ msg.sender_id === report.reported_user?.id ? 'justify-end' : 'justify-start' }`}>
+                                                                <div className={`px-3 py-1.5 rounded-2xl text-xs max-w-[80%] ${ msg.sender_id === report.reported_user?.id ? 'bg-red-500/20 text-red-200' : 'bg-white/10 text-white/60' }`}>
+                                                                    {msg.content}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+
+                                            {/* Actions — only for pending */}
+                                            {report.status === 'pending' && (
+                                                <div className="flex flex-col sm:flex-row gap-2">
+                                                    <button
+                                                        onClick={() => handleReportAction(report.id, 'dismissed', report.reported_user?.id)}
+                                                        disabled={reportProcessing === report.id}
+                                                        className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white/50 border border-white/10 rounded-2xl font-black text-xs tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                                    >
+                                                        {reportProcessing === report.id ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
+                                                        Dismiss
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleReportAction(report.id, 'valid', report.reported_user?.id, false)}
+                                                        disabled={reportProcessing === report.id}
+                                                        className="flex-1 py-3 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-2xl font-black text-xs tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                                    >
+                                                        {reportProcessing === report.id ? <Loader2 size={14} className="animate-spin" /> : <Flag size={14} />}
+                                                        Valid (No Ban)
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleReportAction(report.id, 'valid', report.reported_user?.id, true)}
+                                                        disabled={reportProcessing === report.id || report.reported_user?.is_banned}
+                                                        className="flex-1 py-3 bg-red-600/80 hover:bg-red-600 text-white border border-red-500/40 rounded-2xl font-black text-xs tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                                    >
+                                                        {reportProcessing === report.id ? <Loader2 size={14} className="animate-spin" /> : <Ban size={14} />}
+                                                        {report.reported_user?.is_banned ? 'Already Banned' : 'Valid + Ban'}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 <div className={`${adminSection === 'posts' ? 'block' : 'hidden'} space-y-8`}>

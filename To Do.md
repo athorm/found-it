@@ -24,8 +24,8 @@
 - [x] Whenever a user deletes their posted item it encountered an error saying "Encountered two children with the same key, ``. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.". While the delete post does work, it is not good to have an error on the console.
 - [x] The confirmation process does work on chats. The item should automatically be marked as claimed in the item page and when the item is marked as claimed, users cannot message the poster anymore.
 - [x] When enlarging an item's image, I get an error saying two children with the same key
-- [ ] In Home page, the text "Search items" doesn't seem to be in the left, why is that? Can you fix it or an alternative way to make the search bar look more appealing?
-- [x] The showing of numbers in the chat button of navbar seems to work, but when reading the message or viewing it. It does not update the number of messages. It should go down. How do we fix it? Should we use supabase to update the number of messages?
+- [x] In Home page, the text "Search items" doesn't seem to be in the left, why is that? Can you fix it or an alternative way to make the search bar look more appealing?
+- [x] The showing of nuxmbers in the chat button of navbar seems to work, but when reading the message or viewing it. It does not update the number of messages. It should go down. How do we fix it? Should we use supabase to update the number of messages?
 
 
 ## Future Features (Priority 3 - later)
@@ -41,7 +41,11 @@
 ## Trying to implement this when we feel like it (Priority 3.5 - when have time)
 - [x] Since the website is tailored for mobile view on users. We create profiles for admin users with access. Add an admin desktop view that handles the item posting process so normal users cannot post items directly but instead admin users can. Approving the post if the item is appropriate and not a troll. Rejecting it if it is inappropriate or a troll. Use Supabase to also implement this so that admin users have access and authentication. Not all users can access this view, only admin users. Admin users would have a button on the desktop view that says "Admin View". When admin users click it, it would lead them to the admin desktop view. And any admin functions/process that you can think of.
 - [x] Recent Feed Plan see RECENT_FEED_PLAN.md
-- [ ] 
+- [x] Report of User on chat if user is messaging inappropriate messages or trolling. When user is reported. It should be temporarily banned from messaging or posting. Only admin users can unbann them. Or the user can appeal for an unban. The user who reported it will be providing the reason and the admin can see if the report is valid or not. If valid, the user will be banned. If not valid, the user will not be banned. Maybe to determine if the report is valid. We need a log of all reports and their status. (To Avoid Abuse/False Reports). And to also validated the report, we should see the context of their conversation. Maybe a log of the messages that they sent. Once the user is reported, users can no longer message each other.
+- [x] Optimize the admin page when the admin is on mobile view. Since the admin page is only good for desktop view. We should implement a mobile view for it. Idk if this is necessary or not.
+- [x] Ability to send pictures on chat for both users (lost and finder). In messages, there should be a button to send pictures. Using supabase, upload the image through camera or gallery when on mobile view, and get the url to display it in the messages. Compressed the image to save storage.
+- [x] We should have a JSON file containing list of texts that are not appropriate to send on messages, this is to prevent users from sending inappropriate messages or trolling. It should not be sent to other users. And whenever user tries to do that, they would get a warning that their message is inappropriate and would be reported if they continue to do so. The warning should be a popup and would go away once the user clicks ok. Where can we get those inappropriate texts JSON file? 
+- [x] On Home page, instead of just having just a text of "Welcome back" and "Reuniting items with owners". We should implement other texts that can hook the user more to use the website. Maybe implement a change of greetings once in a while depending on the time or day. 
 
 
 ## Very Hard to Implement But Noted (Priority 4 - when have time or when the school accepts it)
