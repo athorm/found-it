@@ -91,7 +91,7 @@ export default function NavBar({ activePage, onPlusClick }) {
             <NavIcon icon={<Tag size={22} />} label="Items" active={activePage === 'items'} onClick={() => window.location.href = '/items'} />
             <motion.button
                 whileTap={{ scale: 0.92 }}
-                className="p-4 rounded-full -translate-y-6 border-4 border-black shadow-xl shadow-orange-500/40 bg-gradient-to-br from-orange-500 to-orange-700 active:scale-90 transition-transform"
+                className="p-4 rounded-full -translate-y-6 border-4 border-black shadow-xl shadow-orange-500/40 bg-linear-to-br from-orange-500 to-orange-700 active:scale-90 transition-transform"
                 onClick={handlePlusClick}
             >
                 <Plus size={24} color="white" strokeWidth={3} />

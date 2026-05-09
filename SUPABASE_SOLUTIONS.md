@@ -198,7 +198,7 @@ export class SupabaseErrorBoundary extends React.Component {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] flex items-center justify-center p-4"
+        className="min-h-screen bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] flex items-center justify-center p-4"
       >
         <div className="bg-black/40 backdrop-blur-2xl border border-red-500/30 rounded-3xl p-8 max-w-md text-center">
           <AlertCircle className="mx-auto mb-4 text-red-500" size={48} />
@@ -209,7 +209,7 @@ export class SupabaseErrorBoundary extends React.Component {
           <div className="space-y-3">
             <button
               onClick={this.handleRetry}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-700 hover:from-orange-600 hover:to-orange-800 text-white font-bold py-3 px-6 rounded-2xl transition flex items-center justify-center gap-2"
+              className="w-full bg-linear-to-r from-orange-500 to-orange-700 hover:from-orange-600 hover:to-orange-800 text-white font-bold py-3 px-6 rounded-2xl transition flex items-center justify-center gap-2"
             >
               <RotateCcw size={18} />
               Try Again

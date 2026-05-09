@@ -24,7 +24,7 @@ function CustomSelect({ label, value, options, onChange, placeholder = "Select" 
         <span className={`truncate text-left flex-1 ${value ? "text-white" : "text-white/20"}`}>
           {value ? options.find(opt => opt.value === value)?.label || value : placeholder}
         </span>
-        <motion.div animate={{ rotate: isOpen ? 180 : 0 }} className="flex-shrink-0">
+        <motion.div animate={{ rotate: isOpen ? 180 : 0 }} className="shrink-0">
           <ChevronDown size={16} className="text-orange-400" />
         </motion.div>
       </button>
@@ -50,7 +50,7 @@ function CustomSelect({ label, value, options, onChange, placeholder = "Select" 
                     className="w-full flex items-center justify-between px-4 py-3 rounded-xl text-sm text-white hover:bg-orange-500/20 transition-colors group gap-2"
                   >
                     <span className="truncate text-left flex-1">{opt.label}</span>
-                    {value === opt.value && <Check size={14} className="text-orange-400 flex-shrink-0" />}
+                    {value === opt.value && <Check size={14} className="text-orange-400 shrink-0" />}
                   </button>
                 ))}
               </div>
@@ -225,7 +225,7 @@ function PostItemContent() {
 
       {/* Admin review info banner */}
       <div className="flex items-center gap-3 p-3 mb-6 bg-orange-500/10 border border-orange-500/20 rounded-2xl">
-        <Info size={16} className="text-orange-400 flex-shrink-0" />
+        <Info size={16} className="text-orange-400 shrink-0" />
         <p className="text-[11px] text-orange-300/70 font-medium">Your post will be reviewed by an admin before appearing publicly.</p>
       </div>
 

@@ -8,9 +8,9 @@ import {
 } from 'lucide-react';
 
 const USER_TABS = [
-    { key: 'pending', label: 'Pending', icon: Clock, color: 'text-yellow-400', bg: 'bg-yellow-500' },
-    { key: 'approved', label: 'Verified', icon: CheckCircle, color: 'text-green-400', bg: 'bg-green-500' },
-    { key: 'rejected', label: 'Rejected', icon: XCircle, color: 'text-red-400', bg: 'bg-red-500' },
+    { key: 'pending', label: 'Pending', icon: Clock, color: 'text-orange-400', bg: 'bg-orange-500' },
+    { key: 'approved', label: 'Verified', icon: CheckCircle, color: 'text-orange-400', bg: 'bg-orange-500' },
+    { key: 'rejected', label: 'Rejected', icon: XCircle, color: 'text-orange-400', bg: 'bg-orange-500' },
     { key: 'all', label: 'All Users', icon: Users, color: 'text-orange-400', bg: 'bg-orange-500' },
 ];
 
@@ -249,10 +249,10 @@ export default function AdminUsersSection() {
                                         {/* User header */}
                                         <div className="flex items-center gap-3">
                                             <button onClick={(e) => { e.stopPropagation(); toggleSelect(u.id); }}
-                                                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all ${selectedUsers.has(u.id) ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20'}`}>
+                                                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${selectedUsers.has(u.id) ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20'}`}>
                                                 {selectedUsers.has(u.id) && <CheckCircle size={12} className="text-white" />}
                                             </button>
-                                            <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                            <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center overflow-hidden shrink-0">
                                                 {u.avatar_url ? <img src={u.avatar_url} className="w-full h-full object-cover" alt="" /> : <User size={20} className="text-orange-500" />}
                                             </div>
                                             <div className="flex-1 min-w-0">
@@ -270,7 +270,7 @@ export default function AdminUsersSection() {
                                         {u.verification_doc_signed_url && (
                                             <button onClick={() => setPreviewDocUrl(u.verification_doc_signed_url)}
                                                 className="w-full flex items-center gap-2 p-3 bg-white/[0.03] rounded-xl border border-white/5 hover:border-orange-500/30 transition-all text-left">
-                                                <FileText size={16} className="text-orange-500 flex-shrink-0" />
+                                                <FileText size={16} className="text-orange-500 shrink-0" />
                                                 <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">View Document</span>
                                                 <Eye size={14} className="ml-auto text-white/20" />
                                             </button>
@@ -293,11 +293,11 @@ export default function AdminUsersSection() {
                                         <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                                             {u.verification_status === 'pending' && (<>
                                                 <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
-                                                    className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white border-2 border-transparent rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
                                                     <CheckCircle size={12} /> APPROVE
                                                 </button>
                                                 <button onClick={() => setRejectTarget(u.id)} disabled={processing}
-                                                    className="flex-1 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    className="flex-1 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border-2 border-red-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
                                                     <XCircle size={12} /> REJECT
                                                 </button>
                                             </>)}
@@ -390,15 +390,15 @@ export default function AdminUsersSection() {
                         className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-6 py-4 bg-[#1a1a1a]/95 border border-white/10 rounded-2xl backdrop-blur-2xl shadow-2xl">
                         <span className="text-xs font-black text-white/60 uppercase tracking-widest mr-2">{selectedUsers.size} selected</span>
                         <button onClick={() => handleBatchModerate('approve')} disabled={processing}
-                            className="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
+                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white border-2 border-transparent rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
                             <CheckCircle size={12} /> Approve
                         </button>
                         <button onClick={() => handleBatchModerate('reject')} disabled={processing}
-                            className="px-4 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
+                            className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border-2 border-red-500/30 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
                             <XCircle size={12} /> Reject
                         </button>
                         <button onClick={() => setBatchDeleteConfirm(true)} disabled={processing}
-                            className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
+                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white border-2 border-transparent rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
                             <Trash2 size={12} /> Delete
                         </button>
                         <button onClick={() => setSelectedUsers(new Set())}
