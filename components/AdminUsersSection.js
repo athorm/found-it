@@ -4,13 +4,14 @@ import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     CheckCircle, XCircle, Clock, Search, User, Mail,
-    GraduationCap, FileText, Eye, Loader2, AlertTriangle, Users, Trash2
+    GraduationCap, FileText, Eye, Loader2, AlertTriangle, Users, Trash2, Ban, ShieldCheck
 } from 'lucide-react';
 
 const USER_TABS = [
     { key: 'pending', label: 'Pending', icon: Clock, color: 'text-orange-400', bg: 'bg-orange-500' },
     { key: 'approved', label: 'Verified', icon: CheckCircle, color: 'text-orange-400', bg: 'bg-orange-500' },
     { key: 'rejected', label: 'Rejected', icon: XCircle, color: 'text-orange-400', bg: 'bg-orange-500' },
+    { key: 'banned', label: 'Banned', icon: Ban, color: 'text-red-400', bg: 'bg-red-500' },
     { key: 'all', label: 'All Users', icon: Users, color: 'text-orange-400', bg: 'bg-orange-500' },
 ];
 
@@ -70,7 +71,7 @@ export default function AdminUsersSection() {
     const [processing, setProcessing] = useState(false);
     const [activeTab, setActiveTab] = useState('pending');
     const [searchQuery, setSearchQuery] = useState('');
-    const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, total: 0 });
+    const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, banned: 0, total: 0 });
     const [toast, setToast] = useState(null);
     const [rejectTarget, setRejectTarget] = useState(null);
     const [previewDocUrl, setPreviewDocUrl] = useState(null);
@@ -85,10 +86,16 @@ export default function AdminUsersSection() {
         try {
             setLoading(true);
             const headers = await getAuthHeaders();
-            const res = await fetch(`/api/admin/users?status=${activeTab}`, { headers });
+            // For 'banned' tab, fetch all and filter client-side since is_banned is a separate field
+            const fetchStatus = activeTab === 'banned' ? 'all' : activeTab;
+            const res = await fetch(`/api/admin/users?status=${fetchStatus}`, { headers });
             const json = await res.json();
             if (!res.ok) throw new Error(json.error);
-            setUsers(json.users || []);
+            let result = json.users || [];
+            if (activeTab === 'banned') {
+                result = result.filter(u => u.is_banned === true);
+            }
+            setUsers(result);
         } catch (err) { showToast(err.message, 'error'); } finally { setLoading(false); }
     }, [activeTab]);
 
@@ -99,7 +106,7 @@ export default function AdminUsersSection() {
             const json = await res.json();
             if (res.ok && json.users) {
                 const all = json.users;
-                setStats({ pending: all.filter(u => u.verification_status === 'pending').length, approved: all.filter(u => u.verification_status === 'approved').length, rejected: all.filter(u => u.verification_status === 'rejected').length, total: all.length });
+                setStats({ pending: all.filter(u => u.verification_status === 'pending').length, approved: all.filter(u => u.verification_status === 'approved').length, rejected: all.filter(u => u.verification_status === 'rejected').length, banned: all.filter(u => u.is_banned === true).length, total: all.length });
             }
         } catch { }
     }, []);
@@ -174,6 +181,26 @@ export default function AdminUsersSection() {
         } catch (err) { showToast(err.message, 'error'); } finally { setProcessing(false); }
     };
 
+    const handleBanToggle = async (userId, currentlyBanned) => {
+        try {
+            setProcessing(true);
+            const headers = await getAuthHeaders();
+            const res = await fetch('/api/admin/ban-user', {
+                method: 'POST',
+                headers: { ...headers, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    targetUserId: userId,
+                    action: currentlyBanned ? 'unban' : 'ban',
+                    reason: currentlyBanned ? 'Unbanned by admin' : 'Banned by admin from Users panel',
+                }),
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error);
+            showToast(currentlyBanned ? 'User unbanned successfully' : 'User banned successfully');
+            fetchUsers(); fetchStats();
+        } catch (err) { showToast(err.message, 'error'); } finally { setProcessing(false); }
+    };
+
     const filtered = users.filter(u => {
         if (!searchQuery.trim()) return true;
         const q = searchQuery.toLowerCase();
@@ -185,10 +212,11 @@ export default function AdminUsersSection() {
     return (
         <div className="space-y-8">
             {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 {[{ label: 'Pending', count: stats.pending, icon: Clock, color: 'text-yellow-400', tab: 'pending' },
                 { label: 'Verified', count: stats.approved, icon: CheckCircle, color: 'text-green-400', tab: 'approved' },
                 { label: 'Rejected', count: stats.rejected, icon: XCircle, color: 'text-red-400', tab: 'rejected' },
+                { label: 'Banned', count: stats.banned, icon: Ban, color: 'text-red-500', tab: 'banned' },
                 { label: 'Total Users', count: stats.total, icon: Users, color: 'text-orange-400', tab: 'all' }
                 ].map(s => (
                     <button key={s.tab} onClick={() => setActiveTab(s.tab)}
@@ -259,15 +287,20 @@ export default function AdminUsersSection() {
                                                 <p className="text-sm font-bold text-white truncate">{u.full_name || 'Unknown'}</p>
                                                 <p className="text-[10px] text-white/30 font-mono">{u.student_number || 'N/A'}</p>
                                             </div>
-                                            <span className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${statusColors[u.verification_status]}`}>{u.verification_status}</span>
+                                            {!u.is_banned && (
+                                                <span className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${statusColors[u.verification_status]}`}>{u.verification_status}</span>
+                                            )}
+                                            {u.is_banned && (
+                                                <span className="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border bg-red-500/20 text-red-400 border-red-500/30">Banned</span>
+                                            )}
                                         </div>
                                         {/* Email */}
                                         <div className="flex items-center gap-2 text-white/30">
                                             <Mail size={12} className="text-orange-500" />
                                             <span className="text-[10px] font-bold truncate">{u.email}</span>
                                         </div>
-                                        {/* Document preview button */}
-                                        {u.verification_doc_signed_url && (
+                                        {/* Document preview button (Hidden for banned users to save space) */}
+                                        {u.verification_doc_signed_url && !u.is_banned && (
                                             <button onClick={() => setPreviewDocUrl(u.verification_doc_signed_url)}
                                                 className="w-full flex items-center gap-2 p-3 bg-white/[0.03] rounded-xl border border-white/5 hover:border-orange-500/30 transition-all text-left">
                                                 <FileText size={16} className="text-orange-500 shrink-0" />
@@ -307,10 +340,22 @@ export default function AdminUsersSection() {
                                                     <CheckCircle size={12} /> APPROVE
                                                 </button>
                                             )}
-                                            {u.verification_status === 'approved' && (
+                                            {u.verification_status === 'approved' && !u.is_banned && (
                                                 <button onClick={() => setRejectTarget(u.id)} disabled={processing}
                                                     className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400/60 border border-red-500/20 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
                                                     <XCircle size={12} /> REVOKE
+                                                </button>
+                                            )}
+                                            {/* Ban / Unban toggle */}
+                                            {u.is_banned ? (
+                                                <button onClick={() => handleBanToggle(u.id, true)} disabled={processing}
+                                                    className="flex-1 py-2.5 bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    <ShieldCheck size={12} /> UNBAN
+                                                </button>
+                                            ) : u.verification_status === 'approved' && (
+                                                <button onClick={() => handleBanToggle(u.id, false)} disabled={processing}
+                                                    className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl transition-all disabled:opacity-50" title="Ban user">
+                                                    <Ban size={12} />
                                                 </button>
                                             )}
                                             <button onClick={() => setDeleteTarget(u.id)} disabled={processing}

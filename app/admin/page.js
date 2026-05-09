@@ -308,7 +308,10 @@ export default function AdminPage() {
     const [reports, setReports] = useState([]);
     const [reportsLoading, setReportsLoading] = useState(false);
     const [reportProcessing, setReportProcessing] = useState(null); // report id being processed
-    const [expandedReport, setExpandedReport] = useState(null);
+    const [reportFilter, setReportFilter] = useState('pending'); // 'all' | 'pending' | 'dismissed' | 'valid' | 'valid_ban'
+    const [selectedReport, setSelectedReport] = useState(null); // full report for detail modal
+    const [selectedReports, setSelectedReports] = useState(new Set()); // multi-select for batch delete
+    const [batchReportDeleteConfirm, setBatchReportDeleteConfirm] = useState(false);
 
     // Refs for drag constraints calculation
     const typeScrollRef = useRef(null);
@@ -370,12 +373,60 @@ export default function AdminPage() {
                 }),
             });
             if (!res.ok) throw new Error('Failed to update report');
-            showToast(status === 'valid' ? (banUser ? 'Report validated & user banned' : 'Report marked as valid') : 'Report dismissed');
+            showToast(status === 'valid' ? (banUser ? 'Report validated & user banned' : 'Report marked as invalid') : 'Report dismissed');
             fetchReports();
         } catch (err) {
             showToast(err.message, 'error');
         } finally {
             setReportProcessing(null);
+        }
+    };
+
+    const handleDeleteReport = async (reportId) => {
+        if (!confirm('Are you sure you want to permanently delete this report? This cannot be undone.')) return;
+        setReportProcessing(reportId);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch(`/api/admin/reports?id=${reportId}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${session.access_token}`,
+                },
+            });
+            if (!res.ok) throw new Error('Failed to delete report');
+            showToast('Report deleted permanently');
+            setSelectedReport(null);
+            fetchReports();
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            setReportProcessing(null);
+        }
+    };
+
+    const handleBatchDeleteReports = async () => {
+        if (selectedReports.size === 0) return;
+        try {
+            setProcessing(true);
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch('/api/admin/reports', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({ ids: [...selectedReports] }),
+            });
+            if (!res.ok) throw new Error('Failed to delete reports');
+            const json = await res.json();
+            showToast(`${json.deleted} report(s) deleted permanently`);
+            setSelectedReports(new Set());
+            setBatchReportDeleteConfirm(false);
+            fetchReports();
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            setProcessing(false);
         }
     };
 
@@ -571,7 +622,7 @@ export default function AdminPage() {
                             <div>
                                 <h1 className="text-lg sm:text-xl font-black tracking-tight">Admin Dashboard</h1>
                                 <p className="text-[10px] text-orange-400/50 font-bold uppercase tracking-widest">
-                                    {adminSection === 'posts' ? 'Post Moderation' : adminSection === 'users' ? 'User Verification' : 'User Reports'}
+                                    {adminSection === 'posts' ? 'Post Moderation' : adminSection === 'users' ? 'User Moderation' : 'User Reports'}
                                 </p>
                             </div>
                         </div>
@@ -626,7 +677,7 @@ export default function AdminPage() {
 
                 {/* ─── REPORTS SECTION ─── */}
                 <div className={adminSection === 'reports' ? 'block' : 'hidden'}>
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                         <div className="flex items-center justify-between">
                             <div>
                                 <h2 className="text-lg font-black text-white">User Reports</h2>
@@ -637,126 +688,309 @@ export default function AdminPage() {
                             </button>
                         </div>
 
+                        {/* Filter Tabs */}
+                        <div className="flex flex-wrap bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-fit gap-1">
+                            {[
+                                { key: 'all', label: 'All' },
+                                { key: 'pending', label: 'For Review' },
+                                { key: 'dismissed', label: 'Dismissed' },
+                                { key: 'valid', label: 'Invalid' },
+                                { key: 'valid_ban', label: 'Valid + Ban' },
+                            ].map(tab => (
+                                <button key={tab.key} onClick={() => { setReportFilter(tab.key); setSelectedReports(new Set()); }}
+                                    className={`px-4 py-2 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${reportFilter === tab.key ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
+                                    {tab.label}
+                                    {tab.key === 'pending' && reports.filter(r => r.status === 'pending').length > 0 && (
+                                        <span className="ml-1.5 px-1.5 py-0.5 bg-red-500 text-white text-[8px] rounded-full font-black">
+                                            {reports.filter(r => r.status === 'pending').length}
+                                        </span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+
                         {reportsLoading ? (
                             <div className="flex items-center justify-center py-16">
                                 <Loader2 className="animate-spin text-orange-400" size={28} />
                             </div>
-                        ) : reports.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-16 text-white/20 border border-white/5 rounded-3xl">
-                                <Flag size={32} className="mb-3 opacity-30" />
-                                <p className="text-sm font-black uppercase tracking-widest">No reports yet</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {reports.map(report => (
-                                    <div key={report.id}
-                                        className={`bg-white/[0.04] border rounded-3xl overflow-hidden transition-all ${
-                                            report.status === 'pending' ? 'border-red-500/20' :
-                                            report.status === 'valid' ? 'border-green-500/20' : 'border-white/10'
-                                        }`}>
-                                        <div className="p-6">
-                                            {/* Header row */}
-                                            <div className="flex items-start justify-between gap-4 mb-4">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0">
-                                                        <User size={16} className="text-red-400" />
+                        ) : (() => {
+                            const filteredReports = reportFilter === 'all' ? reports : reports.filter(r => r.status === reportFilter);
+
+                            // Select helpers
+                            const toggleReportSelect = (id, e) => { e.stopPropagation(); setSelectedReports(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }); };
+                            const toggleReportSelectAll = () => { selectedReports.size === filteredReports.length ? setSelectedReports(new Set()) : setSelectedReports(new Set(filteredReports.map(r => r.id))); };
+
+                            return filteredReports.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-16 text-white/20 border border-white/5 rounded-3xl">
+                                    <Flag size={32} className="mb-3 opacity-30" />
+                                    <p className="text-sm font-black uppercase tracking-widest">
+                                        {reportFilter === 'all' ? 'No reports yet' : `No ${reportFilter === 'valid_ban' ? 'valid + ban' : reportFilter} reports`}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {/* Select all + batch actions bar */}
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                        <button onClick={toggleReportSelectAll}
+                                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedReports.size === filteredReports.length && filteredReports.length > 0 ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20 hover:border-orange-500/60'}`}>
+                                            {selectedReports.size === filteredReports.length && filteredReports.length > 0 && <CheckCircle size={14} className="text-white" />}
+                                        </button>
+                                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                                            {selectedReports.size > 0 ? `${selectedReports.size} selected` : 'Select all'}
+                                        </span>
+                                        {selectedReports.size > 0 && (
+                                            <button onClick={() => setBatchReportDeleteConfirm(true)}
+                                                className="ml-auto flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-black tracking-widest transition-all">
+                                                <Trash2 size={14} /> Delete {selectedReports.size}
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                        {filteredReports.map(report => (
+                                            <motion.div
+                                                key={report.id}
+                                                layout
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className={`text-left bg-white/[0.04] border rounded-2xl p-4 hover:border-orange-500/30 transition-all group cursor-pointer ${
+                                                    selectedReports.has(report.id) ? 'border-orange-500/60 ring-2 ring-orange-500/30' :
+                                                    report.status === 'pending' ? 'border-red-500/20' :
+                                                    report.status === 'valid' || report.status === 'valid_ban' ? 'border-green-500/20' : 'border-white/10'
+                                                }`}
+                                            >
+                                                {/* Compact header */}
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <button onClick={(e) => toggleReportSelect(report.id, e)}
+                                                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${selectedReports.has(report.id) ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20'}`}>
+                                                        {selectedReports.has(report.id) && <CheckCircle size={12} className="text-white" />}
+                                                    </button>
+                                                    <div className="flex-1 min-w-0" onClick={() => setSelectedReport(report)}>
+                                                        <p className="text-xs font-bold text-white truncate">{report.reported_user?.full_name || 'Unknown'}</p>
+                                                        <p className="text-[10px] text-white/30 truncate">Reported by {report.reporter?.full_name || 'Unknown'}</p>
                                                     </div>
-                                                    <div>
-                                                        <p className="font-black text-sm text-white">{report.reported_user?.full_name || 'Unknown'}</p>
-                                                        <p className="text-[10px] text-white/30">{report.reported_user?.student_number}</p>
+                                                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${
+                                                        report.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' :
+                                                        report.status === 'valid_ban' ? 'bg-red-500/10 text-red-400 border-red-500/30' :
+                                                        report.status === 'valid' ? 'bg-gray-500/10 text-gray-400 border-gray-500/30' :
+                                                        'bg-white/5 text-white/30 border-white/10'
+                                                    }`}>
+                                                        {report.status === 'pending' ? 'For Review' : report.status === 'valid_ban' ? 'Valid + Ban' : report.status === 'valid' ? 'Invalid' : report.status}
+                                                    </span>
+                                                </div>
+                                                {/* Reason preview — clicks open detail */}
+                                                <div onClick={() => setSelectedReport(report)}>
+                                                    <p className="text-[11px] text-white/40 line-clamp-2 mb-2">{report.reason}</p>
+                                                    {/* Footer */}
+                                                    <div className="flex items-center justify-between text-[9px] text-white/20">
+                                                        <span>{new Date(report.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                                                        {report.chatMessages?.length > 0 && (
+                                                            <span className="flex items-center gap-1 text-orange-400/40">
+                                                                <MessageSquare size={10} /> {report.chatMessages.length} msgs
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
-                                                <span className={`shrink-0 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-                                                    report.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' :
-                                                    report.status === 'valid' ? 'bg-green-500/10 text-green-400 border-green-500/30' :
-                                                    'bg-white/5 text-white/30 border-white/10'
-                                                }`}>
-                                                    {report.status}
-                                                </span>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                    </div>
+                </div>
+
+                {/* ─── REPORT DETAIL MODAL ─── */}
+                <AnimatePresence>
+                    {selectedReport && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                onClick={() => setSelectedReport(null)}
+                                className="absolute inset-0 bg-black/85 backdrop-blur-sm"
+                            />
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                className="relative w-full max-w-lg bg-[#121212] border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
+                            >
+                                <div className="p-6 space-y-5">
+                                    {/* Modal header */}
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <h3 className="text-lg font-black text-white">Report Details</h3>
+                                            <p className="text-[10px] text-white/30 uppercase tracking-widest mt-0.5">
+                                                {new Date(selectedReport.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button 
+                                                onClick={() => handleDeleteReport(selectedReport.id)}
+                                                disabled={reportProcessing === selectedReport.id}
+                                                className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all disabled:opacity-50"
+                                                title="Delete Report Permanently"
+                                            >
+                                                {reportProcessing === selectedReport.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                                            </button>
+                                            <button onClick={() => setSelectedReport(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-white/40 transition-all">
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Reported user */}
+                                    <div className="bg-red-500/5 border border-red-500/15 rounded-2xl p-4">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-red-400/60 mb-2">Reported User</p>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0 overflow-hidden">
+                                                {selectedReport.reported_user?.avatar_url
+                                                    ? <img src={selectedReport.reported_user.avatar_url} className="w-full h-full object-cover" alt="" />
+                                                    : <User size={16} className="text-red-400" />}
                                             </div>
-
-                                            {/* Reason */}
-                                            <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4 mb-4">
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-white/30 mb-1">Reason</p>
-                                                <p className="text-white/70 text-sm">{report.reason}</p>
+                                            <div>
+                                                <p className="text-sm font-bold text-white">{selectedReport.reported_user?.full_name || 'Unknown'}</p>
+                                                <p className="text-[10px] text-white/30">{selectedReport.reported_user?.student_number}</p>
                                             </div>
-
-                                            {/* Meta */}
-                                            <div className="flex flex-wrap gap-3 text-[10px] text-white/30 mb-4">
-                                                <span>Reporter: <span className="text-white/50">{report.reporter?.full_name}</span></span>
-                                                <span>·</span>
-                                                <span>{new Date(report.created_at).toLocaleDateString()}</span>
-                                                {report.status !== 'pending' && report.reviewer && (
-                                                    <><span>·</span><span>Reviewed by <span className="text-white/50">{report.reviewer.full_name}</span></span></>
-                                                )}
-                                            </div>
-
-                                            {/* Chat preview toggle */}
-                                            {report.chatMessages?.length > 0 && (
-                                                <button
-                                                    onClick={() => setExpandedReport(expandedReport === report.id ? null : report.id)}
-                                                    className="flex items-center gap-2 text-[10px] text-orange-400/60 hover:text-orange-400 font-bold uppercase tracking-widest mb-3 transition-colors"
-                                                >
-                                                    <MessageSquare size={12} />
-                                                    {expandedReport === report.id ? 'Hide' : 'View'} Chat Context ({report.chatMessages.length} msgs)
-                                                </button>
-                                            )}
-
-                                            <AnimatePresence>
-                                                {expandedReport === report.id && report.chatMessages?.length > 0 && (
-                                                    <motion.div
-                                                        initial={{ opacity: 0, height: 0 }}
-                                                        animate={{ opacity: 1, height: 'auto' }}
-                                                        exit={{ opacity: 0, height: 0 }}
-                                                        className="mb-4 bg-black/30 border border-white/5 rounded-2xl p-4 max-h-48 overflow-y-auto space-y-2"
-                                                    >
-                                                        {report.chatMessages.map(msg => (
-                                                            <div key={msg.id} className={`flex ${ msg.sender_id === report.reported_user?.id ? 'justify-end' : 'justify-start' }`}>
-                                                                <div className={`px-3 py-1.5 rounded-2xl text-xs max-w-[80%] ${ msg.sender_id === report.reported_user?.id ? 'bg-red-500/20 text-red-200' : 'bg-white/10 text-white/60' }`}>
-                                                                    {msg.content}
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
-
-                                            {/* Actions — only for pending */}
-                                            {report.status === 'pending' && (
-                                                <div className="flex flex-col sm:flex-row gap-2">
-                                                    <button
-                                                        onClick={() => handleReportAction(report.id, 'dismissed', report.reported_user?.id)}
-                                                        disabled={reportProcessing === report.id}
-                                                        className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white/50 border border-white/10 rounded-2xl font-black text-xs tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                                                    >
-                                                        {reportProcessing === report.id ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
-                                                        Dismiss
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleReportAction(report.id, 'valid', report.reported_user?.id, false)}
-                                                        disabled={reportProcessing === report.id}
-                                                        className="flex-1 py-3 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 rounded-2xl font-black text-xs tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                                                    >
-                                                        {reportProcessing === report.id ? <Loader2 size={14} className="animate-spin" /> : <Flag size={14} />}
-                                                        Valid (No Ban)
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleReportAction(report.id, 'valid', report.reported_user?.id, true)}
-                                                        disabled={reportProcessing === report.id || report.reported_user?.is_banned}
-                                                        className="flex-1 py-3 bg-red-600/80 hover:bg-red-600 text-white border border-red-500/40 rounded-2xl font-black text-xs tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                                                    >
-                                                        {reportProcessing === report.id ? <Loader2 size={14} className="animate-spin" /> : <Ban size={14} />}
-                                                        {report.reported_user?.is_banned ? 'Already Banned' : 'Valid + Ban'}
-                                                    </button>
-                                                </div>
+                                            {selectedReport.reported_user?.is_banned && (
+                                                <span className="ml-auto px-2 py-0.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-[8px] font-black uppercase">Banned</span>
                                             )}
                                         </div>
                                     </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
+
+                                    {/* Reporter */}
+                                    <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2">Reported By</p>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center shrink-0 overflow-hidden">
+                                                {selectedReport.reporter?.avatar_url
+                                                    ? <img src={selectedReport.reporter.avatar_url} className="w-full h-full object-cover" alt="" />
+                                                    : <User size={14} className="text-orange-400" />}
+                                            </div>
+                                            <p className="text-xs font-bold text-white/60">{selectedReport.reporter?.full_name || 'Unknown'}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Reason */}
+                                    <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2">Report Reason</p>
+                                        <p className="text-white/70 text-sm leading-relaxed">{selectedReport.reason}</p>
+                                    </div>
+
+                                    {/* Chat context with profiles */}
+                                    {selectedReport.chatMessages?.length > 0 && (
+                                        <div>
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-orange-400/60 mb-3 flex items-center gap-2">
+                                                <MessageSquare size={12} /> Chat Context ({selectedReport.chatMessages.length} messages)
+                                            </p>
+                                            <div className="bg-black/30 border border-white/5 rounded-2xl p-4 max-h-60 overflow-y-auto space-y-3">
+                                                {selectedReport.chatMessages.map(msg => {
+                                                    const isReported = msg.sender_id === selectedReport.reported_user?.id;
+                                                    const senderName = isReported
+                                                        ? selectedReport.reported_user?.full_name
+                                                        : selectedReport.reporter?.full_name;
+                                                    return (
+                                                        <div key={msg.id} className={`flex ${isReported ? 'justify-end' : 'justify-start'}`}>
+                                                            <div className="max-w-[80%]">
+                                                                <p className={`text-[9px] font-bold mb-0.5 ${isReported ? 'text-right text-red-400/60' : 'text-white/30'}`}>
+                                                                    {senderName || 'Unknown'} {isReported && '⚠️'}
+                                                                </p>
+                                                                <div className={`px-3 py-2 rounded-2xl text-xs ${
+                                                                    isReported
+                                                                        ? 'bg-red-500/20 text-red-200 border border-red-500/10'
+                                                                        : 'bg-white/10 text-white/60'
+                                                                }`}>
+                                                                    {msg.image_url ? (
+                                                                        <img src={msg.image_url} alt="Shared" className="max-w-[160px] rounded-xl" />
+                                                                    ) : msg.content}
+                                                                </div>
+                                                                <p className="text-[8px] text-white/15 mt-0.5 px-1">
+                                                                    {new Date(msg.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Reviewer info */}
+                                    {selectedReport.status !== 'pending' && selectedReport.reviewer && (
+                                        <div className="flex items-center gap-2 text-[10px] text-white/30">
+                                            <CheckCircle size={12} className="text-green-400/40" />
+                                            <span>Reviewed by <span className="text-white/50 font-bold">{selectedReport.reviewer.full_name}</span></span>
+                                        </div>
+                                    )}
+
+                                    {/* Actions — only for pending */}
+                                    {selectedReport.status === 'pending' && (
+                                        <div className="flex flex-col gap-2 pt-2 border-t border-white/5">
+                                            <button
+                                                onClick={() => { handleReportAction(selectedReport.id, 'dismissed', selectedReport.reported_user?.id); setSelectedReport(null); }}
+                                                disabled={reportProcessing === selectedReport.id}
+                                                className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/50 border border-white/10 rounded-2xl font-black text-xs tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                            >
+                                                {reportProcessing === selectedReport.id ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
+                                                Dismiss Report
+                                            </button>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => { handleReportAction(selectedReport.id, 'valid', selectedReport.reported_user?.id, false); setSelectedReport(null); }}
+                                                    disabled={reportProcessing === selectedReport.id}
+                                                    className="flex-1 py-3 bg-gray-500/10 hover:bg-gray-500/20 text-gray-400 border border-gray-500/30 rounded-2xl font-black text-xs tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                                >
+                                                    <Flag size={14} /> Invalid
+                                                </button>
+                                                <button
+                                                    onClick={() => { handleReportAction(selectedReport.id, 'valid', selectedReport.reported_user?.id, true); setSelectedReport(null); }}
+                                                    disabled={reportProcessing === selectedReport.id || selectedReport.reported_user?.is_banned}
+                                                    className="flex-1 py-3 bg-red-600/80 hover:bg-red-600 text-white border border-red-500/40 rounded-2xl font-black text-xs tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                                >
+                                                    <Ban size={14} /> {selectedReport.reported_user?.is_banned ? 'Banned' : 'Valid + Ban'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Close button for non-pending */}
+                                    {selectedReport.status !== 'pending' && (
+                                        <button onClick={() => setSelectedReport(null)}
+                                            className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-2xl font-bold text-xs tracking-widest transition-all">
+                                            CLOSE
+                                        </button>
+                                    )}
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+
+                {/* ─── BATCH REPORT DELETE CONFIRMATION ─── */}
+                <AnimatePresence>
+                    {batchReportDeleteConfirm && (
+                        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setBatchReportDeleteConfirm(false)} />
+                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                                className="relative bg-[#1a1a1a] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-2xl shadow-red-900/20">
+                                <div className="w-14 h-14 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-5">
+                                    <Trash2 size={28} className="text-red-500" />
+                                </div>
+                                <h3 className="text-lg font-bold text-white mb-2">Delete {selectedReports.size} Report{selectedReports.size > 1 ? 's' : ''}?</h3>
+                                <p className="text-white/40 text-xs mb-6">This action is permanent and cannot be undone.</p>
+                                <div className="space-y-3">
+                                    <button onClick={handleBatchDeleteReports} disabled={processing}
+                                        className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                                        {processing ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} DELETE PERMANENTLY
+                                    </button>
+                                    <button onClick={() => setBatchReportDeleteConfirm(false)}
+                                        className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl font-bold text-xs tracking-widest">CANCEL</button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
 
                 <div className={`${adminSection === 'posts' ? 'block' : 'hidden'} space-y-8`}>
                     {/* ─── STAT CARDS ─── */}

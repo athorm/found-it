@@ -47,6 +47,13 @@
 - [x] We should have a JSON file containing list of texts that are not appropriate to send on messages, this is to prevent users from sending inappropriate messages or trolling. It should not be sent to other users. And whenever user tries to do that, they would get a warning that their message is inappropriate and would be reported if they continue to do so. The warning should be a popup and would go away once the user clicks ok. Where can we get those inappropriate texts JSON file? 
 - [x] On Home page, instead of just having just a text of "Welcome back" and "Reuniting items with owners". We should implement other texts that can hook the user more to use the website. Maybe implement a change of greetings once in a while depending on the time or day. 
 
+## Fixing Priority 3.5 Bugs
+- [x]  The ban works but the admin should also had an option to unban users on verifications page. 
+- [x]  User reports should also have filtration system for Dismissed and For Review and should work properly. This is so that admins can easily see what are the active reports and what are the dismissed reports. I also don't like how chat context does not have profiles on their chat bubbles. It is not distinguishable on who is at fault/sent inappropriate messages or image and who is the innocent.
+- [x]  The plus button to send images is not there on the conversation page.
+- [x]  User Reports card containers is too big and should be small only. We could just make it smaller where we can see the who reported and if its dismissed or for review then admin can click it showing a pop up for the whole details. And also the reason why the user reported them. The admin should also see the chat context for context.
+- [x]  In Dynamic greetings some of the greetings are not displayed appropriate. I will send an image.
+
 
 ## Very Hard to Implement But Noted (Priority 4 - when have time or when the school accepts it)
 - [ ] Implement the use of AI to detect if the picture of the item is appropriate to be posted or not. (Use AI for the detection of the item picture)

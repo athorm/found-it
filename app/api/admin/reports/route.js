@@ -81,11 +81,14 @@ export async function PATCH(req) {
     return NextResponse.json({ error: "Missing reportId or status" }, { status: 400 });
   }
 
+  // Determine the actual status to store — 'valid_ban' distinguishes valid+banned from valid-only
+  const resolvedStatus = (status === 'valid' && banUser) ? 'valid_ban' : status;
+
   // Update the report record
   const { error: updateErr } = await supabaseAdmin
     .from("reports")
     .update({
-      status,
+      status: resolvedStatus,
       admin_notes: adminNotes || null,
       reviewed_by: user.id,
       reviewed_at: new Date().toISOString(),
@@ -94,8 +97,8 @@ export async function PATCH(req) {
 
   if (updateErr) return NextResponse.json({ error: updateErr.message }, { status: 500 });
 
-  // If status is 'valid' and banUser is true, ban the reported user
-  if (status === "valid" && banUser) {
+  // If banning, update the reported user's profile
+  if (resolvedStatus === "valid_ban") {
     const { data: report } = await supabaseAdmin
       .from("reports")
       .select("reported_user_id")
@@ -115,4 +118,52 @@ export async function PATCH(req) {
   }
 
   return NextResponse.json({ success: true });
+}
+
+// DELETE /api/admin/reports — permanently delete report(s)
+// Supports single (?id=xxx) or batch (body: { ids: [...] })
+export async function DELETE(req) {
+  const auth = req.headers.get("authorization");
+  if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const token = auth.replace("Bearer ", "");
+  const { data: { user }, error: authErr } = await supabaseAdmin.auth.getUser(token);
+  if (authErr || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { data: profile } = await supabaseAdmin
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profile?.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  // Support single via query param or batch via body
+  const { searchParams } = new URL(req.url);
+  const singleId = searchParams.get('id');
+
+  let ids = [];
+  if (singleId) {
+    ids = [singleId];
+  } else {
+    try {
+      const body = await req.json();
+      ids = body.ids || [];
+    } catch { /* no body */ }
+  }
+
+  if (ids.length === 0) {
+    return NextResponse.json({ error: "Missing report ID(s)" }, { status: 400 });
+  }
+
+  const { error: deleteErr } = await supabaseAdmin
+    .from("reports")
+    .delete()
+    .in("id", ids);
+
+  if (deleteErr) return NextResponse.json({ error: deleteErr.message }, { status: 500 });
+
+  return NextResponse.json({ success: true, deleted: ids.length });
 }

@@ -19,7 +19,8 @@ function getGreeting() {
   if (isWeekend) {
     if (hour >= 5 && hour < 12) return "Happy weekend morning ☀️";
     if (hour >= 12 && hour < 17) return "Enjoying the weekend? 🎉";
-    return "Weekend vibes 🌙";
+    if (hour >= 17 && hour < 21) return "Weekend evening 🌇";
+    return "Late-night weekend? 🌙";
   }
 
   if (hour >= 5 && hour < 12) return "Good morning ☀️";
@@ -166,7 +167,18 @@ export default function HomePage() {
         .eq("id", user.id)
         .maybeSingle();
       if (data?.full_name) {
-        setUserName(data.full_name.split(" ")[0]);
+        // Handle "LastName, FirstName" or "FirstName LastName" formats
+        const name = data.full_name;
+        let firstName;
+        if (name.includes(',')) {
+          // "Tolentino, Juan" → "Juan"
+          firstName = name.split(',')[1]?.trim().split(' ')[0];
+        }
+        if (!firstName) {
+          // "Juan Tolentino" → "Juan"  or just "Juan" → "Juan"
+          firstName = name.split(' ')[0].replace(/,/g, '');
+        }
+        setUserName(firstName);
       }
     };
     fetchName();

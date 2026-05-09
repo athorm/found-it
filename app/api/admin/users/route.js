@@ -53,7 +53,7 @@ export async function GET(request) {
         const adminClient = getSupabaseAdmin();
         let query = adminClient
             .from('profiles')
-            .select('id, full_name, student_number, email, avatar_url, created_at, role, verification_status, verification_doc_url, verification_reviewed_at, verification_rejection_reason')
+            .select('id, full_name, student_number, email, avatar_url, created_at, role, verification_status, verification_doc_url, verification_reviewed_at, verification_rejection_reason, is_banned, ban_reason')
             .order('created_at', { ascending: false });
 
         if (statusFilter !== 'all') {
