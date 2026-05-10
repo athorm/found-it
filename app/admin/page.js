@@ -125,16 +125,16 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                                 <button
                                     onClick={() => onApprove(item.id)}
                                     disabled={processing}
-                                    className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white border-2 border-transparent rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                                    className="flex-1 py-2.5 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                                 >
-                                    <CheckCircle size={14} /> APPROVE
+                                    <CheckCircle size={12} /> APPROVE
                                 </button>
                                 <button
                                     onClick={() => onReject(item.id)}
                                     disabled={processing}
-                                    className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-2 border-red-500/30 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                                    className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                                 >
-                                    <XCircle size={14} /> REJECT
+                                    <XCircle size={12} /> REJECT
                                 </button>
                             </>
                         )}
@@ -142,18 +142,18 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                             <button
                                 onClick={() => onApprove(item.id)}
                                 disabled={processing}
-                                className="flex-1 py-2.5 bg-green-600/10 hover:bg-green-600/20 text-green-400 border-2 border-green-500/30 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                                className="flex-1 py-2.5 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                             >
-                                <CheckCircle size={14} /> RE-APPROVE
+                                <CheckCircle size={12} /> RE-APPROVE
                             </button>
                         )}
                         {isApproved && (
                             <button
                                 onClick={() => onReject(item.id)}
                                 disabled={processing}
-                                className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400/60 border-2 border-red-500/20 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                                className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400/60 border border-red-500/20 rounded-xl font-bold text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                             >
-                                <XCircle size={14} /> REVOKE
+                                <XCircle size={12} /> REVOKE
                             </button>
                         )}
                         <button
@@ -237,7 +237,7 @@ function StatCard({ label, count, icon: Icon, color, active, onClick }) {
 /* ─────────────────────────── DELETE CONFIRMATION ────────────────── */
 function DeleteConfirmModal({ onConfirm, onCancel, processing, message }) {
     return (
-        <div className="fixed inset-0 z-110 flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
             <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="absolute inset-0 bg-black/90 backdrop-blur-sm"
@@ -273,6 +273,56 @@ function DeleteConfirmModal({ onConfirm, onCancel, processing, message }) {
     );
 }
 
+const BAN_PREMADE_REASONS = [
+    'Repeated violation of community guidelines',
+    'Posting inappropriate or offensive content',
+    'Harassment or threatening behavior',
+    'Fraudulent activity or scam attempts',
+    'Impersonation or fake account',
+];
+
+function BanReasonModal({ onConfirm, onCancel, processing }) {
+    const [reason, setReason] = useState('');
+    return (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onCancel} />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-[#1a1a1a] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+                <div className="w-14 h-14 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-5">
+                    <Ban size={28} className="text-red-500" />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2 text-center">Ban User</h3>
+                <p className="text-white/40 text-xs mb-4 text-center">Select a reason or type a custom one. The user will be notified via email.</p>
+                {/* Premade reason chips */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                    {BAN_PREMADE_REASONS.map((r) => (
+                        <button key={r} onClick={() => setReason(r)} type="button"
+                            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${
+                                reason === r
+                                    ? 'bg-red-500/20 border-red-500/40 text-red-300'
+                                    : 'bg-white/5 border-white/10 text-white/40 hover:border-red-500/30 hover:text-white/60'
+                            }`}>
+                            {r}
+                        </button>
+                    ))}
+                </div>
+                <textarea
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="Or type a custom reason..."
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-white/20 outline-none focus:border-red-500/50 resize-none h-20 mb-4"
+                />
+                <div className="space-y-3">
+                    <button onClick={() => onConfirm(reason || 'Violated community guidelines')} disabled={processing}
+                        className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                        {processing ? <Loader2 size={14} className="animate-spin" /> : <><Ban size={14} /> BAN USER</>}
+                    </button>
+                    <button onClick={onCancel} className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl font-bold text-xs tracking-widest">CANCEL</button>
+                </div>
+            </motion.div>
+        </div>
+    );
+}
+
 /* ═══════════════════════════ MAIN PAGE ═══════════════════════════ */
 export default function AdminPage() {
     const router = useRouter();
@@ -300,6 +350,7 @@ export default function AdminPage() {
     // Batch selection
     const [selectedItems, setSelectedItems] = useState(new Set());
     const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false);
+    const [userRefreshTrigger, setUserRefreshTrigger] = useState(0);
 
     // Stats
     const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, total: 0 });
@@ -310,6 +361,7 @@ export default function AdminPage() {
     const [reportProcessing, setReportProcessing] = useState(null); // report id being processed
     const [reportFilter, setReportFilter] = useState('pending'); // 'all' | 'pending' | 'dismissed' | 'valid' | 'valid_ban'
     const [selectedReport, setSelectedReport] = useState(null); // full report for detail modal
+    const [reportBanReasonTarget, setReportBanReasonTarget] = useState(null);
     const [selectedReports, setSelectedReports] = useState(new Set()); // multi-select for batch delete
     const [batchReportDeleteConfirm, setBatchReportDeleteConfirm] = useState(false);
 
@@ -427,6 +479,17 @@ export default function AdminPage() {
             showToast(err.message, 'error');
         } finally {
             setProcessing(false);
+        }
+    };
+
+    const handleRefresh = () => {
+        if (adminSection === 'posts') {
+            fetchItems();
+            fetchStats();
+        } else if (adminSection === 'users') {
+            setUserRefreshTrigger(prev => prev + 1);
+        } else if (adminSection === 'reports') {
+            fetchReports();
         }
     };
 
@@ -637,11 +700,11 @@ export default function AdminPage() {
                             </div>
                         )}
                         <button
-                            onClick={() => { fetchItems(); fetchStats(); }}
+                            onClick={handleRefresh}
                             className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-white/40 hover:text-orange-400"
                             title="Refresh"
                         >
-                            <RefreshCw size={18} />
+                            <RefreshCw size={18} className={loading || reportsLoading ? 'animate-spin' : ''} />
                         </button>
                     </div>
                 </div>
@@ -672,7 +735,7 @@ export default function AdminPage() {
                 </div>
 
                 <div className={adminSection === 'users' ? 'block' : 'hidden'}>
-                    <AdminUsersSection />
+                    <AdminUsersSection refreshTrigger={userRefreshTrigger} />
                 </div>
 
                 {/* ─── REPORTS SECTION ─── */}
@@ -686,6 +749,23 @@ export default function AdminPage() {
                             <button onClick={fetchReports} className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-white/40 hover:text-orange-400">
                                 <RefreshCw size={16} className={reportsLoading ? 'animate-spin' : ''} />
                             </button>
+                        </div>
+
+                        {/* Reports Stats */}
+                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                            {[
+                                { label: 'For Review', count: reports.filter(r => r.status === 'pending').length, icon: Clock, color: 'text-yellow-400', tab: 'pending' },
+                                { label: 'Dismissed', count: reports.filter(r => r.status === 'dismissed').length, icon: XCircle, color: 'text-white/40', tab: 'dismissed' },
+                                { label: 'Invalid', count: reports.filter(r => r.status === 'valid').length, icon: CheckCircle, color: 'text-gray-400', tab: 'valid' },
+                                { label: 'Valid + Ban', count: reports.filter(r => r.status === 'valid_ban').length, icon: Ban, color: 'text-red-500', tab: 'valid_ban' },
+                                { label: 'Total Reports', count: reports.length, icon: Flag, color: 'text-orange-400', tab: 'all' }
+                            ].map(s => (
+                                <button key={s.tab} onClick={() => { setReportFilter(s.tab); setSelectedReports(new Set()); }}
+                                    className={`p-5 rounded-2xl border transition-all text-left ${reportFilter === s.tab ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_30px_rgba(249,115,22,0.15)]' : 'bg-white/[0.03] border-white/10 hover:border-white/20'}`}>
+                                    <div className="flex items-center justify-between mb-3"><s.icon size={20} className={s.color} /><span className="text-3xl font-black text-white">{s.count}</span></div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{s.label}</p>
+                                </button>
+                            ))}
                         </div>
 
                         {/* Filter Tabs */}
@@ -943,7 +1023,7 @@ export default function AdminPage() {
                                                     <Flag size={14} /> Invalid
                                                 </button>
                                                 <button
-                                                    onClick={() => { handleReportAction(selectedReport.id, 'valid', selectedReport.reported_user?.id, true); setSelectedReport(null); }}
+                                                    onClick={() => setReportBanReasonTarget(selectedReport)}
                                                     disabled={reportProcessing === selectedReport.id || selectedReport.reported_user?.is_banned}
                                                     className="flex-1 py-3 bg-red-600/80 hover:bg-red-600 text-white border border-red-500/40 rounded-2xl font-black text-xs tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                                 >
@@ -989,6 +1069,21 @@ export default function AdminPage() {
                                 </div>
                             </motion.div>
                         </div>
+                    )}
+                </AnimatePresence>
+
+                {/* ─── BAN REASON MODAL (REPORTS) ─── */}
+                <AnimatePresence>
+                    {reportBanReasonTarget && (
+                        <BanReasonModal
+                            processing={reportProcessing === reportBanReasonTarget.id}
+                            onCancel={() => setReportBanReasonTarget(null)}
+                            onConfirm={(reason) => {
+                                handleReportAction(reportBanReasonTarget.id, 'valid', reportBanReasonTarget.reported_user?.id, true, reason);
+                                setReportBanReasonTarget(null);
+                                setSelectedReport(null);
+                            }}
+                        />
                     )}
                 </AnimatePresence>
 
@@ -1313,14 +1408,20 @@ export default function AdminPage() {
                     <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }}
                         className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-6 py-4 bg-[#1a1a1a]/95 border border-white/10 rounded-2xl backdrop-blur-2xl shadow-2xl">
                         <span className="text-xs font-black text-white/60 uppercase tracking-widest mr-2">{selectedItems.size} selected</span>
-                        <button onClick={() => handleBatchModerate('approve')} disabled={processing}
-                            className="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
-                            <CheckCircle size={12} /> Approve
-                        </button>
-                        <button onClick={() => handleBatchModerate('reject')} disabled={processing}
-                            className="px-4 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
-                            <XCircle size={12} /> Reject
-                        </button>
+                        {/* Approve: show on pending, rejected, all */}
+                        {(activeTab === 'pending' || activeTab === 'rejected' || activeTab === 'all') && (
+                            <button onClick={() => handleBatchModerate('approve')} disabled={processing}
+                                className="px-4 py-2.5 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
+                                <CheckCircle size={12} /> Approve
+                            </button>
+                        )}
+                        {/* Reject: show on pending, approved, all */}
+                        {(activeTab === 'pending' || activeTab === 'approved' || activeTab === 'all') && (
+                            <button onClick={() => handleBatchModerate('reject')} disabled={processing}
+                                className="px-4 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
+                                <XCircle size={12} /> Reject
+                            </button>
+                        )}
                         <button onClick={() => setBatchDeleteConfirm(true)} disabled={processing}
                             className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
                             <Trash2 size={12} /> Delete

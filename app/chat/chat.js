@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Send, Loader2, User, Trash2, X, CheckCircle2, AlertCircle, Lock, AlertTriangle, Flag, ImageIcon } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User, Trash2, X, CheckCircle2, AlertCircle, Lock, AlertTriangle, Flag, ImageIcon, Plus, Camera } from "lucide-react";
 import { containsProfanity } from "@/utils/profanityFilter";
 import { motion, AnimatePresence } from "framer-motion";
 import NavBar from "@/components/NavBar";
@@ -44,6 +44,8 @@ export default function ChatPage() {
   // Image sharing state
   const [imageUploading, setImageUploading] = useState(false);
   const imageInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   // Lightbox for image messages
   const [lightboxUrl, setLightboxUrl] = useState(null);
 
@@ -176,26 +178,45 @@ export default function ChatPage() {
     }
 
     if (channelRef.current) supabase.removeChannel(channelRef.current);
-    const channel = supabase.channel(`room-${conv.id}`);
-    channel.on(
-      'postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${conv.id}` },
-      (payload) => {
-        // Deduplicate: skip if we already added this message optimistically
-        // (happens for the sender's own messages via sendMessage).
-        setMessages((prev) =>
-          prev.some((m) => m.id === payload.new.id) ? prev : [...prev, payload.new]
-        );
-        // If this incoming message is for the current user, mark it read immediately
-        if (payload.new.receiver_id === user?.id) {
-          supabase
-            .from('messages')
-            .update({ is_read: true })
-            .eq('id', payload.new.id)
-            .then(() => { }); // fire-and-forget
+    const channel = supabase.channel(`room-${conv.id}-${Date.now()}`);
+    channel
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${conv.id}` },
+        (payload) => {
+          // Deduplicate: skip if we already added this message optimistically
+          // (happens for the sender's own messages via sendMessage).
+          setMessages((prev) =>
+            prev.some((m) => m.id === payload.new.id) ? prev : [...prev, payload.new]
+          );
+          // If this incoming message is for the current user, mark it read immediately
+          if (payload.new.receiver_id === user?.id) {
+            supabase
+              .from('messages')
+              .update({ is_read: true })
+              .eq('id', payload.new.id)
+              .then(() => { }); // fire-and-forget
+          }
         }
-      }
-    ).subscribe();
+      )
+      // Listen for chats UPDATE so resolution status syncs in real-time for the OTHER user
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'chats', filter: `id=eq.${conv.id}` },
+        (payload) => {
+          const updated = payload.new;
+          setSelectedConversation((prev) => {
+            if (!prev || prev.id !== updated.id) return prev;
+            return {
+              ...prev,
+              finderConfirmed: updated.finder_confirmed_resolved,
+              claimerConfirmed: updated.claimer_confirmed_resolved,
+              isResolved: updated.finder_confirmed_resolved && updated.claimer_confirmed_resolved,
+            };
+          });
+        }
+      )
+      .subscribe();
     channelRef.current = channel;
   };
 
@@ -352,7 +373,7 @@ export default function ChatPage() {
           receiver_id: selectedConversation.otherUserId,
           chat_id: selectedConversation.id,
           item_id: selectedConversation.itemId,
-          content: "✅ Both users have confirmed. This item is now marked as Resolved.",
+          content: "✅ Both users have confirmed. The item has been retrieved.",
           is_read: false
         });
       }
@@ -434,7 +455,7 @@ export default function ChatPage() {
       {view === 'list' ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 overflow-y-auto pb-24">
           <div className="p-6 flex items-center gap-3">
-            <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-xl mix-blend-screen drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
+            <img src="/logo2.svg" alt="Logo" className="w-8 h-8 mix-blend-screen drop-shadow-[0_0_8px_rgba(249,115,22,0.4)] object-contain" />
             <h1 className="text-2xl font-bold bg-linear-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">Messages</h1>
           </div>
           <div className="px-6 space-y-4">
@@ -506,7 +527,7 @@ export default function ChatPage() {
             {selectedConversation?.isResolved ? (
               <div className="flex items-center justify-center gap-2 py-2 text-green-400">
                 <CheckCircle2 size={16} />
-                <span className="text-[10px] font-black uppercase tracking-widest">Transaction Resolved</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">Item Retrieved</span>
               </div>
             ) : (
               <div className="flex items-center justify-between py-1">
@@ -610,16 +631,14 @@ export default function ChatPage() {
                   className="hidden"
                   onChange={handleImageSend}
                 />
-                <button
-                  onClick={() => imageInputRef.current?.click()}
-                  disabled={imageUploading}
-                  className="text-white/20 hover:text-orange-400 transition-colors p-1 shrink-0 disabled:opacity-50"
-                  title="Send image"
-                >
-                  {imageUploading
-                    ? <Loader2 size={18} className="animate-spin text-orange-400" />
-                    : <ImageIcon size={18} />}
-                </button>
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleImageSend}
+                />
                 <input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
@@ -628,6 +647,44 @@ export default function ChatPage() {
                   onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                 />
                 <button onClick={sendMessage} className="text-orange-500 p-2"><Send size={20} /></button>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
+                    disabled={imageUploading}
+                    className="text-white/20 hover:text-orange-400 transition-colors p-1 shrink-0 disabled:opacity-50"
+                    title="Attach"
+                  >
+                    {imageUploading
+                      ? <Loader2 size={18} className="animate-spin text-orange-400" />
+                      : <Plus size={22} />}
+                  </button>
+
+                  <AnimatePresence>
+                    {showAttachmentMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute bottom-full right-0 mb-3 w-36 bg-[#1a1a1a] border border-white/10 rounded-2xl p-2 shadow-xl shadow-black/50 origin-bottom-right z-50"
+                      >
+                        <button
+                          onClick={() => { setShowAttachmentMenu(false); cameraInputRef.current?.click(); }}
+                          className="w-full flex items-center gap-3 px-3 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                        >
+                          <Camera size={16} className="text-orange-400" />
+                          Camera
+                        </button>
+                        <button
+                          onClick={() => { setShowAttachmentMenu(false); imageInputRef.current?.click(); }}
+                          className="w-full flex items-center gap-3 px-3 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                        >
+                          <ImageIcon size={16} className="text-orange-400" />
+                          Gallery
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             )}
           </div>

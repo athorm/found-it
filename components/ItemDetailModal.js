@@ -234,19 +234,27 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
                                         </div>
                                     )}
 
-                                    <button
-                                        onClick={handleToggleStatus}
-                                        className={`w-full py-4 rounded-2xl font-black tracking-widest transition-all shadow-lg ${localStatus === 'Active'
-                                            ? 'bg-green-600 hover:bg-green-700 text-white'
-                                            : 'bg-orange-500 hover:bg-orange-600 text-white'
-                                            }`}
-                                    >
-                                        {/* Context-aware label: Lost items say "FOUND/UNFOUND", Found items say "CLAIMED/UNCLAIMED" */}
-                                        MARK AS {localStatus === 'Active'
-                                            ? (item.category === 'Lost' ? 'FOUND' : 'CLAIMED')
-                                            : (item.category === 'Lost' ? 'UNFOUND' : 'UNCLAIMED')
-                                        }
-                                    </button>
+                                    {/* If both chat users confirmed resolution, lock the status */}
+                                    {item.resolution_confirmed ? (
+                                        <div className="w-full py-4 bg-green-500/10 border border-green-500/20 rounded-2xl flex items-center justify-center gap-2 text-green-400 font-black tracking-widest text-xs">
+                                            <Lock size={16} />
+                                            ITEM RETRIEVED — STATUS LOCKED
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={handleToggleStatus}
+                                            className={`w-full py-4 rounded-2xl font-black tracking-widest transition-all shadow-lg ${localStatus === 'Active'
+                                                ? 'bg-green-600 hover:bg-green-700 text-white'
+                                                : 'bg-orange-500 hover:bg-orange-600 text-white'
+                                                }`}
+                                        >
+                                            {/* Context-aware label: Lost items say "FOUND/UNFOUND", Found items say "CLAIMED/UNCLAIMED" */}
+                                            MARK AS {localStatus === 'Active'
+                                                ? (item.category === 'Lost' ? 'FOUND' : 'CLAIMED')
+                                                : (item.category === 'Lost' ? 'UNFOUND' : 'UNCLAIMED')
+                                            }
+                                        </button>
+                                    )}
 
                                     <button
                                         onClick={() => setShowDeleteConfirm(true)}

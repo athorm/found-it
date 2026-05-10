@@ -39,7 +39,7 @@ function CustomSelect({ label, value, options, onChange, placeholder = "Select" 
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               className="absolute left-0 right-0 z-20 overflow-hidden rounded-2xl border border-white/20 bg-[#1a1a1a]/90 backdrop-blur-xl shadow-2xl"
             >
-              <div className="p-1">
+              <div className="p-1 dropdown-scrollable">
                 {options.map((opt) => (
                   <button
                     key={opt.value}

@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Info, X, MapPin } from "lucide-react";
+import { Search, Info, X, MapPin, Package } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import NavBar from "@/components/NavBar";
 import ItemPostModal from "@/components/ItemPostModal";
@@ -108,8 +108,8 @@ const INFO_SECTIONS = [
   },
   {
     icon: "✅",
-    title: "Mark as Claimed",
-    body: "Once your item is claimed, open it from the Items page and tap MARK AS CLAIMED to resolve it."
+    title: "Item Retrieved",
+    body: "Once you've coordinated with the poster and retrieved the item, press 'Mark as Resolved' inside the chat to confirm the handover. Both users must confirm before the item is marked as retrieved."
   }
 ];
 
@@ -244,7 +244,7 @@ export default function HomePage() {
           animate={{ opacity: 1, scale: 1 }}
           className="flex justify-center mb-6"
         >
-          <img src="/logo.png" alt="FoundIt Logo" className="w-24 h-24 rounded-3xl mix-blend-screen drop-shadow-[0_0_24px_rgba(249,115,22,0.5)]" />
+          <img src="/logo2.svg" alt="FoundIt Logo" className="w-24 h-24 mix-blend-screen drop-shadow-[0_0_24px_rgba(249,115,22,0.5)] object-contain" />
         </motion.div>
 
         {/* User Greeting */}
@@ -351,7 +351,7 @@ export default function HomePage() {
         {recentItems.length > 0 && (
           <>
             {/* Mobile: drag scroll */}
-            <div className="md:hidden w-full overflow-hidden mt-1" ref={recentScrollRef}>
+            <div className="md:hidden overflow-hidden mt-1 -mx-6 px-6" ref={recentScrollRef}>
               <motion.div
                 drag="x"
                 dragConstraints={recentConstraints}
@@ -440,7 +440,7 @@ export default function HomePage() {
       {/* Info Modal */}
       <AnimatePresence>
         {showInfoModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setShowInfoModal(false)}
@@ -450,28 +450,28 @@ export default function HomePage() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-sm bg-[#111] border border-orange-500/20 rounded-[2.5rem] p-8 shadow-2xl shadow-orange-900/20"
+              className="relative w-full max-w-sm max-h-[85vh] flex flex-col bg-[#111] border border-orange-500/20 rounded-[2.5rem] p-6 shadow-2xl shadow-orange-900/20"
             >
               <button
                 onClick={() => setShowInfoModal(false)}
-                className="absolute top-5 right-5 p-2 bg-white/5 rounded-full text-white/40 hover:text-white transition-colors"
+                className="absolute top-5 right-5 p-2 bg-white/5 rounded-full text-white/40 hover:text-white transition-colors z-10"
               >
                 <X size={18} />
               </button>
 
-              <div className="text-center mb-8">
-                <div className="text-4xl mb-3">🎒</div>
-                <h2 className="text-2xl font-black text-white">About FoundIt</h2>
-                <p className="text-orange-300/60 text-xs mt-1 font-semibold uppercase tracking-widest">LSPU Lost &amp; Found System</p>
+              <div className="text-center mb-6 shrink-0 flex flex-col items-center">
+                <img src="/logo2.svg" alt="FoundIt Logo" className="w-16 h-16 mix-blend-screen drop-shadow-[0_0_24px_rgba(249,115,22,0.6)] object-contain mb-4" />
+                <h2 className="text-xl font-black text-white tracking-wide">About FoundIt</h2>
+                <p className="text-orange-300/60 text-[10px] mt-1.5 font-black uppercase tracking-widest">LSPU Lost & Found System</p>
               </div>
 
-              <div className="space-y-5">
+              <div className="space-y-3 overflow-y-auto pr-1 flex-1 min-h-0 relative">
                 {INFO_SECTIONS.map((s) => (
-                  <div key={s.title} className="flex gap-4 items-start p-4 bg-white/[0.04] rounded-2xl border border-white/5">
-                    <span className="text-2xl shrink-0">{s.icon}</span>
+                  <div key={s.title} className="flex gap-3 items-start p-3.5 bg-white/[0.04] rounded-2xl border border-white/5">
+                    <span className="text-xl shrink-0 mt-0.5">{s.icon}</span>
                     <div>
-                      <p className="font-black text-sm text-white mb-0.5">{s.title}</p>
-                      <p className="text-white/50 text-xs leading-relaxed">{s.body}</p>
+                      <p className="font-black text-xs text-white mb-0.5">{s.title}</p>
+                      <p className="text-white/50 text-[11px] leading-relaxed">{s.body}</p>
                     </div>
                   </div>
                 ))}
@@ -479,7 +479,7 @@ export default function HomePage() {
 
               <button
                 onClick={() => setShowInfoModal(false)}
-                className="mt-8 w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95"
+                className="mt-6 shrink-0 w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95"
               >
                 GOT IT
               </button>

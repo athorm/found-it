@@ -52,7 +52,7 @@ export default function BannedPage() {
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <img
-            src="/logo.png"
+            src="/logo2.svg"
             alt="FoundIt Logo"
             className="w-20 h-20 rounded-2xl mix-blend-screen drop-shadow-[0_0_15px_rgba(249,115,22,0.4)]"
           />

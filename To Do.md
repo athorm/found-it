@@ -59,3 +59,13 @@
 - [ ] Implement the use of AI to detect if the picture of the item is appropriate to be posted or not. (Use AI for the detection of the item picture)
 - [ ] Implement the use of AI to detect if the user is only trolling or not when messaging or claiming an item.
 - [ ] Implement the use of AI to flagged inappropriate messages so that they cannot message that kind of messages anymore or at least warn the user that the message is inappropriate. 
+
+## Admin Moderation Refinements (Priority 3.5 — Done May 10, 2025)
+- [x] **Context-aware batch action bar (Post Moderation)** — The batch action bar in Post Moderation now shows only relevant buttons depending on the active tab: Pending→Approve+Reject+Delete, Approved→Reject+Delete only, Rejected→Approve+Delete only, All Items→all options.
+- [x] **Context-aware batch action bar (User Moderation)** — Same logic for users: Pending→Approve+Reject+Delete, Verified→Reject+Delete, Rejected→Approve+Delete, Banned→Unban+Delete, All→all options.
+- [x] **BanReasonModal with premade reason chips** — Ban modal now shows 5 clickable premade reason chips (e.g., "Repeated violation of community guidelines", "Harassment or threatening behavior") that auto-fill the textarea. Admins can still type a custom reason.
+- [x] **UnbanReasonModal** — New green-themed modal appears when unbanning a user, with 4 premade unban reasons (e.g., "Successful appeal — user reinstated", "Ban period completed") and a custom text area.
+- [x] **Automated ban email notification** — When a user is banned, an automated branded email (dark/red theme) is sent to their email with the ban reason via Nodemailer/Gmail SMTP.
+- [x] **Automated unban email notification** — When a user is unbanned, an automated branded email (dark/green theme) is sent to their email with the unban reason.
+- [x] **Approve button green glassmorphic styling** — All Approve buttons across admin UI updated to `bg-green-600/30 text-green-400 border border-green-500/30` for a consistent glassmorphic look.
+- [x] **Toast shows email sent status** — After ban/unban, the toast notification includes "— email sent" if the email was successfully delivered.

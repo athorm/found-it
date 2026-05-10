@@ -217,7 +217,7 @@ export default function ProfilePage() {
           <ArrowLeft size={24} />
         </button>
         <h1 className="text-3xl font-extrabold tracking-tight text-orange-400">Profile</h1>
-        <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-xl mix-blend-screen drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
+        <img src="/logo2.svg" alt="Logo" className="w-8 h-8 mix-blend-screen drop-shadow-[0_0_8px_rgba(249,115,22,0.4)] object-contain" />
       </div>
 
       <main className="px-6 mt-10 max-w-lg mx-auto space-y-8">

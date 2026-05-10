@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { User, GraduationCap, Mail, Lock, Upload, FileText, X, Image as ImageIcon } from 'lucide-react'
+import { User, GraduationCap, Mail, Lock, Upload, FileText, X, Image as ImageIcon, Eye, EyeOff } from 'lucide-react'
 
 export default function LoginPage() {
     const [isSignUp, setIsSignUp] = useState(false)
@@ -17,6 +17,7 @@ export default function LoginPage() {
     const [verificationFile, setVerificationFile] = useState(null)
     const [filePreview, setFilePreview] = useState(null)
     const [loading, setLoading] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
     const [error, setError] = useState('')
     const [message, setMessage] = useState('')
     const fileInputRef = useRef(null)
@@ -194,7 +195,7 @@ export default function LoginPage() {
             <div className="w-full max-w-md bg-black/40 backdrop-blur-2xl border border-orange-500/20 rounded-3xl p-8 shadow-2xl shadow-orange-500/10">
                 <div className="text-center mb-8">
                     <div className="flex justify-center mb-4">
-                        <img src="/logo.png" alt="FoundIt Logo" className="w-20 h-20 rounded-2xl mix-blend-screen drop-shadow-[0_0_15px_rgba(249,115,22,0.4)]" />
+                        <img src="/logo2.svg" alt="FoundIt Logo" className="w-20 h-20 rounded-2xl mix-blend-screen drop-shadow-[0_0_15px_rgba(249,115,22,0.4)]" />
                     </div>
                     <h1 className="text-5xl font-extrabold gradient-text mb-2 tracking-tight">FoundIt</h1>
                     <p className="text-orange-300/70 text-sm font-semibold">LSPU Lost and Found System</p>
@@ -280,14 +281,21 @@ export default function LoginPage() {
                     <div className="relative group">
                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500/60 w-5 h-5 group-focus-within:text-orange-500 transition-colors" />
                         <input
-                            type="password"
+                            type={showPassword ? "text" : "password"}
                             name="password"
                             placeholder="Password"
                             value={formData.password}
                             onChange={handleInputChange}
                             required
-                            className="w-full pl-12 pr-4 py-3 bg-white/5 border border-orange-500/20 rounded-xl text-white placeholder-orange-300/40 focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/50 transition-all"
+                            className="w-full pl-12 pr-12 py-3 bg-white/5 border border-orange-500/20 rounded-xl text-white placeholder-orange-300/40 focus:outline-none focus:ring-2 focus:ring-orange-500/40 focus:border-orange-500/50 transition-all"
                         />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-orange-500/40 hover:text-orange-500 transition-colors"
+                        >
+                            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        </button>
                     </div>
 
                     {/* Verification Document Upload — only on Sign Up */}

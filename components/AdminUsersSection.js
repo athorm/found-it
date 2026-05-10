@@ -11,7 +11,7 @@ const USER_TABS = [
     { key: 'pending', label: 'Pending', icon: Clock, color: 'text-orange-400', bg: 'bg-orange-500' },
     { key: 'approved', label: 'Verified', icon: CheckCircle, color: 'text-orange-400', bg: 'bg-orange-500' },
     { key: 'rejected', label: 'Rejected', icon: XCircle, color: 'text-orange-400', bg: 'bg-orange-500' },
-    { key: 'banned', label: 'Banned', icon: Ban, color: 'text-red-400', bg: 'bg-red-500' },
+    { key: 'banned', label: 'Banned', icon: Ban, color: 'text-orange-400', bg: 'bg-orange-500' },
     { key: 'all', label: 'All Users', icon: Users, color: 'text-orange-400', bg: 'bg-orange-500' },
 ];
 
@@ -44,6 +44,105 @@ function RejectReasonModal({ onConfirm, onCancel, processing }) {
     );
 }
 
+const BAN_PREMADE_REASONS = [
+    'Repeated violation of community guidelines',
+    'Posting inappropriate or offensive content',
+    'Harassment or threatening behavior',
+    'Fraudulent activity or scam attempts',
+    'Impersonation or fake account',
+];
+
+const UNBAN_PREMADE_REASONS = [
+    'Account reviewed — no violations found',
+    'Ban period completed',
+    'Successful appeal — user reinstated',
+    'Admin review — false positive',
+];
+
+function BanReasonModal({ onConfirm, onCancel, processing }) {
+    const [reason, setReason] = useState('');
+    return (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onCancel} />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-[#1a1a1a] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+                <div className="w-14 h-14 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-5">
+                    <Ban size={28} className="text-red-500" />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2 text-center">Ban User</h3>
+                <p className="text-white/40 text-xs mb-4 text-center">Select a reason or type a custom one. The user will be notified via email.</p>
+                {/* Premade reason chips */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                    {BAN_PREMADE_REASONS.map((r) => (
+                        <button key={r} onClick={() => setReason(r)} type="button"
+                            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${
+                                reason === r
+                                    ? 'bg-red-500/20 border-red-500/40 text-red-300'
+                                    : 'bg-white/5 border-white/10 text-white/40 hover:border-red-500/30 hover:text-white/60'
+                            }`}>
+                            {r}
+                        </button>
+                    ))}
+                </div>
+                <textarea
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="Or type a custom reason..."
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-white/20 outline-none focus:border-red-500/50 resize-none h-20 mb-4"
+                />
+                <div className="space-y-3">
+                    <button onClick={() => onConfirm(reason || 'Violated community guidelines')} disabled={processing}
+                        className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                        {processing ? <Loader2 size={14} className="animate-spin" /> : <><Ban size={14} /> BAN USER</>}
+                    </button>
+                    <button onClick={onCancel} className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl font-bold text-xs tracking-widest">CANCEL</button>
+                </div>
+            </motion.div>
+        </div>
+    );
+}
+
+function UnbanReasonModal({ onConfirm, onCancel, processing }) {
+    const [reason, setReason] = useState('');
+    return (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onCancel} />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-[#1a1a1a] border border-green-500/30 rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+                <div className="w-14 h-14 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-5">
+                    <ShieldCheck size={28} className="text-green-400" />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2 text-center">Unban User</h3>
+                <p className="text-white/40 text-xs mb-4 text-center">Select a reason or type a custom one. The user will be notified via email.</p>
+                {/* Premade reason chips */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                    {UNBAN_PREMADE_REASONS.map((r) => (
+                        <button key={r} onClick={() => setReason(r)} type="button"
+                            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${
+                                reason === r
+                                    ? 'bg-green-500/20 border-green-500/40 text-green-300'
+                                    : 'bg-white/5 border-white/10 text-white/40 hover:border-green-500/30 hover:text-white/60'
+                            }`}>
+                            {r}
+                        </button>
+                    ))}
+                </div>
+                <textarea
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="Or type a custom reason..."
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-white/20 outline-none focus:border-green-500/50 resize-none h-20 mb-4"
+                />
+                <div className="space-y-3">
+                    <button onClick={() => onConfirm(reason || 'Unbanned by admin')} disabled={processing}
+                        className="w-full py-3 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl font-bold text-xs tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                        {processing ? <Loader2 size={14} className="animate-spin" /> : <><ShieldCheck size={14} /> UNBAN USER</>}
+                    </button>
+                    <button onClick={onCancel} className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl font-bold text-xs tracking-widest">CANCEL</button>
+                </div>
+            </motion.div>
+        </div>
+    );
+}
+
 function DocPreviewModal({ url, onClose }) {
     if (!url) return null;
     const isPdf = url.includes('.pdf');
@@ -65,7 +164,7 @@ function DocPreviewModal({ url, onClose }) {
     );
 }
 
-export default function AdminUsersSection() {
+export default function AdminUsersSection({ refreshTrigger }) {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
@@ -74,6 +173,8 @@ export default function AdminUsersSection() {
     const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, banned: 0, total: 0 });
     const [toast, setToast] = useState(null);
     const [rejectTarget, setRejectTarget] = useState(null);
+    const [banTarget, setBanTarget] = useState(null);
+    const [unbanTarget, setUnbanTarget] = useState(null);
     const [previewDocUrl, setPreviewDocUrl] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [selectedUsers, setSelectedUsers] = useState(new Set());
@@ -111,7 +212,7 @@ export default function AdminUsersSection() {
         } catch { }
     }, []);
 
-    useEffect(() => { fetchUsers(); fetchStats(); }, [fetchUsers, fetchStats]);
+    useEffect(() => { fetchUsers(); fetchStats(); }, [fetchUsers, fetchStats, refreshTrigger]);
 
     const handleDeleteUser = async (userId) => {
         try {
@@ -181,7 +282,7 @@ export default function AdminUsersSection() {
         } catch (err) { showToast(err.message, 'error'); } finally { setProcessing(false); }
     };
 
-    const handleBanToggle = async (userId, currentlyBanned) => {
+    const handleBanToggle = async (userId, currentlyBanned, customReason = '') => {
         try {
             setProcessing(true);
             const headers = await getAuthHeaders();
@@ -191,12 +292,14 @@ export default function AdminUsersSection() {
                 body: JSON.stringify({
                     targetUserId: userId,
                     action: currentlyBanned ? 'unban' : 'ban',
-                    reason: currentlyBanned ? 'Unbanned by admin' : 'Banned by admin from Users panel',
+                    reason: currentlyBanned ? (customReason || 'Unbanned by admin') : (customReason || 'Banned by admin from Users panel'),
                 }),
             });
             const json = await res.json();
             if (!res.ok) throw new Error(json.error);
-            showToast(currentlyBanned ? 'User unbanned successfully' : 'User banned successfully');
+            showToast(`User ${currentlyBanned ? 'unbanned' : 'banned'} successfully${json.emailSent ? ' — email sent' : ''}`);
+            setBanTarget(null);
+            setUnbanTarget(null);
             fetchUsers(); fetchStats();
         } catch (err) { showToast(err.message, 'error'); } finally { setProcessing(false); }
     };
@@ -326,17 +429,17 @@ export default function AdminUsersSection() {
                                         <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                                             {u.verification_status === 'pending' && (<>
                                                 <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
-                                                    className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white border-2 border-transparent rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    className="flex-1 py-2.5 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
                                                     <CheckCircle size={12} /> APPROVE
                                                 </button>
                                                 <button onClick={() => setRejectTarget(u.id)} disabled={processing}
-                                                    className="flex-1 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border-2 border-red-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    className="flex-1 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
                                                     <XCircle size={12} /> REJECT
                                                 </button>
                                             </>)}
                                             {u.verification_status === 'rejected' && (
                                                 <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
-                                                    className="flex-1 py-2.5 bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    className="flex-1 py-2.5 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
                                                     <CheckCircle size={12} /> APPROVE
                                                 </button>
                                             )}
@@ -348,12 +451,12 @@ export default function AdminUsersSection() {
                                             )}
                                             {/* Ban / Unban toggle */}
                                             {u.is_banned ? (
-                                                <button onClick={() => handleBanToggle(u.id, true)} disabled={processing}
-                                                    className="flex-1 py-2.5 bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                <button onClick={() => setUnbanTarget(u.id)} disabled={processing}
+                                                    className="flex-1 py-2.5 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
                                                     <ShieldCheck size={12} /> UNBAN
                                                 </button>
                                             ) : u.verification_status === 'approved' && (
-                                                <button onClick={() => handleBanToggle(u.id, false)} disabled={processing}
+                                                <button onClick={() => setBanTarget(u.id)} disabled={processing}
                                                     className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl transition-all disabled:opacity-50" title="Ban user">
                                                     <Ban size={12} />
                                                 </button>
@@ -387,6 +490,8 @@ export default function AdminUsersSection() {
             {/* Modals */}
             <AnimatePresence>{previewDocUrl && <DocPreviewModal url={previewDocUrl} onClose={() => setPreviewDocUrl(null)} />}</AnimatePresence>
             <AnimatePresence>{rejectTarget && <RejectReasonModal processing={processing} onCancel={() => setRejectTarget(null)} onConfirm={(reason) => handleModerate(rejectTarget, 'reject', reason)} />}</AnimatePresence>
+            <AnimatePresence>{banTarget && <BanReasonModal processing={processing} onCancel={() => setBanTarget(null)} onConfirm={(reason) => handleBanToggle(banTarget, false, reason)} />}</AnimatePresence>
+            <AnimatePresence>{unbanTarget && <UnbanReasonModal processing={processing} onCancel={() => setUnbanTarget(null)} onConfirm={(reason) => handleBanToggle(unbanTarget, true, reason)} />}</AnimatePresence>
 
             {/* Delete user confirm */}
             <AnimatePresence>{deleteTarget && (
@@ -434,16 +539,29 @@ export default function AdminUsersSection() {
                     <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }}
                         className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-6 py-4 bg-[#1a1a1a]/95 border border-white/10 rounded-2xl backdrop-blur-2xl shadow-2xl">
                         <span className="text-xs font-black text-white/60 uppercase tracking-widest mr-2">{selectedUsers.size} selected</span>
-                        <button onClick={() => handleBatchModerate('approve')} disabled={processing}
-                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white border-2 border-transparent rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
-                            <CheckCircle size={12} /> Approve
-                        </button>
-                        <button onClick={() => handleBatchModerate('reject')} disabled={processing}
-                            className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border-2 border-red-500/30 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
-                            <XCircle size={12} /> Reject
-                        </button>
+                        {/* Approve: show on pending, rejected, all */}
+                        {(activeTab === 'pending' || activeTab === 'rejected' || activeTab === 'all') && (
+                            <button onClick={() => handleBatchModerate('approve')} disabled={processing}
+                                className="px-4 py-2 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
+                                <CheckCircle size={12} /> Approve
+                            </button>
+                        )}
+                        {/* Reject: show on pending, approved, all */}
+                        {(activeTab === 'pending' || activeTab === 'approved' || activeTab === 'all') && (
+                            <button onClick={() => handleBatchModerate('reject')} disabled={processing}
+                                className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
+                                <XCircle size={12} /> Reject
+                            </button>
+                        )}
+                        {/* Unban: show on banned, all */}
+                        {(activeTab === 'banned' || activeTab === 'all') && (
+                            <button onClick={() => handleBatchModerate('approve')} disabled={processing}
+                                className="px-4 py-2 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
+                                <ShieldCheck size={12} /> Unban
+                            </button>
+                        )}
                         <button onClick={() => setBatchDeleteConfirm(true)} disabled={processing}
-                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white border-2 border-transparent rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
+                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
                             <Trash2 size={12} /> Delete
                         </button>
                         <button onClick={() => setSelectedUsers(new Set())}

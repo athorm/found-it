@@ -45,7 +45,7 @@
 | Image Cropping | react-easy-crop | 5.5.7 | Client-side crop before upload |
 | BaaS | Supabase | 2.105.1 | Auth, DB, Storage, Realtime |
 | SSR Auth | @supabase/ssr | 0.10.2 | Server-side session handling |
-| Email Validation | Nodemailer | 8.0.7 | MX record verification |
+| Email Validation & Notifications | Nodemailer | 8.0.7 | MX record verification, ban/unban & moderation alerts |
 | Database | PostgreSQL 17 | via Supabase | Relational data, RLS, triggers |
 
 ### 1.3 Design Language
@@ -255,6 +255,11 @@ Each module performs a single, well-defined function:
 
 **All admin mutations** go through server-side API routes (`/api/admin/`) that use the `SUPABASE_SERVICE_ROLE_KEY` — the anon key's RLS policies prevent these operations from the client.
 
+**Moderation Workflow Enhancements:**
+- **Premade Reason Chips**: Admin modals (Reject, Ban, Unban) now feature clickable chips for common violations, ensuring consistency and speed.
+- **Context-Aware Batch Actions**: The batch action bar dynamically filters available actions (Approve/Reject/Unban) based on the active moderation tab.
+- **Automated Email Notifications**: Critical moderation actions (Ban, Unban, Verification Approval/Rejection) trigger automated emails to users explaining the decision and providing relevant reasons.
+
 **Design:** Desktop-optimized grid layout with sidebar filters, stat dashboard at top, glassmorphic cards throughout.
 
 ---
@@ -360,6 +365,13 @@ Each module performs a single, well-defined function:
 **Purpose:** Checks that the provided email domain has valid MX records (is a real email domain).
 - Uses Nodemailer's `dns.resolveMx()` under the hood
 - Returns `{ valid: true/false }`
+
+### 6.6 POST /api/admin/ban-user — User Suspension
+**Purpose:** Toggles a user's ban status and sends appropriate email notifications.
+- Authenticates admin role via service role
+- Updates `profiles.is_banned` and `profiles.ban_reason`
+- Triggers `sendBanNotification` or `sendUnbanNotification` via `lib/mailer.js`
+- Returns `{ success: true, action: 'banned'|'unbanned', emailSent: true/false }`
 
 ---
 
@@ -529,9 +541,9 @@ found-it/
 2. Chat supports text only (no image sharing)
 3. No push notifications — users must open the app
 4. No profanity filter in chat messages
-5. No user reporting / ban system
+5. No user reporting / ban system (REMOVED — Implemented)
 6. No pagination on large item lists
-7. No automated email notifications
+7. No automated email notifications (PARTIALLY REMOVED — Implemented for moderation)
 
 ### Planned Enhancements (Priority 3.5)
 1. **User Reporting & Ban System**: Report users for inappropriate chat behavior; admin reviews with chat context; temporary bans with appeal flow

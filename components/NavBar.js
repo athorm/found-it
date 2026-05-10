@@ -2,9 +2,11 @@
 import { Search, Tag, Plus, MessageCircle, User, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
 export default function NavBar({ activePage, onPlusClick }) {
+    const router = useRouter();
     const [unreadCount, setUnreadCount] = useState(0);
     const [isAdmin, setIsAdmin] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
@@ -13,7 +15,7 @@ export default function NavBar({ activePage, onPlusClick }) {
         if (onPlusClick) {
             onPlusClick();
         } else {
-            window.location.href = '/post';
+            router.push('/post');
         }
     };
 
@@ -87,8 +89,8 @@ export default function NavBar({ activePage, onPlusClick }) {
 
     return (
         <nav className="fixed bottom-6 left-6 right-6 h-18 bg-black/50 backdrop-blur-2xl rounded-[2.5rem] border border-orange-500/20 shadow-2xl flex items-center justify-around px-4 z-50">
-            <NavIcon icon={<Search size={22} />} label="Explore" active={activePage === 'home'} onClick={() => window.location.href = '/Home'} />
-            <NavIcon icon={<Tag size={22} />} label="Items" active={activePage === 'items'} onClick={() => window.location.href = '/items'} />
+            <NavIcon icon={<Search size={22} />} label="Explore" active={activePage === 'home'} onClick={() => router.push('/Home')} />
+            <NavIcon icon={<Tag size={22} />} label="Items" active={activePage === 'items'} onClick={() => router.push('/items')} />
             <motion.button
                 whileTap={{ scale: 0.92 }}
                 className="p-4 rounded-full -translate-y-6 border-4 border-black shadow-xl shadow-orange-500/40 bg-linear-to-br from-orange-500 to-orange-700 active:scale-90 transition-transform"
@@ -96,8 +98,8 @@ export default function NavBar({ activePage, onPlusClick }) {
             >
                 <Plus size={24} color="white" strokeWidth={3} />
             </motion.button>
-            <NavIcon icon={<MessageCircle size={22} />} label="Chat" active={activePage === 'chat'} onClick={() => window.location.href = '/chat'} badgeCount={unreadCount} />
-            <NavIcon icon={<User size={22} />} label="Profile" active={activePage === 'profile'} onClick={() => window.location.href = '/Profile'} />
+            <NavIcon icon={<MessageCircle size={22} />} label="Chat" active={activePage === 'chat'} onClick={() => router.push('/chat')} badgeCount={unreadCount} />
+            <NavIcon icon={<User size={22} />} label="Profile" active={activePage === 'profile'} onClick={() => router.push('/Profile')} />
 
             {/* Admin View button — only visible on desktop for admin users */}
             {isAdmin && isDesktop && (
@@ -105,7 +107,7 @@ export default function NavBar({ activePage, onPlusClick }) {
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     whileTap={{ scale: 0.92 }}
-                    onClick={() => window.location.href = '/admin'}
+                    onClick={() => router.push('/admin')}
                     className="absolute -top-14 right-4 flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase shadow-lg shadow-orange-500/30 transition-all border-2 border-orange-400/50"
                 >
                     <Shield size={14} strokeWidth={3} />

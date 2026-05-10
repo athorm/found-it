@@ -95,3 +95,9 @@ body {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.1) #0a0a0a;
 }
+
+/* Custom scrollable dropdown */
+.dropdown-scrollable {
+  max-height: 240px;
+  overflow-y: auto;
+}
