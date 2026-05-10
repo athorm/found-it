@@ -202,6 +202,10 @@ Each module performs a single, well-defined function:
 - Messages from the other party appear via the realtime subscription
 - Chat status changes (resolution confirmations) also trigger UI updates
 
+**Features:**
+- **Image Sharing:** Users can upload images via camera/gallery to Supabase Storage, displayed seamlessly in the chat.
+- **Profanity Filter:** Client-side filtering blocks inappropriate messages based on a JSON word list before they are sent.
+
 **Resolution flow:**
 - Either user can tap "Mark as Resolved" (or "Mark as Found" for lost items)
 - This updates `finder_confirmed_resolved` or `claimer_confirmed_resolved` in the `chats` table
@@ -249,9 +253,14 @@ Each module performs a single, well-defined function:
 
 #### Users Management (`AdminUsersSection.js`)
 - **User List**: All registered users with their verification status
-- **Actions**: Approve verification, Reject verification (with reason), Delete user account
+- **Actions**: Approve verification, Reject verification (with reason), Ban/Unban users, Delete user account
 - **Verification doc preview**: Admin can view the uploaded COR/Student ID before deciding
 - **Search**: Filter users by name or student number
+
+#### User Reports Management
+- **Reports Dashboard**: Review user reports with tabs for For Review, Dismissed, and Valid.
+- **Actions**: Dismiss reports, mark as valid, or mark as valid + ban user.
+- **Chat Context**: Detail modal shows the reporter, the reason, and the full chat context with sender profile labels to determine fault.
 
 **All admin mutations** go through server-side API routes (`/api/admin/`) that use the `SUPABASE_SERVICE_ROLE_KEY` — the anon key's RLS policies prevent these operations from the client.
 
@@ -537,20 +546,19 @@ found-it/
 ## 10. KNOWN LIMITATIONS & FUTURE ROADMAP
 
 ### Current Limitations
-1. Admin Dashboard not fully optimized for mobile screens
-2. Chat supports text only (no image sharing)
-3. No push notifications — users must open the app
-4. No profanity filter in chat messages
-5. No user reporting / ban system (REMOVED — Implemented)
-6. No pagination on large item lists
-7. No automated email notifications (PARTIALLY REMOVED — Implemented for moderation)
+1. No push notifications — users must rely on in-app badges and automated emails.
+2. No pagination on large item lists — fetching may impact performance at scale.
+3. Single Campus Only — designed specifically for one LSPU campus without multi-campus support.
+4. Manual Admin Review — all postings and reports require manual intervention (no AI pre-screening).
 
-### Planned Enhancements (Priority 3.5)
-1. **User Reporting & Ban System**: Report users for inappropriate chat behavior; admin reviews with chat context; temporary bans with appeal flow
-2. **In-Chat Image Sharing**: Photo uploads in chat via Supabase Storage with client-side compression
-3. **Profanity Filter**: JSON word-list-based real-time content blocking with user warnings
-4. **Dynamic Home Greetings**: Context-aware greetings based on time of day
-5. **Admin Mobile Optimization**: Responsive admin dashboard layout
+### Successfully Implemented Enhancements (Priority 3.5 & Below)
+- **User Reporting & Ban System**: Admins can review reports with full chat context and issue bans with premade reasons.
+- **Automated Moderation Emails**: Branded Nodemailer emails sent for account verification and ban/unban events.
+- **In-Chat Image Sharing**: Users can upload and share photos within private chats.
+- **Profanity Filter**: Real-time blocking of inappropriate messages using a local JSON word list.
+- **Dynamic Home Greetings**: Context-aware greetings based on the time of day.
+- **Admin Mobile Optimization**: Responsive adjustments allowing admins to manage the platform from mobile devices.
+- **Context-Aware Admin Modals**: Batch action bars dynamically update available options based on the active moderation tab.
 
 ---
 
