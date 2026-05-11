@@ -88,7 +88,18 @@ Each module performs a single, well-defined function:
 - Admin-privileged operations route through `/api/admin/` endpoints, keeping the service-role key server-side
 - Components communicate via props and callbacks, not shared global mutable state
 - The `useAuthGuard` → `useAdminGuard` chain uses composition, not inheritance
-
++
++### 2.4 Data Management (CRUD Operations)
++The system's data lifecycle is governed by the CRUD paradigm, ensuring that every entity (Items, Profiles, Chats, Messages, Reports) is managed through standardized operations:
++
++| Entity | Create | Read | Update | Delete |
++|---|---|---|---|---|
++| **Items** | `/post` page | `/items` grid | Resolution Toggle | `deleteItem()` |
++| **Profiles** | `/login` (Sign Up) | `/Profile` page | Avatar/Password | `deleteAccount()` |
++| **Chats** | `/api/chats` | Chat List | Resolution Flags | `deleteChat()` |
++| **Messages** | `sendMessage()` | Realtime Hook | `markAsRead()` | Cascade Deletion |
++| **Reports** | `/api/report-user` | Admin Dashboard | Status Update | Admin Delete |
++
 ---
 
 ## 3. PAGE-BY-PAGE ARCHITECTURE
@@ -383,75 +394,37 @@ Each module performs a single, well-defined function:
 
 ## 6. API ROUTES
 
-### 6.1 POST /api/chats — Chat Creation
+### 6.1 POST /api/chats — Chat Creation [CREATE/READ]
 **File:** `app/api/chats/route.js`
 **Purpose:** Creates a new chat or returns an existing one for a given item + user pair.
-- Authenticates via Bearer token
-- Prevents self-messaging (finder cannot message themselves)
-- Deduplicates: checks for existing chat before creating
-- Returns `{ chatId }` — client navigates to `/chat?id={chatId}`
-
-### 6.2 GET /api/admin/verify — Admin Role Check
+...
+### 6.2 GET /api/admin/verify — Admin Role Check [READ]
 **File:** `app/api/admin/verify/route.js`
-**Purpose:** Server-side verification that the requesting user has `role = 'admin'` in their profile.
-- Uses service role key to bypass RLS
-- Returns `{ isAdmin: true/false }`
-
-### 6.3 GET|PATCH|DELETE /api/admin/items — Item Moderation
+...
+### 6.3 GET|PATCH|DELETE /api/admin/items — Item Moderation [READ/UPDATE/DELETE]
 **File:** `app/api/admin/items/route.js`
 **Purpose:** Full CRUD for admin item moderation.
-- **GET** `?status=pending|approved|rejected|all` — fetches items with poster profile joins
-- **PATCH** `{ itemId, action: 'approve'|'reject' }` or `{ itemIds: [...], action }` for batch
-- **DELETE** `{ itemId }` or `{ itemIds: [...] }` for single/batch permanent deletion
-- Creates notifications on approve/reject via the `notifications` table
-
-### 6.4 GET|PATCH|DELETE /api/admin/users — User Management
+...
+### 6.4 GET|PATCH|DELETE /api/admin/users — User Management [READ/UPDATE/DELETE]
 **File:** `app/api/admin/users/route.js`
-**Purpose:** Admin user verification and account management.
-- **GET** — lists all profiles with verification info
-- **PATCH** — approve/reject verification, sends email notification via `lib/mailer.js`
-- **DELETE** — permanently deletes user via `supabase.auth.admin.deleteUser()`
-
-### 6.5 POST /api/admin/ban-user — User Suspension
+...
+### 6.5 POST /api/admin/ban-user — User Suspension [UPDATE]
 **File:** `app/api/admin/ban-user/route.js`
-**Purpose:** Toggles a user's ban status and sends appropriate email notifications.
-- Authenticates admin role via service role
-- Updates `profiles.is_banned` and `profiles.ban_reason`
-- Triggers `sendBanNotification` or `sendUnbanNotification` via `lib/mailer.js`
-- Returns `{ success: true, action: 'banned'|'unbanned', emailSent: true/false }`
-
-### 6.6 GET|PATCH|DELETE /api/admin/reports — Report Management
+...
+### 6.6 GET|PATCH|DELETE /api/admin/reports — Report Management [READ/UPDATE/DELETE]
 **File:** `app/api/admin/reports/route.js`
-**Purpose:** Admin review of user reports.
-- **GET** — fetches all reports with reporter/reported profiles and chat context
-- **PATCH** `{ reportId, status, banUser?, banReason? }` — dismiss, mark valid, or valid+ban
-- **DELETE** `?id=` (single) or `{ ids: [...] }` (batch) — permanent deletion
-
-### 6.7 POST /api/report-user — User Reporting
+...
+### 6.7 POST /api/report-user — User Reporting [CREATE]
 **File:** `app/api/report-user/route.js`
-**Purpose:** Allows users to report another user from within a chat.
-- Authenticates via Bearer token
-- Stores report with `reporter_id`, `reported_user_id`, `chat_id`, and `reason`
-- Status defaults to `'pending'` for admin review
-
-### 6.8 POST /api/upload-verification — Document Upload
+...
+### 6.8 POST /api/upload-verification — Document Upload [CREATE/UPDATE]
 **File:** `app/api/upload-verification/route.js`
-**Purpose:** Uploads a COR/Student ID to Supabase Storage and updates the profile.
-- Accepts multipart form data with file
-- Uploads to `verifications/{userId}/{filename}`
-- Updates `profiles.verification_doc_url` and sets status to `'pending'`
-
-### 6.9 POST /api/validate-email — Email MX Validation
+...
+### 6.9 POST /api/validate-email — Email MX Validation [READ]
 **File:** `app/api/validate-email/route.js`
-**Purpose:** Checks that the provided email domain has valid MX records (is a real email domain).
-- Uses Node.js `dns.resolveMx()` for server-side validation
-- Returns `{ valid: true/false }`
-
-### 6.10 DELETE /api/account — Account Self-Deletion
+...
+### 6.10 DELETE /api/account — Account Self-Deletion [DELETE]
 **File:** `app/api/account/route.js`
-**Purpose:** Allows a user to permanently delete their own account.
-- Authenticates via Bearer token
-- Uses `supabase.auth.admin.deleteUser()` via service role
 
 ---
 
