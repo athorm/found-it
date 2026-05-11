@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Search, Tag, Plus, MessageCircle, User, ChevronRight, LogOut, Trash2, Camera, Image, X, Send, Loader2, ArrowLeft, Lock, Shield } from 'lucide-react';
+import { Search, Tag, Plus, MessageCircle, User, ChevronRight, LogOut, Trash2, Camera, Image, X, Send, Loader2, ArrowLeft, Lock, Shield, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 
@@ -31,6 +31,8 @@ export default function ProfilePage() {
   const [passwordMsg, setPasswordMsg] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [showNewPw, setShowNewPw] = useState(false);
+  const [showConfirmPw, setShowConfirmPw] = useState(false);
 
   const router = useRouter();
 
@@ -203,14 +205,14 @@ export default function ProfilePage() {
   };
 
   if (authLoading || loading) return (
-    <div className="min-h-screen flex flex-col items-center justify-center text-white bg-black">
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center text-white">
       <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4" />
       <p className="font-medium opacity-50">Loading profile...</p>
     </div>
   );
 
   return (
-    <div className="min-h-screen text-white pb-20 font-sans bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233]">
+    <div className="min-h-screen pb-20 font-sans">
       {/* Header */}
       <div className="sticky top-0 z-20 backdrop-blur-md bg-black/40 border-b border-orange-500/20 px-6 pt-4 pb-6 flex items-center justify-between">
         <button onClick={() => router.push('/Home')} className="p-2 hover:bg-white/5 rounded-full transition text-orange-400">
@@ -313,25 +315,43 @@ export default function ProfilePage() {
               <h3 className="text-xl font-bold mb-1">Change Password</h3>
               <p className="text-orange-300/50 text-xs mb-6">Must be at least 6 characters.</p>
               <div className="space-y-3">
-                <input
-                  type="password"
-                  placeholder="New Password"
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                  className="w-full bg-white/5 border border-orange-500/20 p-4 rounded-2xl text-white outline-none placeholder:text-white/30 focus:border-orange-500/50"
-                />
-                <input
-                  type="password"
-                  placeholder="Confirm Password"
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  className="w-full bg-white/5 border border-orange-500/20 p-4 rounded-2xl text-white outline-none placeholder:text-white/30 focus:border-orange-500/50"
-                />
+                <div className="relative">
+                  <input
+                    type={showNewPw ? 'text' : 'password'}
+                    placeholder="New Password"
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    className="w-full bg-white/5 border border-orange-500/20 p-4 pr-12 rounded-2xl text-white outline-none placeholder:text-white/30 focus:border-orange-500/50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPw(p => !p)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-orange-400 transition-colors"
+                  >
+                    {showNewPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showConfirmPw ? 'text' : 'password'}
+                    placeholder="Confirm Password"
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    className="w-full bg-white/5 border border-orange-500/20 p-4 pr-12 rounded-2xl text-white outline-none placeholder:text-white/30 focus:border-orange-500/50"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPw(p => !p)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-orange-400 transition-colors"
+                  >
+                    {showConfirmPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
                 {passwordMsg && <p className="text-xs text-center text-orange-300/80 px-2">{passwordMsg}</p>}
                 <button onClick={handleChangePassword} disabled={changingPassword} className="w-full py-4 bg-orange-500 hover:bg-orange-600 rounded-2xl font-bold disabled:opacity-50 transition-all">
                   {changingPassword ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'Update Password'}
                 </button>
-                <button onClick={() => { setShowPasswordModal(false); setPasswordMsg(''); setNewPassword(''); setConfirmPassword(''); }} className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-white/50">
+                <button onClick={() => { setShowPasswordModal(false); setPasswordMsg(''); setNewPassword(''); setConfirmPassword(''); setShowNewPw(false); setShowConfirmPw(false); }} className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-white/50">
                   Cancel
                 </button>
               </div>

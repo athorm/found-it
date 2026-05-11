@@ -197,7 +197,7 @@ function PostItemContent() {
   // Submitted confirmation screen
   if (submitted) {
     return (
-      <div className="min-h-screen text-white flex flex-col items-center justify-center p-6 bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233]">
+      <div className="min-h-screen text-white flex flex-col items-center justify-center p-6">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -215,7 +215,7 @@ function PostItemContent() {
   }
 
   return (
-    <div className="min-h-screen text-white p-6 bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233]">
+    <div className="min-h-screen text-white p-6">
       <header className="flex items-center gap-4 mb-4">
         <button onClick={() => router.back()} className="text-orange-400 p-2 bg-white/5 rounded-full">
           <ArrowLeft size={20} />

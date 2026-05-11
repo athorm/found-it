@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import {
@@ -26,6 +26,13 @@ export default function ItemsPage() {
   const [items, setItems] = useState([]);
   const [userItems, setUserItems] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // ─── Cursor-Based Pagination State ───
+  const PAGE_SIZE = 12;
+  const [cursor, setCursor] = useState(null);       // created_at of last loaded item
+  const [hasMore, setHasMore] = useState(true);      // false when no more pages
+  const [loadingMore, setLoadingMore] = useState(false); // true while fetching next page
+  const sentinelRef = useRef(null);                  // IntersectionObserver target
 
   const [locationFilter, setLocationFilter] = useState('All');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -98,7 +105,7 @@ export default function ItemsPage() {
     localStorage.setItem("itemsViewMode", viewMode);
   }, [viewMode]);
 
-  useEffect(() => { fetchItems(); }, [activeTab]);
+  useEffect(() => { fetchItems(false); }, [activeTab]);
 
   // Called by ItemDetailModal after a status toggle — keeps list in sync without refetch
   const handleStatusUpdate = (itemId, newStatus) => {
@@ -117,7 +124,7 @@ export default function ItemsPage() {
   useEffect(() => {
     window.onItemDeleted = handleItemDeleted;
 
-    // Real-time subscription for item updates (status changes, etc.)
+    // Real-time subscription for item updates (status changes, new inserts, etc.)
     const channel = supabase
       .channel('items-realtime-updates')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'items' }, (payload) => {
@@ -125,6 +132,12 @@ export default function ItemsPage() {
         setItems(updateList);
         setUserItems(updateList);
         setSelectedItem(prev => (prev?.id === payload.new.id ? { ...prev, ...payload.new } : prev));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'items' }, (payload) => {
+        // Prepend newly approved items so the list stays fresh without a full refetch
+        if (payload.new?.moderation_status === 'approved') {
+          setItems(prev => prev.some(i => i.id === payload.new.id) ? prev : [payload.new, ...prev]);
+        }
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'items' }, (payload) => {
         handleItemDeleted(payload.old.id);
@@ -142,25 +155,99 @@ export default function ItemsPage() {
     setIsModalOpen(true);
   };
 
-  const fetchItems = async () => {
+  const fetchItems = async (isLoadMore = false) => {
     try {
-      setLoading(true);
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+        setCursor(null);
+        setHasMore(true);
+      }
+
       const formattedCategory = activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
       const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase
+
+      let query = supabase
         .from("items")
         .select("*")
         .eq("category", formattedCategory)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(PAGE_SIZE);
 
+      // If loading more, apply cursor to get the next batch
+      if (isLoadMore && cursor) {
+        query = query.lt("created_at", cursor);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
-      setItems(data || []);
-      if (user) setUserItems(data?.filter(item => item.user_id === user.id) || []);
+
+      const fetched = data || [];
+
+      // Determine if more pages exist
+      if (fetched.length < PAGE_SIZE) {
+        setHasMore(false);
+      }
+
+      // Update cursor to the created_at of the last item in this batch
+      if (fetched.length > 0) {
+        setCursor(fetched[fetched.length - 1].created_at);
+      }
+
+      if (isLoadMore) {
+        // Append new items, deduplicating by id
+        setItems(prev => {
+          const ids = new Set(prev.map(i => i.id));
+          return [...prev, ...fetched.filter(i => !ids.has(i.id))];
+        });
+      } else {
+        setItems(fetched);
+      }
+
+      // User items: always filtered from full items array (no separate pagination)
+      if (user) {
+        if (isLoadMore) {
+          setUserItems(prev => {
+            const ids = new Set(prev.map(i => i.id));
+            const newUserItems = fetched.filter(i => i.user_id === user.id && !ids.has(i.id));
+            return [...prev, ...newUserItems];
+          });
+        } else {
+          setUserItems(fetched.filter(item => item.user_id === user.id));
+        }
+      }
     } finally {
-      // Small delay ensures the grid doesn't flicker during rapid state updates[cite: 3]
-      setTimeout(() => setLoading(false), 100);
+      if (isLoadMore) {
+        setLoadingMore(false);
+      } else {
+        // Small delay ensures the grid doesn't flicker during rapid state updates
+        setTimeout(() => setLoading(false), 100);
+      }
     }
   };
+
+  // ─── IntersectionObserver: trigger loadMore when sentinel enters viewport ───
+  const loadMore = useCallback(() => {
+    if (!loadingMore && hasMore && !viewUserPosts) {
+      fetchItems(true);
+    }
+  }, [loadingMore, hasMore, cursor, activeTab, viewUserPosts]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) loadMore();
+      },
+      { rootMargin: '200px' } // Start loading 200px before the user reaches the bottom
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loadMore]);
 
   const applyFilters = (list) => {
     return list.filter(item => {
@@ -198,33 +285,47 @@ export default function ItemsPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="min-h-[100dvh] flex flex-col items-center justify-center gap-4">
         <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] bg-fixed text-white pb-32 font-sans">
+    <div className="min-h-full font-sans">
 
       {/* HEADER */}
-      <header className="sticky top-0 z-50 bg-transparent backdrop-blur-xl border-b border-white/5 p-5">
+      <header className="sticky top-0 z-50 bg-transparent backdrop-blur-xl border-b border-white/5 py-3 px-5">
         <div className="max-w-6xl mx-auto flex items-center justify-center">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(249,115,22,0.5)]">
-              <Package size={18} className="text-black" strokeWidth={3} />
-            </div>
-            <span className="text-lg font-black tracking-widest text-orange-500 hidden sm:block">FOUNDIT</span>
+            <img src="/logo2.svg" alt="FoundIt Logo" className="w-9 h-9 mix-blend-screen drop-shadow-[0_0_15px_rgba(249,115,22,0.6)] object-contain" />
+            <span className="text-lg font-black tracking-widest text-transparent bg-clip-text bg-linear-to-r from-orange-400 via-orange-500 to-orange-600 drop-shadow-[0_0_10px_rgba(249,115,22,0.2)] hidden sm:block">FOUNDIT</span>
           </div>
 
-          <div className="ml-auto flex bg-white/5 p-1 rounded-xl border border-white/10 backdrop-blur-md">
-            <button onClick={() => setViewMode("grid")} className={`p-2 rounded-lg transition-all ${viewMode === "grid" ? "bg-orange-500 text-white shadow-[0_0_20px_rgba(249,115,22,0.5)]" : "text-white/30"}`}><Grid size={18} /></button>
-            <button onClick={() => setViewMode("list")} className={`p-2 rounded-lg transition-all ${viewMode === "list" ? "bg-orange-500 text-white shadow-[0_0_20px_rgba(249,115,22,0.5)]" : "text-white/30"}`}><List size={18} /></button>
+          <div className="ml-auto">
+            <button 
+              onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")} 
+              className="bg-white/5 p-2 rounded-xl border border-white/10 backdrop-blur-md flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 shadow-[0_0_15px_rgba(0,0,0,0.2)]"
+              title={`Switch to ${viewMode === "grid" ? "List" : "Grid"} View`}
+            >
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={viewMode}
+                  initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  exit={{ opacity: 0, scale: 0.5, rotate: 90 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-center justify-center text-orange-400 drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]"
+                >
+                  {viewMode === "grid" ? <Grid size={18} /> : <List size={18} />}
+                </motion.div>
+              </AnimatePresence>
+            </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 pt-6 space-y-6">
+      <main className="max-w-6xl mx-auto px-6 pt-6 pb-40 space-y-6">
 
         {/* TAB SWITCHER */}
         <div className="relative flex bg-white/5 p-1.5 rounded-[1.5rem] border border-white/10 shadow-2xl backdrop-blur-md">
@@ -465,6 +566,7 @@ export default function ItemsPage() {
                   {currentDisplayList.length > 0 ? (
                     currentDisplayList.map((item, index) => (
                       <motion.div
+                        // Cap stagger delay to first PAGE_SIZE items to avoid slow renders on large lists
                         layout
                         key={item.id}
                         initial={{ opacity: 0, y: 20 }}
@@ -472,7 +574,7 @@ export default function ItemsPage() {
                           opacity: 1,
                           y: 0,
                           transition: {
-                            delay: index * 0.05,
+                            delay: Math.min(index, PAGE_SIZE) * 0.05,
                             duration: 0.4,
                             ease: [0.23, 1, 0.32, 1]
                           }
@@ -567,6 +669,25 @@ export default function ItemsPage() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* ─── Infinite Scroll Sentinel & Loading Indicator ─── */}
+          {!loading && !viewUserPosts && hasMore && currentDisplayList.length > 0 && (
+            <div ref={sentinelRef} className="flex justify-center py-8">
+              {loadingMore && (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-6 h-6 border-3 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
+                  <p className="text-[9px] font-black tracking-widest text-orange-500/30 uppercase">Loading more...</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* End-of-list indicator */}
+          {!loading && !viewUserPosts && !hasMore && currentDisplayList.length > PAGE_SIZE && (
+            <div className="flex justify-center py-6">
+              <p className="text-[9px] font-black tracking-widest text-white/15 uppercase">All items loaded</p>
+            </div>
+          )}
         </div>
       </main>
 

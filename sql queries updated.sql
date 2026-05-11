@@ -213,3 +213,77 @@ ALTER TABLE public.profiles ADD CONSTRAINT profiles_verification_reviewed_by_fke
 CREATE POLICY "Admins can delete any profile" ON public.profiles FOR DELETE TO authenticated USING (is_admin());
 CREATE POLICY "Admins can delete any chat" ON public.chats FOR DELETE TO authenticated USING (is_admin());
 CREATE POLICY "Admins can delete any message" ON public.messages FOR DELETE TO authenticated USING (is_admin());
+
+-- ═══════════════════════════════════════════════════════════
+-- 7. NOTIFICATIONS TABLE — In-App Notification Center
+-- ═══════════════════════════════════════════════════════════
+
+CREATE TABLE public.notifications (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,            -- 'item_approved', 'item_rejected', 'item_resolved'
+  title TEXT NOT NULL,           -- e.g. "Post Approved ✅"
+  body TEXT NOT NULL,            -- e.g. "Your item 'Blue Wallet' has been approved"
+  related_item_id UUID REFERENCES public.items(id) ON DELETE SET NULL,
+  is_read BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes for fast querying
+CREATE INDEX idx_notifications_user_id ON public.notifications(user_id);
+CREATE INDEX idx_notifications_unread ON public.notifications(user_id, is_read) WHERE is_read = FALSE;
+
+-- Row Level Security
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+-- Users can view their own notifications
+CREATE POLICY "Users can view own notifications"
+  ON public.notifications FOR SELECT TO authenticated
+  USING (auth.uid() = user_id);
+
+-- Users can update their own notifications (mark as read)
+CREATE POLICY "Users can update own notifications"
+  ON public.notifications FOR UPDATE TO authenticated
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- Enable Realtime replication for notifications
+ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+
+-- ═══════════════════════════════════════════════════════════
+-- 8. AUTO-NOTIFY TRIGGER: Item Resolution
+-- When both finder and claimer confirm, notify the item owner
+-- ═══════════════════════════════════════════════════════════
+
+CREATE OR REPLACE FUNCTION public.notify_on_item_resolved()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_item RECORD;
+BEGIN
+  IF NEW.finder_confirmed_resolved = TRUE
+     AND NEW.claimer_confirmed_resolved = TRUE
+     AND (OLD.finder_confirmed_resolved = FALSE OR OLD.claimer_confirmed_resolved = FALSE)
+  THEN
+    SELECT id, title, user_id INTO v_item FROM public.items WHERE id = NEW.item_id;
+    IF v_item.id IS NOT NULL THEN
+      INSERT INTO public.notifications (user_id, type, title, body, related_item_id)
+      VALUES (
+        v_item.user_id,
+        'item_resolved',
+        'Item Retrieved ✅',
+        'Your item "' || COALESCE(v_item.title, 'Untitled') || '" has been successfully retrieved!',
+        v_item.id
+      );
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER trg_notify_item_resolved
+  AFTER UPDATE ON public.chats
+  FOR EACH ROW
+  EXECUTE FUNCTION public.notify_on_item_resolved();
+
+-- Harden: revoke direct RPC access to trigger functions
+REVOKE EXECUTE ON FUNCTION public.notify_on_item_resolved() FROM anon, authenticated;

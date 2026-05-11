@@ -209,20 +209,18 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
 
                                     {/* Moderation status banner — only visible to the owner when not approved */}
                                     {item.moderation_status && item.moderation_status !== 'approved' && (
-                                        <div className={`w-full p-4 rounded-2xl border flex items-start gap-3 ${
-                                            item.moderation_status === 'pending'
-                                                ? 'bg-yellow-500/10 border-yellow-500/30'
-                                                : 'bg-red-500/10 border-red-500/30'
-                                        }`}>
+                                        <div className={`w-full p-4 rounded-2xl border flex items-start gap-3 ${item.moderation_status === 'pending'
+                                            ? 'bg-yellow-500/10 border-yellow-500/30'
+                                            : 'bg-red-500/10 border-red-500/30'
+                                            }`}>
                                             {item.moderation_status === 'pending' ? (
                                                 <Clock size={18} className="text-yellow-400 shrink-0 mt-0.5" />
                                             ) : (
                                                 <XCircle size={18} className="text-red-400 shrink-0 mt-0.5" />
                                             )}
                                             <div>
-                                                <p className={`text-xs font-black uppercase tracking-widest ${
-                                                    item.moderation_status === 'pending' ? 'text-yellow-400' : 'text-red-400'
-                                                }`}>
+                                                <p className={`text-xs font-black uppercase tracking-widest ${item.moderation_status === 'pending' ? 'text-yellow-400' : 'text-red-400'
+                                                    }`}>
                                                     {item.moderation_status === 'pending' ? 'Pending Review' : 'Post Rejected'}
                                                 </p>
                                                 <p className="text-[11px] text-white/40 mt-1 leading-relaxed">
@@ -243,10 +241,15 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
                                     ) : (
                                         <button
                                             onClick={handleToggleStatus}
-                                            className={`w-full py-4 rounded-2xl font-black tracking-widest transition-all shadow-lg ${localStatus === 'Active'
-                                                ? 'bg-green-600 hover:bg-green-700 text-white'
-                                                : 'bg-orange-500 hover:bg-orange-600 text-white'
-                                                }`}
+                                            disabled={item.moderation_status !== 'approved'}
+                                            title={item.moderation_status !== 'approved' ? 'Status cannot be changed while post is pending or rejected' : ''}
+                                            className={`w-full py-4 rounded-2xl font-black tracking-widest transition-all shadow-lg ${
+                                                item.moderation_status !== 'approved'
+                                                    ? 'bg-white/5 border border-white/10 text-white/20 cursor-not-allowed'
+                                                    : localStatus === 'Active'
+                                                        ? 'bg-green-600 hover:bg-green-700 text-white'
+                                                        : 'bg-orange-500 hover:bg-orange-600 text-white'
+                                            }`}
                                         >
                                             {/* Context-aware label: Lost items say "FOUND/UNFOUND", Found items say "CLAIMED/UNCLAIMED" */}
                                             MARK AS {localStatus === 'Active'

@@ -278,10 +278,15 @@ export default function ItemDetailPage() {
                         </div>
                         <button
                             onClick={handleToggleStatus}
-                            className={`w-full py-4 rounded-2xl font-black tracking-widest transition-all shadow-lg ${item.status === 'Active'
-                                ? 'bg-green-600 hover:bg-green-700 text-white'
-                                : 'bg-orange-500 hover:bg-orange-600 text-white'
-                                }`}
+                            disabled={item.moderation_status !== 'approved'}
+                            title={item.moderation_status !== 'approved' ? 'Status cannot be changed while post is pending or rejected' : ''}
+                            className={`w-full py-4 rounded-2xl font-black tracking-widest transition-all shadow-lg ${
+                                item.moderation_status !== 'approved'
+                                    ? 'bg-white/5 border border-white/10 text-white/20 cursor-not-allowed'
+                                    : item.status === 'Active'
+                                        ? 'bg-green-600 hover:bg-green-700 text-white'
+                                        : 'bg-orange-500 hover:bg-orange-600 text-white'
+                            }`}
                         >
                             MARK AS {item.status === 'Active' ? 'CLAIMED' : 'UNCLAIMED'}
                         </button>

@@ -659,7 +659,7 @@ export default function AdminPage() {
     /* ───── Loading guard ───── */
     if (guardLoading) {
         return (
-            <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-4">
+            <div className="min-h-[100dvh] bg-[#0a0a0a] flex flex-col items-center justify-center gap-4">
                 <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
                 <p className="text-[10px] font-black tracking-widest text-orange-500/40 uppercase">Verifying admin access...</p>
             </div>
@@ -667,7 +667,7 @@ export default function AdminPage() {
     }
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] bg-fixed text-white font-sans">
+        <div className="min-h-full text-white font-sans">
             {/* ─── HEADER ─── */}
             <header className="sticky top-0 z-50 bg-black/60 backdrop-blur-2xl border-b border-white/5">
                 <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -712,25 +712,25 @@ export default function AdminPage() {
 
             <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
                 {/* ─── SECTION SWITCHER ─── */}
-                <div className="overflow-x-auto -mx-1 px-1 pb-1">
-                    <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-fit min-w-full sm:min-w-0">
-                    <button onClick={() => setAdminSection('posts')}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'posts' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
-                        <Package size={16} /> Posts
-                    </button>
-                    <button onClick={() => setAdminSection('users')}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'users' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
-                        <Users size={16} /> Users
-                    </button>
-                    <button onClick={() => { setAdminSection('reports'); fetchReports(); }}
-                        className={`relative flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'reports' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
-                        <Flag size={16} /> Reports
-                        {reports.filter(r => r.status === 'pending').length > 0 && (
-                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] font-black text-white flex items-center justify-center">
-                                {reports.filter(r => r.status === 'pending').length}
-                            </span>
-                        )}
-                    </button>
+                <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide">
+                    <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max">
+                        <button onClick={() => setAdminSection('posts')}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'posts' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
+                            <Package size={16} /> Posts
+                        </button>
+                        <button onClick={() => setAdminSection('users')}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'users' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
+                            <Users size={16} /> Users
+                        </button>
+                        <button onClick={() => { setAdminSection('reports'); fetchReports(); }}
+                            className={`relative flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'reports' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
+                            <Flag size={16} /> Reports
+                            {reports.filter(r => r.status === 'pending').length > 0 && (
+                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] font-black text-white flex items-center justify-center">
+                                    {reports.filter(r => r.status === 'pending').length}
+                                </span>
+                            )}
+                        </button>
                     </div>
                 </div>
 
@@ -769,24 +769,26 @@ export default function AdminPage() {
                         </div>
 
                         {/* Filter Tabs */}
-                        <div className="flex flex-wrap bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-fit gap-1">
-                            {[
-                                { key: 'all', label: 'All' },
-                                { key: 'pending', label: 'For Review' },
-                                { key: 'dismissed', label: 'Dismissed' },
-                                { key: 'valid', label: 'Invalid' },
-                                { key: 'valid_ban', label: 'Valid + Ban' },
-                            ].map(tab => (
-                                <button key={tab.key} onClick={() => { setReportFilter(tab.key); setSelectedReports(new Set()); }}
-                                    className={`px-4 py-2 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${reportFilter === tab.key ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
-                                    {tab.label}
-                                    {tab.key === 'pending' && reports.filter(r => r.status === 'pending').length > 0 && (
-                                        <span className="ml-1.5 px-1.5 py-0.5 bg-red-500 text-white text-[8px] rounded-full font-black">
-                                            {reports.filter(r => r.status === 'pending').length}
-                                        </span>
-                                    )}
-                                </button>
-                            ))}
+                        <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide">
+                            <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max gap-1">
+                                {[
+                                    { key: 'all', label: 'All' },
+                                    { key: 'pending', label: 'For Review' },
+                                    { key: 'dismissed', label: 'Dismissed' },
+                                    { key: 'valid', label: 'Invalid' },
+                                    { key: 'valid_ban', label: 'Valid + Ban' },
+                                ].map(tab => (
+                                    <button key={tab.key} onClick={() => { setReportFilter(tab.key); setSelectedReports(new Set()); }}
+                                        className={`px-4 py-2 rounded-[0.9rem] text-xs font-black tracking-widest transition-all whitespace-nowrap ${reportFilter === tab.key ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
+                                        {tab.label}
+                                        {tab.key === 'pending' && reports.filter(r => r.status === 'pending').length > 0 && (
+                                            <span className="ml-1.5 px-1.5 py-0.5 bg-red-500 text-white text-[8px] rounded-full font-black">
+                                                {reports.filter(r => r.status === 'pending').length}
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         {reportsLoading ? (
@@ -1099,20 +1101,22 @@ export default function AdminPage() {
                     {/* ─── TABS + SEARCH + FILTERS ─── */}
                     <div className="relative w-full z-60">
                         <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
-                            <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md">
-                                {TABS.map(tab => (
-                                    <button
-                                        key={tab.key}
-                                        onClick={() => setActiveTab(tab.key)}
-                                        className={`flex items-center gap-2 px-5 py-2.5 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${activeTab === tab.key
-                                            ? `${tab.bg} text-white shadow-lg`
-                                            : 'text-white/30 hover:text-white/50'
-                                            }`}
-                                    >
-                                        <tab.icon size={14} />
-                                        {tab.label}
-                                    </button>
-                                ))}
+                            <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide lg:overflow-visible lg:mx-0 lg:px-0 lg:pb-0">
+                                <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max lg:w-auto">
+                                    {TABS.map(tab => (
+                                        <button
+                                            key={tab.key}
+                                            onClick={() => setActiveTab(tab.key)}
+                                            className={`flex items-center gap-2 px-5 py-2.5 rounded-[0.9rem] text-xs font-black tracking-widest transition-all whitespace-nowrap ${activeTab === tab.key
+                                                ? `${tab.bg} text-white shadow-lg`
+                                                : 'text-white/30 hover:text-white/50'
+                                                }`}
+                                        >
+                                            <tab.icon size={14} />
+                                            {tab.label}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
                             <div className="flex items-center gap-4 lg:ml-auto w-full lg:w-auto flex-1 lg:justify-end">

@@ -332,13 +332,15 @@ export default function AdminUsersSection({ refreshTrigger }) {
 
             {/* Tabs + Search */}
             <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
-                <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md">
-                    {USER_TABS.map(tab => (
-                        <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                            className={`flex items-center gap-2 px-5 py-2.5 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${activeTab === tab.key ? `${tab.bg} text-white shadow-lg` : 'text-white/30 hover:text-white/50'}`}>
-                            <tab.icon size={14} />{tab.label}
-                        </button>
-                    ))}
+                <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide lg:overflow-visible lg:mx-0 lg:px-0 lg:pb-0">
+                    <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max lg:w-auto">
+                        {USER_TABS.map(tab => (
+                            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                                className={`flex items-center gap-2 px-5 py-2.5 rounded-[0.9rem] text-xs font-black tracking-widest transition-all whitespace-nowrap ${activeTab === tab.key ? `${tab.bg} text-white shadow-lg` : 'text-white/30 hover:text-white/50'}`}>
+                                <tab.icon size={14} />{tab.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
                 <div className="flex items-center gap-4 lg:ml-auto w-full lg:w-auto flex-1 lg:justify-end">
                     <div className="relative flex-1 max-w-md">
