@@ -1,36 +1,73 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Info, X, MapPin } from "lucide-react";
+import { Search, Info, X, MapPin, Package } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import NavBar from "@/components/NavBar";
 import ItemPostModal from "@/components/ItemPostModal";
 import MarqueeTitle from "@/components/MarqueeTitle";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { supabase } from "@/lib/supabase";
+import { ITEM_CATEGORIES, CATEGORY_EMOJI } from "@/lib/constants";
 
-// Emoji map for item categories (used by Recent Feed cards)
-const CATEGORY_EMOJI = {
-  Electronics: "📱", Wallets: "👛", "IDs & Cards": "🪪",
-  "School Supplies": "📚", Keys: "🔑", Books: "📖",
-  Clothing: "👕", Bags: "🎒", Accessories: "⌚",
-  Documents: "📄", Other: "📦",
-};
+// ─── Dynamic Greeting Engine ───
+// Returns a context-aware greeting based on the current hour and day of week.
+function getGreeting() {
+  const hour = new Date().getHours();
+  const day = new Date().getDay(); // 0 = Sunday, 6 = Saturday
+  const isWeekend = day === 0 || day === 6;
 
-// Shared item category list — single source of truth
-export const ITEM_CATEGORIES = [
-  { label: "Electronics", value: "Electronics", emoji: "📱" },
-  { label: "Wallets", value: "Wallets", emoji: "👛" },
-  { label: "IDs & Cards", value: "IDs & Cards", emoji: "🪪" },
-  { label: "School Supplies", value: "School Supplies", emoji: "📚" },
-  { label: "Keys", value: "Keys", emoji: "🔑" },
-  { label: "Books", value: "Books", emoji: "📖" },
-  { label: "Clothing", value: "Clothing", emoji: "👕" },
-  { label: "Bags", value: "Bags", emoji: "🎒" },
-  { label: "Accessories", value: "Accessories", emoji: "⌚" },
-  { label: "Documents", value: "Documents", emoji: "📄" },
-  { label: "Other", value: "Other", emoji: "📦" },
-];
+  if (isWeekend) {
+    if (hour >= 5 && hour < 12) return "Happy weekend morning ☀️";
+    if (hour >= 12 && hour < 17) return "Enjoying the weekend? 🎉";
+    if (hour >= 17 && hour < 21) return "Weekend evening 🌇";
+    return "Late-night weekend? 🌙";
+  }
+
+  if (hour >= 5 && hour < 12) return "Good morning ☀️";
+  if (hour >= 12 && hour < 17) return "Good afternoon 👋";
+  if (hour >= 17 && hour < 21) return "Good evening 🌅";
+  return "Burning the midnight oil? 🌙";
+}
+
+// Returns an engaging subtitle that rotates based on time/day.
+function getSubtitle() {
+  const hour = new Date().getHours();
+  const day = new Date().getDay();
+  const isWeekend = day === 0 || day === 6;
+
+  const pool = isWeekend
+    ? [
+        "Check if your item has been found this week!",
+        "Browse what students have reported recently.",
+        "Help someone get their belongings back 🤝",
+      ]
+    : hour >= 5 && hour < 12
+      ? [
+          "Start the day by helping someone find their item!",
+          "Lost something yesterday? Let's check.",
+          "New items are posted every morning 📬",
+        ]
+      : hour >= 12 && hour < 17
+        ? [
+            "Lost something on campus? Let's find it.",
+            "Someone might have found what you're looking for!",
+            "Reuniting items with their owners 🔍",
+          ]
+        : [
+            "Check if your lost item was reported today.",
+            "Evening check — any new found items?",
+            "Don't forget to check before heading home 🏠",
+          ];
+
+  // Pick one based on the day-of-year so it changes daily but stays consistent within a day
+  const dayOfYear = Math.floor(
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
+  );
+  return pool[dayOfYear % pool.length];
+}
+
+// Item categories and emojis now imported from @/lib/constants
 
 // Info modal content
 const INFO_SECTIONS = [
@@ -51,8 +88,8 @@ const INFO_SECTIONS = [
   },
   {
     icon: "✅",
-    title: "Mark as Claimed",
-    body: "Once your item is claimed, open it from the Items page and tap MARK AS CLAIMED to resolve it."
+    title: "Item Retrieved",
+    body: "Once you've coordinated with the poster and retrieved the item, press 'Mark as Resolved' inside the chat to confirm the handover. Both users must confirm before the item is marked as retrieved."
   }
 ];
 
@@ -110,7 +147,18 @@ export default function HomePage() {
         .eq("id", user.id)
         .maybeSingle();
       if (data?.full_name) {
-        setUserName(data.full_name.split(" ")[0]);
+        // Handle "LastName, FirstName" or "FirstName LastName" formats
+        const name = data.full_name;
+        let firstName;
+        if (name.includes(',')) {
+          // "Tolentino, Juan" → "Juan"
+          firstName = name.split(',')[1]?.trim().split(' ')[0];
+        }
+        if (!firstName) {
+          // "Juan Tolentino" → "Juan"  or just "Juan" → "Juan"
+          firstName = name.split(' ')[0].replace(/,/g, '');
+        }
+        setUserName(firstName);
       }
     };
     fetchName();
@@ -152,14 +200,14 @@ export default function HomePage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="min-h-[100dvh] flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen text-white pb-60 font-sans selection:bg-orange-500/30 flex flex-col items-center pt-12 bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] bg-fixed">
+    <div className="min-h-full pb-40 font-sans selection:bg-orange-500/30 flex flex-col items-center pt-12">
 
       {/* (i) Info button — top right */}
       <button
@@ -176,7 +224,7 @@ export default function HomePage() {
           animate={{ opacity: 1, scale: 1 }}
           className="flex justify-center mb-6"
         >
-          <img src="/logo.png" alt="FoundIt Logo" className="w-24 h-24 rounded-3xl mix-blend-screen drop-shadow-[0_0_24px_rgba(249,115,22,0.5)]" />
+          <img src="/logo2.svg" alt="FoundIt Logo" className="w-24 h-24 mix-blend-screen drop-shadow-[0_0_24px_rgba(249,115,22,0.5)] object-contain" />
         </motion.div>
 
         {/* User Greeting */}
@@ -186,7 +234,7 @@ export default function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <p className="text-white/40 text-sm font-medium mb-1">Welcome back,</p>
+            <p className="text-white/40 text-sm font-medium mb-1">{getGreeting()}</p>
             <h1 className="text-4xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-orange-400 via-orange-500 to-orange-600 drop-shadow-2xl">
               {userName}! 👋
             </h1>
@@ -200,7 +248,7 @@ export default function HomePage() {
             FoundIt
           </motion.h1>
         )}
-        <motion.p className="text-orange-300/70 mt-4 text-lg font-medium">Reuniting items with owners</motion.p>
+        <motion.p className="text-orange-300/70 mt-4 text-lg font-medium">{getSubtitle()}</motion.p>
 
         {/* Search bar: navigates to /items?search= on Enter or button click */}
         <div className="relative group my-8 max-w-sm mx-auto">
@@ -274,7 +322,7 @@ export default function HomePage() {
             transition={{ delay: 0.3 }}
             className="w-full mt-8"
           >
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 mb-3 text-left">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 mb-3 text-center">
               Recently Reported
             </p>
           </motion.div>
@@ -283,7 +331,7 @@ export default function HomePage() {
         {recentItems.length > 0 && (
           <>
             {/* Mobile: drag scroll */}
-            <div className="md:hidden w-full overflow-hidden mt-1" ref={recentScrollRef}>
+            <div className="md:hidden overflow-hidden mt-1 -mx-6 px-6" ref={recentScrollRef}>
               <motion.div
                 drag="x"
                 dragConstraints={recentConstraints}
@@ -372,7 +420,7 @@ export default function HomePage() {
       {/* Info Modal */}
       <AnimatePresence>
         {showInfoModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setShowInfoModal(false)}
@@ -382,28 +430,28 @@ export default function HomePage() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-sm bg-[#111] border border-orange-500/20 rounded-[2.5rem] p-8 shadow-2xl shadow-orange-900/20"
+              className="relative w-full max-w-sm max-h-[85vh] flex flex-col bg-[#111] border border-orange-500/20 rounded-[2.5rem] p-6 shadow-2xl shadow-orange-900/20"
             >
               <button
                 onClick={() => setShowInfoModal(false)}
-                className="absolute top-5 right-5 p-2 bg-white/5 rounded-full text-white/40 hover:text-white transition-colors"
+                className="absolute top-5 right-5 p-2 bg-white/5 rounded-full text-white/40 hover:text-white transition-colors z-10"
               >
                 <X size={18} />
               </button>
 
-              <div className="text-center mb-8">
-                <div className="text-4xl mb-3">🎒</div>
-                <h2 className="text-2xl font-black text-white">About FoundIt</h2>
-                <p className="text-orange-300/60 text-xs mt-1 font-semibold uppercase tracking-widest">LSPU Lost &amp; Found System</p>
+              <div className="text-center mb-6 shrink-0 flex flex-col items-center">
+                <img src="/logo2.svg" alt="FoundIt Logo" className="w-16 h-16 mix-blend-screen drop-shadow-[0_0_24px_rgba(249,115,22,0.6)] object-contain mb-4" />
+                <h2 className="text-xl font-black text-white tracking-wide">About FoundIt</h2>
+                <p className="text-orange-300/60 text-[10px] mt-1.5 font-black uppercase tracking-widest">LSPU Lost & Found System</p>
               </div>
 
-              <div className="space-y-5">
+              <div className="space-y-3 overflow-y-auto pr-1 flex-1 min-h-0 relative">
                 {INFO_SECTIONS.map((s) => (
-                  <div key={s.title} className="flex gap-4 items-start p-4 bg-white/[0.04] rounded-2xl border border-white/5">
-                    <span className="text-2xl shrink-0">{s.icon}</span>
+                  <div key={s.title} className="flex gap-3 items-start p-3.5 bg-white/[0.04] rounded-2xl border border-white/5">
+                    <span className="text-xl shrink-0 mt-0.5">{s.icon}</span>
                     <div>
-                      <p className="font-black text-sm text-white mb-0.5">{s.title}</p>
-                      <p className="text-white/50 text-xs leading-relaxed">{s.body}</p>
+                      <p className="font-black text-xs text-white mb-0.5">{s.title}</p>
+                      <p className="text-white/50 text-[11px] leading-relaxed">{s.body}</p>
                     </div>
                   </div>
                 ))}
@@ -411,7 +459,7 @@ export default function HomePage() {
 
               <button
                 onClick={() => setShowInfoModal(false)}
-                className="mt-8 w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95"
+                className="mt-6 shrink-0 w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95"
               >
                 GOT IT
               </button>

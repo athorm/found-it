@@ -1,19 +1,25 @@
 "use client";
-import { Search, Tag, Plus, MessageCircle, User, Shield } from "lucide-react";
+import { Search, Tag, Plus, MessageCircle, User, Shield, Bell } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import NotificationDropdown from "@/components/NotificationDropdown";
 
 export default function NavBar({ activePage, onPlusClick }) {
+    const router = useRouter();
     const [unreadCount, setUnreadCount] = useState(0);
+    const [notifUnreadCount, setNotifUnreadCount] = useState(0);
     const [isAdmin, setIsAdmin] = useState(false);
     const [isDesktop, setIsDesktop] = useState(false);
+    const [userId, setUserId] = useState(null);
+    const [showNotifDropdown, setShowNotifDropdown] = useState(false);
 
     const handlePlusClick = () => {
         if (onPlusClick) {
             onPlusClick();
         } else {
-            window.location.href = '/post';
+            router.push('/post');
         }
     };
 
@@ -25,15 +31,21 @@ export default function NavBar({ activePage, onPlusClick }) {
         return () => window.removeEventListener('resize', checkDesktop);
     }, []);
 
-    // Fetch user data (Admin status & Unread messages)
+    // Fetch user data (Admin status & Unread messages & Notification count)
     useEffect(() => {
-        let channel;
+        let isMounted = true;
+        let msgChannel;
+        let notifChannel;
 
         const initializeUserData = async () => {
             try {
                 // Fetch user once to prevent concurrent lock acquisitions
                 const { data: { user }, error: authError } = await supabase.auth.getUser();
                 if (authError || !user) return;
+
+                if (!isMounted) return;
+
+                setUserId(user.id);
 
                 // 1. Check if admin
                 const { data: profile } = await supabase
@@ -42,11 +54,11 @@ export default function NavBar({ activePage, onPlusClick }) {
                     .eq('id', user.id)
                     .maybeSingle();
 
-                if (profile?.role === 'admin') {
+                if (profile?.role === 'admin' && isMounted) {
                     setIsAdmin(true);
                 }
 
-                // 2. Fetch unread count
+                // 2. Fetch unread message count
                 const fetchUnreadCount = async () => {
                     const { count, error } = await supabase
                         .from('messages')
@@ -54,13 +66,28 @@ export default function NavBar({ activePage, onPlusClick }) {
                         .eq('receiver_id', user.id)
                         .eq('is_read', false);
 
-                    if (!error) setUnreadCount(count || 0);
+                    if (!error && isMounted) setUnreadCount(count || 0);
                 };
 
                 await fetchUnreadCount();
 
-                // 3. Subscribe to new messages
-                channel = supabase
+                // 3. Fetch unread notification count
+                const fetchNotifCount = async () => {
+                    const { count, error } = await supabase
+                        .from('notifications')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('user_id', user.id)
+                        .eq('is_read', false);
+
+                    if (!error && isMounted) setNotifUnreadCount(count || 0);
+                };
+
+                await fetchNotifCount();
+                
+                if (!isMounted) return;
+
+                // 4. Subscribe to new messages
+                msgChannel = supabase
                     .channel(`unread-messages-navbar-${Date.now()}`)
                     .on('postgres_changes', { 
                         event: 'INSERT', 
@@ -73,6 +100,20 @@ export default function NavBar({ activePage, onPlusClick }) {
                         table: 'messages' 
                     }, () => fetchUnreadCount())
                     .subscribe();
+
+                // 5. Subscribe to new notifications (realtime)
+                notifChannel = supabase
+                    .channel(`notifications-badge-${user.id}-${Date.now()}`)
+                    .on('postgres_changes', {
+                        event: 'INSERT',
+                        schema: 'public',
+                        table: 'notifications',
+                        filter: `user_id=eq.${user.id}`,
+                    }, () => {
+                        // Increment badge count immediately for instant feedback
+                        if (isMounted) setNotifUnreadCount(prev => prev + 1);
+                    })
+                    .subscribe();
             } catch (error) {
                 console.error("Error initializing user data in NavBar:", error);
             }
@@ -81,38 +122,82 @@ export default function NavBar({ activePage, onPlusClick }) {
         initializeUserData();
 
         return () => { 
-            if (channel) supabase.removeChannel(channel); 
+            isMounted = false;
+            if (msgChannel) supabase.removeChannel(msgChannel);
+            if (notifChannel) supabase.removeChannel(notifChannel);
         };
     }, []);
 
-    return (
-        <nav className="fixed bottom-6 left-6 right-6 h-18 bg-black/50 backdrop-blur-2xl rounded-[2.5rem] border border-orange-500/20 shadow-2xl flex items-center justify-around px-4 z-50">
-            <NavIcon icon={<Search size={22} />} label="Explore" active={activePage === 'home'} onClick={() => window.location.href = '/Home'} />
-            <NavIcon icon={<Tag size={22} />} label="Items" active={activePage === 'items'} onClick={() => window.location.href = '/items'} />
-            <motion.button
-                whileTap={{ scale: 0.92 }}
-                className="p-4 rounded-full -translate-y-6 border-4 border-black shadow-xl shadow-orange-500/40 bg-linear-to-br from-orange-500 to-orange-700 active:scale-90 transition-transform"
-                onClick={handlePlusClick}
-            >
-                <Plus size={24} color="white" strokeWidth={3} />
-            </motion.button>
-            <NavIcon icon={<MessageCircle size={22} />} label="Chat" active={activePage === 'chat'} onClick={() => window.location.href = '/chat'} badgeCount={unreadCount} />
-            <NavIcon icon={<User size={22} />} label="Profile" active={activePage === 'profile'} onClick={() => window.location.href = '/Profile'} />
+    // When dropdown closes, refresh the unread count (some may have been marked as read)
+    const handleNotifClose = () => {
+        setShowNotifDropdown(false);
+        // Re-fetch accurate unread count after user interacts with the dropdown
+        if (userId) {
+            supabase
+                .from('notifications')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', userId)
+                .eq('is_read', false)
+                .then(({ count }) => setNotifUnreadCount(count || 0));
+        }
+    };
 
-            {/* Admin View button — only visible on desktop for admin users */}
-            {isAdmin && isDesktop && (
-                <motion.button
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    whileTap={{ scale: 0.92 }}
-                    onClick={() => window.location.href = '/admin'}
-                    className="absolute -top-14 right-4 flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase shadow-lg shadow-orange-500/30 transition-all border-2 border-orange-400/50"
+    return (
+        <>
+            {/* Floating Alert Icon Button (Bottom Right above NavBar) */}
+            <div className="fixed bottom-[112px] right-10 z-50 flex flex-col items-end">
+                <button
+                    id="notif-bell-button"
+                    onClick={() => setShowNotifDropdown(prev => !prev)}
+                    className="p-3 bg-white/5 border border-white/10 rounded-2xl text-orange-400/70 hover:text-orange-400 hover:bg-white/10 transition-all backdrop-blur-md relative shadow-lg shadow-black/50"
+                    aria-label="Alerts"
                 >
-                    <Shield size={14} strokeWidth={3} />
-                    Admin View
+                    <Bell size={20} />
+                    {notifUnreadCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-[#0a0a0a] shadow-lg">
+                            {notifUnreadCount > 9 ? '9+' : notifUnreadCount}
+                        </span>
+                    )}
+                </button>
+                <NotificationDropdown
+                    isOpen={showNotifDropdown}
+                    onClose={handleNotifClose}
+                    userId={userId}
+                />
+            </div>
+
+            <nav className="fixed bottom-6 left-6 right-6 h-18 bg-black/50 backdrop-blur-2xl rounded-[2.5rem] border border-orange-500/20 shadow-2xl flex items-center justify-around px-4 z-50">
+                <NavIcon icon={<Search size={22} />} label="Explore" active={activePage === 'home'} onClick={() => router.push('/Home')} />
+                <NavIcon icon={<Tag size={22} />} label="Items" active={activePage === 'items'} onClick={() => router.push('/items')} />
+                {/* Plus button border options:
+                    OPTION A (current): border-orange-900/70 — warm dark-orange, blends with the design
+                    OPTION B: border-[#1a0a00] — near-black with a warm tint
+                */}
+                <motion.button
+                    whileTap={{ scale: 0.92 }}
+                    className="p-4 rounded-full -translate-y-6 border-4 border-[#431407] shadow-xl shadow-orange-500/40 bg-linear-to-br from-orange-500 to-orange-700 active:scale-90 transition-transform"
+                    onClick={handlePlusClick}
+                >
+                    <Plus size={24} color="white" strokeWidth={3} />
                 </motion.button>
-            )}
-        </nav>
+                <NavIcon icon={<MessageCircle size={22} />} label="Chat" active={activePage === 'chat'} onClick={() => router.push('/chat')} badgeCount={unreadCount} />
+                <NavIcon icon={<User size={22} />} label="Profile" active={activePage === 'profile'} onClick={() => router.push('/Profile')} />
+
+                {/* Admin View button — only visible on desktop for admin users */}
+                {isAdmin && isDesktop && (
+                    <motion.button
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        whileTap={{ scale: 0.92 }}
+                        onClick={() => router.push('/admin')}
+                        className="absolute -top-14 left-4 flex items-center gap-2 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black text-[10px] tracking-widest uppercase shadow-lg shadow-orange-500/30 transition-all border-2 border-orange-400/50"
+                    >
+                        <Shield size={14} strokeWidth={3} />
+                        Admin View
+                    </motion.button>
+                )}
+            </nav>
+        </>
     );
 }
 
@@ -130,4 +215,4 @@ function NavIcon({ icon, label, active = false, onClick, badgeCount = 0 }) {
             <span className="text-[10px] font-bold uppercase tracking-tighter">{label}</span>
         </button>
     );
-}
+}

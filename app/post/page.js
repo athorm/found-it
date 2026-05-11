@@ -7,7 +7,7 @@ import { ArrowLeft, Send, Loader2, AlertCircle, ChevronDown, Check, Maximize2, C
 import ItemPostModal from '@/components/ItemPostModal';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import Cropper from 'react-easy-crop';
-import { ITEM_CATEGORIES } from '@/app/Home/page';
+import { ITEM_CATEGORIES, CAMPUS_LOCATION_OPTIONS } from '@/lib/constants';
 
 // --- CUSTOM DROPDOWN COMPONENT ---
 function CustomSelect({ label, value, options, onChange, placeholder = "Select" }) {
@@ -39,7 +39,7 @@ function CustomSelect({ label, value, options, onChange, placeholder = "Select" 
               exit={{ opacity: 0, y: -10, scale: 0.95 }}
               className="absolute left-0 right-0 z-20 overflow-hidden rounded-2xl border border-white/20 bg-[#1a1a1a]/90 backdrop-blur-xl shadow-2xl"
             >
-              <div className="p-1">
+              <div className="p-1 dropdown-scrollable">
                 {options.map((opt) => (
                   <button
                     key={opt.value}
@@ -197,7 +197,7 @@ function PostItemContent() {
   // Submitted confirmation screen
   if (submitted) {
     return (
-      <div className="min-h-screen text-white flex flex-col items-center justify-center p-6 bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233]">
+      <div className="min-h-screen text-white flex flex-col items-center justify-center p-6">
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -215,7 +215,7 @@ function PostItemContent() {
   }
 
   return (
-    <div className="min-h-screen text-white p-6 bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233]">
+    <div className="min-h-screen text-white p-6">
       <header className="flex items-center gap-4 mb-4">
         <button onClick={() => router.back()} className="text-orange-400 p-2 bg-white/5 rounded-full">
           <ArrowLeft size={20} />
@@ -300,16 +300,7 @@ function PostItemContent() {
         <CustomSelect
           label="General Area"
           value={locationTag}
-          options={[
-            { label: 'Shed', value: 'Shed' },
-            { label: 'Activity Center', value: 'Activity Center' },
-            { label: 'ER Bldg.', value: 'ER Bldg.' },
-            { label: 'ENB Bldg.', value: 'ENB Bldg.' },
-            { label: 'Volleyball Court', value: 'Volleyball Court' },
-            { label: 'Basketball Court', value: 'Basketball Court' },
-            { label: 'Admin Bldg.', value: 'Admin Bldg.' },
-            { label: 'Quadrangle', value: 'Quadrangle' }
-          ]}
+          options={CAMPUS_LOCATION_OPTIONS}
           onChange={setLocationTag}
         />
 

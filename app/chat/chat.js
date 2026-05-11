@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Send, Loader2, User, Trash2, X, CheckCircle2, AlertCircle, Lock } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User, Trash2, X, CheckCircle2, AlertCircle, Lock, AlertTriangle, Flag, ImageIcon, Plus, Camera } from "lucide-react";
+import { containsProfanity } from "@/utils/profanityFilter";
 import { motion, AnimatePresence } from "framer-motion";
 import NavBar from "@/components/NavBar";
 import ItemPostModal from "@/components/ItemPostModal";
@@ -32,6 +33,21 @@ export default function ChatPage() {
   const urlAutoOpenedRef = useRef(false);
   const [resolving, setResolving] = useState(false);
   const [visibleTimes, setVisibleTimes] = useState({});
+  // Profanity filter state
+  const [profanityWarning, setProfanityWarning] = useState(null); // null | 'first' | 'repeat'
+  const profanityStrikeRef = useRef(0);
+  // Report user state
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [reportReason, setReportReason] = useState('');
+  const [reportSubmitting, setReportSubmitting] = useState(false);
+  const [reportSuccess, setReportSuccess] = useState(false);
+  // Image sharing state
+  const [imageUploading, setImageUploading] = useState(false);
+  const imageInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  // Lightbox for image messages
+  const [lightboxUrl, setLightboxUrl] = useState(null);
 
   const toggleTime = (msgId) => {
     setVisibleTimes(prev => ({ ...prev, [msgId]: !prev[msgId] }));
@@ -96,7 +112,7 @@ export default function ChatPage() {
 
     const [{ data: itemsData }, { data: profilesData }] = await Promise.all([
       supabase.from('items').select('id, title, status').in('id', itemIds),
-      supabase.from('profiles').select('id, full_name, avatar_url').in('id', profileIds)
+      supabase.from('profiles').select('id, full_name, avatar_url, is_banned').in('id', profileIds)
     ]);
 
     const itemMap = itemsData?.reduce((acc, i) => ({ ...acc, [i.id]: i }), {}) || {};
@@ -121,7 +137,8 @@ export default function ChatPage() {
         isFinder,
         finderConfirmed: chat.finder_confirmed_resolved,
         claimerConfirmed: chat.claimer_confirmed_resolved,
-        isResolved: (chat.finder_confirmed_resolved && chat.claimer_confirmed_resolved) || itemMap[chat.item_id]?.status === 'Resolved'
+        isResolved: (chat.finder_confirmed_resolved && chat.claimer_confirmed_resolved) || itemMap[chat.item_id]?.status === 'Resolved',
+        otherUserIsBanned: otherUser?.is_banned ?? false,
       };
     }).sort((a, b) => b.lastMessageTime - a.lastMessageTime);
 
@@ -161,33 +178,64 @@ export default function ChatPage() {
     }
 
     if (channelRef.current) supabase.removeChannel(channelRef.current);
-    const channel = supabase.channel(`room-${conv.id}`);
-    channel.on(
-      'postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${conv.id}` },
-      (payload) => {
-        // Deduplicate: skip if we already added this message optimistically
-        // (happens for the sender's own messages via sendMessage).
-        setMessages((prev) =>
-          prev.some((m) => m.id === payload.new.id) ? prev : [...prev, payload.new]
-        );
-        // If this incoming message is for the current user, mark it read immediately
-        if (payload.new.receiver_id === user?.id) {
-          supabase
-            .from('messages')
-            .update({ is_read: true })
-            .eq('id', payload.new.id)
-            .then(() => { }); // fire-and-forget
+    const channel = supabase.channel(`room-${conv.id}-${Date.now()}`);
+    channel
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${conv.id}` },
+        (payload) => {
+          // Deduplicate: skip if we already added this message optimistically
+          // (happens for the sender's own messages via sendMessage).
+          setMessages((prev) =>
+            prev.some((m) => m.id === payload.new.id) ? prev : [...prev, payload.new]
+          );
+          // If this incoming message is for the current user, mark it read immediately
+          if (payload.new.receiver_id === user?.id) {
+            supabase
+              .from('messages')
+              .update({ is_read: true })
+              .eq('id', payload.new.id)
+              .then(() => { }); // fire-and-forget
+          }
         }
-      }
-    ).subscribe();
+      )
+      // Listen for chats UPDATE so resolution status syncs in real-time for the OTHER user
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'chats', filter: `id=eq.${conv.id}` },
+        (payload) => {
+          const updated = payload.new;
+          setSelectedConversation((prev) => {
+            if (!prev || prev.id !== updated.id) return prev;
+            return {
+              ...prev,
+              finderConfirmed: updated.finder_confirmed_resolved,
+              claimerConfirmed: updated.claimer_confirmed_resolved,
+              isResolved: updated.finder_confirmed_resolved && updated.claimer_confirmed_resolved,
+            };
+          });
+        }
+      )
+      .subscribe();
     channelRef.current = channel;
   };
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation || !user) return;
     const content = newMessage.trim();
+
+    // ─── Profanity Check ───
+    // Check before sending — if flagged, show warning modal and do NOT send.
+    const { isClean } = await containsProfanity(content);
+    if (!isClean) {
+      profanityStrikeRef.current += 1;
+      setProfanityWarning(profanityStrikeRef.current >= 2 ? 'repeat' : 'first');
+      return; // Block the send — message stays in the input box
+    }
+
+    // If clean, proceed with sending
     setNewMessage("");
+    profanityStrikeRef.current = 0; // Reset strike count on clean message
 
     // BUG FIX: Supabase Realtime postgres_changes does NOT deliver INSERT events
     // back to the client that performed the insert. This means the sender never
@@ -218,6 +266,63 @@ export default function ChatPage() {
       setMessages((prev) =>
         prev.some((m) => m.id === inserted.id) ? prev : [...prev, inserted]
       );
+    }
+  };
+
+  // ─── Image sharing helpers ───
+  const compressImage = (file) =>
+    new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 800;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.75);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+
+  const handleImageSend = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedConversation || !user) return;
+    e.target.value = '';
+    if (file.size > 10 * 1024 * 1024) { alert('Image must be under 10 MB'); return; }
+    setImageUploading(true);
+    try {
+      const compressed = await compressImage(file);
+      const path = `${selectedConversation.id}/${crypto.randomUUID()}.jpg`;
+      const { error: uploadErr } = await supabase.storage
+        .from('chat-images')
+        .upload(path, compressed, { contentType: 'image/jpeg', upsert: false });
+      if (uploadErr) throw uploadErr;
+      const { data: { publicUrl } } = supabase.storage.from('chat-images').getPublicUrl(path);
+      const { data: inserted, error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user.id,
+          receiver_id: selectedConversation.otherUserId,
+          chat_id: selectedConversation.id,
+          item_id: selectedConversation.itemId,
+          content: '🖼️ Photo',
+          image_url: publicUrl,
+          is_read: false,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      if (inserted) {
+        setMessages((prev) =>
+          prev.some((m) => m.id === inserted.id) ? prev : [...prev, inserted]
+        );
+      }
+    } catch (err) {
+      console.error('Image send error:', err);
+      alert('Could not send image: ' + (err.message || 'Unknown error'));
+    } finally {
+      setImageUploading(false);
     }
   };
 
@@ -268,7 +373,7 @@ export default function ChatPage() {
           receiver_id: selectedConversation.otherUserId,
           chat_id: selectedConversation.id,
           item_id: selectedConversation.itemId,
-          content: "✅ Both users have confirmed. This item is now marked as Resolved.",
+          content: "✅ Both users have confirmed. The item has been retrieved.",
           is_read: false
         });
       }
@@ -279,6 +384,38 @@ export default function ChatPage() {
       alert("Failed to update resolution status: " + err.message);
     } finally {
       setResolving(false);
+    }
+  };
+
+  const handleReport = async () => {
+    if (!reportReason.trim() || !selectedConversation || !user) return;
+    setReportSubmitting(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/report-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          reportedUserId: selectedConversation.otherUserId,
+          chatId: selectedConversation.id,
+          reason: reportReason.trim(),
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Report failed');
+      setReportSuccess(true);
+      setReportReason('');
+      setTimeout(() => {
+        setShowReportModal(false);
+        setReportSuccess(false);
+      }, 2000);
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      setReportSubmitting(false);
     }
   };
 
@@ -299,26 +436,26 @@ export default function ChatPage() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+    <div className="min-h-[100dvh] flex items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-orange-400" />
     </div>
   );
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="min-h-[100dvh] flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] text-white flex flex-col font-sans overflow-hidden">
+    <div className="min-h-screen text-white flex flex-col font-sans overflow-hidden">
 
       {view === 'list' ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 overflow-y-auto pb-24">
           <div className="p-6 flex items-center gap-3">
-            <img src="/logo.png" alt="Logo" className="w-8 h-8 rounded-xl mix-blend-screen drop-shadow-[0_0_8px_rgba(249,115,22,0.4)]" />
+            <img src="/logo2.svg" alt="Logo" className="w-8 h-8 mix-blend-screen drop-shadow-[0_0_8px_rgba(249,115,22,0.4)] object-contain" />
             <h1 className="text-2xl font-bold bg-linear-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">Messages</h1>
           </div>
           <div className="px-6 space-y-4">
@@ -362,10 +499,20 @@ export default function ChatPage() {
             {selectedConversation?.isFinder && (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="p-2 mr-2 text-red-400/60 hover:text-red-400 transition-colors"
+                className="p-2 mr-1 text-red-400/60 hover:text-red-400 transition-colors"
                 title="Delete this conversation"
               >
                 <Trash2 size={20} />
+              </button>
+            )}
+            {/* Report user button — visible to all non-poster participants */}
+            {!selectedConversation?.isResolved && (
+              <button
+                onClick={() => setShowReportModal(true)}
+                className="p-2 mr-1 text-white/20 hover:text-yellow-400 transition-colors"
+                title="Report this user"
+              >
+                <Flag size={18} />
               </button>
             )}
             <div className="w-9 h-9 rounded-full border border-orange-500/30 overflow-hidden bg-orange-500/10">
@@ -380,7 +527,7 @@ export default function ChatPage() {
             {selectedConversation?.isResolved ? (
               <div className="flex items-center justify-center gap-2 py-2 text-green-400">
                 <CheckCircle2 size={16} />
-                <span className="text-[10px] font-black uppercase tracking-widest">Transaction Resolved</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">Item Retrieved</span>
               </div>
             ) : (
               <div className="flex items-center justify-between py-1">
@@ -433,10 +580,22 @@ export default function ChatPage() {
                     <motion.div
                       initial={{ scale: 0.9, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      onClick={() => toggleTime(msg.id)}
-                      className={`px-4 py-2 rounded-2xl text-[15px] ${isMe ? 'bg-orange-600 rounded-br-none' : 'bg-white/10 rounded-bl-none shadow-lg'}`}
+                      onClick={() => msg.image_url ? setLightboxUrl(msg.image_url) : toggleTime(msg.id)}
+                      className={`overflow-hidden rounded-2xl ${
+                        msg.image_url
+                          ? 'cursor-pointer p-0'
+                          : `px-4 py-2 text-[15px] ${isMe ? 'bg-orange-600 rounded-br-none' : 'bg-white/10 rounded-bl-none shadow-lg'}`
+                      }`}
                     >
-                      {msg.content}
+                      {msg.image_url ? (
+                        <img
+                          src={msg.image_url}
+                          alt="Shared image"
+                          className="max-w-[220px] max-h-[220px] object-cover rounded-2xl block"
+                        />
+                      ) : (
+                        msg.content
+                      )}
                     </motion.div>
                     {visibleTimes[msg.id] && (
                       <span className="text-[9px] text-white/30 mt-1 px-1">
@@ -457,8 +616,29 @@ export default function ChatPage() {
                 <Lock size={16} />
                 <span className="text-xs font-black uppercase tracking-widest">Messaging Disabled</span>
               </div>
+            ) : selectedConversation?.otherUserIsBanned ? (
+              <div className="flex items-center justify-center gap-3 py-4 bg-yellow-500/10 border border-yellow-500/20 rounded-2xl text-yellow-400">
+                <AlertTriangle size={16} />
+                <span className="text-xs font-black uppercase tracking-widest">User Suspended — Messaging Unavailable</span>
+              </div>
             ) : (
               <div className="flex items-center gap-2 bg-white/5 rounded-full px-4 py-1 border border-white/10 focus-within:border-orange-500/40 transition-all">
+                {/* Hidden file input for image sharing */}
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleImageSend}
+                />
+                <input
+                  ref={cameraInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleImageSend}
+                />
                 <input
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
@@ -467,11 +647,168 @@ export default function ChatPage() {
                   onKeyDown={(e) => e.key === "Enter" && sendMessage()}
                 />
                 <button onClick={sendMessage} className="text-orange-500 p-2"><Send size={20} /></button>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
+                    disabled={imageUploading}
+                    className="text-white/20 hover:text-orange-400 transition-colors p-1 shrink-0 disabled:opacity-50"
+                    title="Attach"
+                  >
+                    {imageUploading
+                      ? <Loader2 size={18} className="animate-spin text-orange-400" />
+                      : <Plus size={22} />}
+                  </button>
+
+                  <AnimatePresence>
+                    {showAttachmentMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute bottom-full right-0 mb-3 w-36 bg-[#1a1a1a] border border-white/10 rounded-2xl p-2 shadow-xl shadow-black/50 origin-bottom-right z-50"
+                      >
+                        <button
+                          onClick={() => { setShowAttachmentMenu(false); cameraInputRef.current?.click(); }}
+                          className="w-full flex items-center gap-3 px-3 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                        >
+                          <Camera size={16} className="text-orange-400" />
+                          Camera
+                        </button>
+                        <button
+                          onClick={() => { setShowAttachmentMenu(false); imageInputRef.current?.click(); }}
+                          className="w-full flex items-center gap-3 px-3 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                        >
+                          <ImageIcon size={16} className="text-orange-400" />
+                          Gallery
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
               </div>
             )}
           </div>
         </div>
       )}
+
+      {/* ─── Image Lightbox ─── */}
+      <AnimatePresence>
+        {lightboxUrl && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setLightboxUrl(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm cursor-zoom-out"
+          >
+            <motion.img
+              src={lightboxUrl}
+              alt="Full size"
+              initial={{ scale: 0.85 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.85 }}
+              className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── Report User Modal ─── */}
+      <AnimatePresence>
+        {showReportModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="w-full max-w-sm bg-[#111] border border-red-500/20 rounded-[2.5rem] p-8"
+            >
+              <button
+                onClick={() => { setShowReportModal(false); setReportReason(''); setReportSuccess(false); }}
+                className="absolute top-5 right-5 p-2 bg-white/5 rounded-full text-white/40 hover:text-white transition-colors"
+              >
+                <X size={16} />
+              </button>
+
+              {reportSuccess ? (
+                <div className="text-center py-4">
+                  <div className="w-16 h-16 rounded-full bg-green-500/10 border-2 border-green-500/30 flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle2 size={32} className="text-green-400" />
+                  </div>
+                  <h3 className="text-xl font-black text-white mb-2">Report Submitted</h3>
+                  <p className="text-white/50 text-sm">An admin will review the report and the conversation context shortly.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 rounded-full bg-red-500/10 border-2 border-red-500/20 flex items-center justify-center shrink-0">
+                      <Flag size={22} className="text-red-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-white leading-tight">Report User</h3>
+                      <p className="text-white/40 text-xs">Reporting: {selectedConversation?.otherUser?.full_name}</p>
+                    </div>
+                  </div>
+
+                  <p className="text-white/50 text-xs mb-4 leading-relaxed">
+                    Describe why you are reporting this user. An admin will review the report along with the conversation history before taking action.
+                  </p>
+
+                  <textarea
+                    value={reportReason}
+                    onChange={(e) => setReportReason(e.target.value)}
+                    placeholder="e.g. Sending inappropriate messages, trolling, spam..."
+                    rows={4}
+                    className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white placeholder:text-white/20 focus:outline-none focus:border-orange-500/40 resize-none transition-all"
+                  />
+
+                  <button
+                    onClick={handleReport}
+                    disabled={reportSubmitting || !reportReason.trim()}
+                    className="mt-4 w-full py-4 bg-red-600 hover:bg-red-700 disabled:opacity-40 text-white font-black rounded-2xl tracking-widest text-sm transition-all active:scale-95 flex items-center justify-center gap-2"
+                  >
+                    {reportSubmitting ? <Loader2 size={18} className="animate-spin" /> : <Flag size={16} />}
+                    {reportSubmitting ? 'Submitting...' : 'Submit Report'}
+                  </button>
+                </>
+              )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── Profanity Warning Modal ─── */}
+      <AnimatePresence>
+        {profanityWarning && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="w-full max-w-xs bg-[#111] border border-yellow-500/30 rounded-[2.5rem] p-8 text-center"
+            >
+              <div className="w-16 h-16 rounded-full bg-yellow-500/10 border-2 border-yellow-500/30 flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle size={32} className="text-yellow-400" />
+              </div>
+              <h3 className="text-xl font-black text-white mb-2">
+                {profanityWarning === 'repeat' ? 'Final Warning' : 'Inappropriate Message'}
+              </h3>
+              <p className="text-white/50 text-sm leading-relaxed mb-6">
+                {profanityWarning === 'repeat'
+                  ? 'You have attempted to send inappropriate content more than once. Continued violations may result in your account being reported and suspended by an admin.'
+                  : 'Your message contains inappropriate content and was not sent. Please keep conversations respectful and on-topic.'}
+              </p>
+              <button
+                onClick={() => setProfanityWarning(null)}
+                style={{ background: 'linear-gradient(90deg, #f97316, #fb923c)' }}
+                className="w-full py-4 text-white font-black rounded-2xl tracking-widest text-sm transition-all active:scale-95 shadow-lg shadow-orange-500/20"
+              >
+                I UNDERSTAND
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Delete confirmation modal */}
       <AnimatePresence>

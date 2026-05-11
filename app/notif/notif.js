@@ -86,7 +86,7 @@ export default function NotificationListener() {
 
   return (
     /* POSITIONING: Moved to top center with top-6 and left-1/2 -translate-x-1/2 */
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-9999 flex flex-col gap-3 pointer-events-none w-full max-w-340px items-center">
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-3 pointer-events-none w-[calc(100%-32px)] max-w-[400px] items-center">
       <AnimatePresence>
         {notifications.map((notification) => (
           <motion.div

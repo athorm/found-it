@@ -114,6 +114,27 @@ export async function PATCH(request) {
             return NextResponse.json({ error: 'Failed to update item(s)' }, { status: 500 })
         }
 
+        // ─── In-App Notifications: insert a notification for each affected poster ───
+        if (updatedItems && updatedItems.length > 0) {
+            const notifications = updatedItems.map(item => ({
+                user_id: item.user_id,
+                type: newStatus === 'approved' ? 'item_approved' : 'item_rejected',
+                title: newStatus === 'approved' ? 'Post Approved ✅' : 'Post Rejected ❌',
+                body: newStatus === 'approved'
+                    ? `Your item "${item.title}" has been approved and is now visible to everyone.`
+                    : `Your item "${item.title}" was not approved by the moderators.`,
+                related_item_id: item.id,
+            }));
+
+            const { error: notifError } = await adminClient
+                .from('notifications')
+                .insert(notifications);
+
+            if (notifError) {
+                console.error('Failed to insert notifications:', notifError);
+            }
+        }
+
         // Send email notifications to poster(s) — fire-and-forget, don't block the response
         if (updatedItems && updatedItems.length > 0) {
             for (const item of updatedItems) {

@@ -32,7 +32,7 @@ export function useAuthGuard() {
       // Check verification status
       const { data: profile } = await supabase
         .from("profiles")
-        .select("verification_status")
+        .select("verification_status, is_banned, ban_reason")
         .eq("id", session.user.id)
         .maybeSingle();
 
@@ -40,6 +40,11 @@ export function useAuthGuard() {
 
       if (profile && profile.verification_status !== 'approved') {
         router.replace("/pending-verification");
+        return;
+      }
+
+      if (profile?.is_banned) {
+        router.replace("/banned");
         return;
       }
 
@@ -58,12 +63,14 @@ export function useAuthGuard() {
         // Re-check verification on auth change
         supabase
           .from("profiles")
-          .select("verification_status")
+          .select("verification_status, is_banned")
           .eq("id", session.user.id)
           .maybeSingle()
           .then(({ data: profile }) => {
             if (!mounted) return;
-            if (profile && profile.verification_status !== 'approved') {
+            if (profile?.is_banned) {
+              router.replace("/banned");
+            } else if (profile && profile.verification_status !== 'approved') {
               router.replace("/pending-verification");
             } else {
               setUser(session.user);

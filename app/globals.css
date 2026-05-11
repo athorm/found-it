@@ -11,6 +11,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  /* Geist is loaded in layout.js and wired to these CSS variables */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -18,8 +19,11 @@
 body {
   background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Uses Geist Sans (from layout.js) with Arial as fallback */
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
   min-height: 100vh;
+  overscroll-behavior-y: none;
+  overflow-x: hidden;
 }
 
 /* Gradient utilities */
@@ -46,7 +50,7 @@ body {
 @keyframes marquee-scroll {
   0% { transform: translateX(0); }
   10% { transform: translateX(0); } /* Pause at start */
-  45% { transform: translateX(calc(-100% + 100px)); } /* Scroll to end (approx 100px is the width of the container, we just use a trick to scroll far enough) */
+  45% { transform: translateX(calc(-100% + 100px)); } /* Scroll to end */
   55% { transform: translateX(calc(-100% + 100px)); } /* Pause at end */
   90% { transform: translateX(0); } /* Scroll back */
   100% { transform: translateX(0); }
@@ -94,4 +98,10 @@ body {
 * {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.1) #0a0a0a;
+}
+
+/* Custom scrollable dropdown */
+.dropdown-scrollable {
+  max-height: 240px;
+  overflow-y: auto;
 }

@@ -7,11 +7,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowLeft, Shield, CheckCircle, XCircle, Trash2, Clock,
     Package, Search, RefreshCw, AlertTriangle, Loader2,
-    Eye, ChevronDown, MapPin, User, Filter, Users, Calendar, X
+    Eye, ChevronDown, MapPin, User, Filter, Users, Calendar, X,
+    Flag, Ban, MessageSquare
 } from 'lucide-react';
 import AdminUsersSection from '@/components/AdminUsersSection';
 import CustomDateRangePicker from '@/components/CustomDateRangePicker';
-import { ITEM_CATEGORIES } from '@/app/Home/page';
+import { ITEM_CATEGORIES, CAMPUS_LOCATIONS } from '@/lib/constants';
 
 /* ─────────────────────────── STATUS TABS ─────────────────────────── */
 const TABS = [
@@ -21,7 +22,7 @@ const TABS = [
     { key: 'all', label: 'All Items', icon: Package, color: 'text-orange-400', bg: 'bg-orange-500' },
 ];
 
-const LOCATIONS = ['Shed', 'Activity Center', 'ER Bldg.', 'ENB Bldg.', 'Volleyball Court', 'Basketball Court', 'Admin Bldg.', 'Quadrangle'];
+// LOCATIONS now imported from @/lib/constants — edit that file to add/remove locations
 
 /* ─────────────────────────── ITEM CARD ─────────────────────────── */
 function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, processing, selected, onToggleSelect }) {
@@ -124,16 +125,16 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                                 <button
                                     onClick={() => onApprove(item.id)}
                                     disabled={processing}
-                                    className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white border-2 border-transparent rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                                    className="flex-1 py-2.5 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                                 >
-                                    <CheckCircle size={14} /> APPROVE
+                                    <CheckCircle size={12} /> APPROVE
                                 </button>
                                 <button
                                     onClick={() => onReject(item.id)}
                                     disabled={processing}
-                                    className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-2 border-red-500/30 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                                    className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                                 >
-                                    <XCircle size={14} /> REJECT
+                                    <XCircle size={12} /> REJECT
                                 </button>
                             </>
                         )}
@@ -141,18 +142,18 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                             <button
                                 onClick={() => onApprove(item.id)}
                                 disabled={processing}
-                                className="flex-1 py-2.5 bg-green-600/10 hover:bg-green-600/20 text-green-400 border-2 border-green-500/30 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                                className="flex-1 py-2.5 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                             >
-                                <CheckCircle size={14} /> RE-APPROVE
+                                <CheckCircle size={12} /> RE-APPROVE
                             </button>
                         )}
                         {isApproved && (
                             <button
                                 onClick={() => onReject(item.id)}
                                 disabled={processing}
-                                className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400/60 border-2 border-red-500/20 rounded-xl font-bold text-xs tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                                className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400/60 border border-red-500/20 rounded-xl font-bold text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                             >
-                                <XCircle size={14} /> REVOKE
+                                <XCircle size={12} /> REVOKE
                             </button>
                         )}
                         <button
@@ -236,7 +237,7 @@ function StatCard({ label, count, icon: Icon, color, active, onClick }) {
 /* ─────────────────────────── DELETE CONFIRMATION ────────────────── */
 function DeleteConfirmModal({ onConfirm, onCancel, processing, message }) {
     return (
-        <div className="fixed inset-0 z-110 flex items-center justify-center p-6">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
             <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 className="absolute inset-0 bg-black/90 backdrop-blur-sm"
@@ -272,12 +273,62 @@ function DeleteConfirmModal({ onConfirm, onCancel, processing, message }) {
     );
 }
 
+const BAN_PREMADE_REASONS = [
+    'Repeated violation of community guidelines',
+    'Posting inappropriate or offensive content',
+    'Harassment or threatening behavior',
+    'Fraudulent activity or scam attempts',
+    'Impersonation or fake account',
+];
+
+function BanReasonModal({ onConfirm, onCancel, processing }) {
+    const [reason, setReason] = useState('');
+    return (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onCancel} />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-[#1a1a1a] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl max-h-[90vh] overflow-y-auto">
+                <div className="w-14 h-14 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-5">
+                    <Ban size={28} className="text-red-500" />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2 text-center">Ban User</h3>
+                <p className="text-white/40 text-xs mb-4 text-center">Select a reason or type a custom one. The user will be notified via email.</p>
+                {/* Premade reason chips */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                    {BAN_PREMADE_REASONS.map((r) => (
+                        <button key={r} onClick={() => setReason(r)} type="button"
+                            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${
+                                reason === r
+                                    ? 'bg-red-500/20 border-red-500/40 text-red-300'
+                                    : 'bg-white/5 border-white/10 text-white/40 hover:border-red-500/30 hover:text-white/60'
+                            }`}>
+                            {r}
+                        </button>
+                    ))}
+                </div>
+                <textarea
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="Or type a custom reason..."
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-white/20 outline-none focus:border-red-500/50 resize-none h-20 mb-4"
+                />
+                <div className="space-y-3">
+                    <button onClick={() => onConfirm(reason || 'Violated community guidelines')} disabled={processing}
+                        className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                        {processing ? <Loader2 size={14} className="animate-spin" /> : <><Ban size={14} /> BAN USER</>}
+                    </button>
+                    <button onClick={onCancel} className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl font-bold text-xs tracking-widest">CANCEL</button>
+                </div>
+            </motion.div>
+        </div>
+    );
+}
+
 /* ═══════════════════════════ MAIN PAGE ═══════════════════════════ */
 export default function AdminPage() {
     const router = useRouter();
     const { user, isAdmin, guardLoading } = useAdminGuard();
 
-    const [adminSection, setAdminSection] = useState('posts'); // 'posts' | 'users'
+    const [adminSection, setAdminSection] = useState('posts'); // 'posts' | 'users' | 'reports'
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
@@ -299,9 +350,20 @@ export default function AdminPage() {
     // Batch selection
     const [selectedItems, setSelectedItems] = useState(new Set());
     const [batchDeleteConfirm, setBatchDeleteConfirm] = useState(false);
+    const [userRefreshTrigger, setUserRefreshTrigger] = useState(0);
 
     // Stats
     const [stats, setStats] = useState({ pending: 0, approved: 0, rejected: 0, total: 0 });
+
+    // Reports
+    const [reports, setReports] = useState([]);
+    const [reportsLoading, setReportsLoading] = useState(false);
+    const [reportProcessing, setReportProcessing] = useState(null); // report id being processed
+    const [reportFilter, setReportFilter] = useState('pending'); // 'all' | 'pending' | 'dismissed' | 'valid' | 'valid_ban'
+    const [selectedReport, setSelectedReport] = useState(null); // full report for detail modal
+    const [reportBanReasonTarget, setReportBanReasonTarget] = useState(null);
+    const [selectedReports, setSelectedReports] = useState(new Set()); // multi-select for batch delete
+    const [batchReportDeleteConfirm, setBatchReportDeleteConfirm] = useState(false);
 
     // Refs for drag constraints calculation
     const typeScrollRef = useRef(null);
@@ -326,6 +388,109 @@ export default function AdminPage() {
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
         setTimeout(() => setToast(null), 3000);
+    };
+
+    const fetchReports = async () => {
+        if (!user) return;
+        setReportsLoading(true);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch('/api/admin/reports', {
+                headers: { Authorization: `Bearer ${session.access_token}` },
+            });
+            const json = await res.json();
+            if (res.ok) setReports(json.reports || []);
+        } catch (err) {
+            console.error('fetchReports error:', err);
+        } finally {
+            setReportsLoading(false);
+        }
+    };
+
+    const handleReportAction = async (reportId, status, reportedUserId, banUser = false) => {
+        setReportProcessing(reportId);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch('/api/admin/reports', {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({
+                    reportId,
+                    status,
+                    banUser,
+                    banReason: 'Reported and verified by admin for community guideline violations.',
+                }),
+            });
+            if (!res.ok) throw new Error('Failed to update report');
+            showToast(status === 'valid' ? (banUser ? 'Report validated & user banned' : 'Report marked as invalid') : 'Report dismissed');
+            fetchReports();
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            setReportProcessing(null);
+        }
+    };
+
+    const handleDeleteReport = async (reportId) => {
+        if (!confirm('Are you sure you want to permanently delete this report? This cannot be undone.')) return;
+        setReportProcessing(reportId);
+        try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch(`/api/admin/reports?id=${reportId}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${session.access_token}`,
+                },
+            });
+            if (!res.ok) throw new Error('Failed to delete report');
+            showToast('Report deleted permanently');
+            setSelectedReport(null);
+            fetchReports();
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            setReportProcessing(null);
+        }
+    };
+
+    const handleBatchDeleteReports = async () => {
+        if (selectedReports.size === 0) return;
+        try {
+            setProcessing(true);
+            const { data: { session } } = await supabase.auth.getSession();
+            const res = await fetch('/api/admin/reports', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                },
+                body: JSON.stringify({ ids: [...selectedReports] }),
+            });
+            if (!res.ok) throw new Error('Failed to delete reports');
+            const json = await res.json();
+            showToast(`${json.deleted} report(s) deleted permanently`);
+            setSelectedReports(new Set());
+            setBatchReportDeleteConfirm(false);
+            fetchReports();
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            setProcessing(false);
+        }
+    };
+
+    const handleRefresh = () => {
+        if (adminSection === 'posts') {
+            fetchItems();
+            fetchStats();
+        } else if (adminSection === 'users') {
+            setUserRefreshTrigger(prev => prev + 1);
+        } else if (adminSection === 'reports') {
+            fetchReports();
+        }
     };
 
     const getAuthHeaders = async () => {
@@ -494,7 +659,7 @@ export default function AdminPage() {
     /* ───── Loading guard ───── */
     if (guardLoading) {
         return (
-            <div className="min-h-screen bg-[#0a0a0a] flex flex-col items-center justify-center gap-4">
+            <div className="min-h-[100dvh] bg-[#0a0a0a] flex flex-col items-center justify-center gap-4">
                 <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
                 <p className="text-[10px] font-black tracking-widest text-orange-500/40 uppercase">Verifying admin access...</p>
             </div>
@@ -502,7 +667,7 @@ export default function AdminPage() {
     }
 
     return (
-        <div className="min-h-screen bg-linear-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] bg-fixed text-white font-sans">
+        <div className="min-h-full text-white font-sans">
             {/* ─── HEADER ─── */}
             <header className="sticky top-0 z-50 bg-black/60 backdrop-blur-2xl border-b border-white/5">
                 <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -518,8 +683,10 @@ export default function AdminPage() {
                                 <Shield size={20} className="text-black" strokeWidth={3} />
                             </div>
                             <div>
-                                <h1 className="text-xl font-black tracking-tight">Admin Dashboard</h1>
-                                <p className="text-[10px] text-orange-400/50 font-bold uppercase tracking-widest">{adminSection === 'posts' ? 'Post Moderation' : 'User Verification'}</p>
+                                <h1 className="text-lg sm:text-xl font-black tracking-tight">Admin Dashboard</h1>
+                                <p className="text-[10px] text-orange-400/50 font-bold uppercase tracking-widest">
+                                    {adminSection === 'posts' ? 'Post Moderation' : adminSection === 'users' ? 'User Moderation' : 'User Reports'}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -527,17 +694,17 @@ export default function AdminPage() {
                     <div className="flex items-center gap-3">
                         {/* Pending count badge */}
                         {stats.pending > 0 && (
-                            <div className="flex items-center gap-2 px-4 py-2 bg-yellow-500/15 border border-yellow-500/30 rounded-xl">
+                            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-yellow-500/15 border border-yellow-500/30 rounded-xl">
                                 <Clock size={14} className="text-yellow-400" />
                                 <span className="text-xs font-black text-yellow-400">{stats.pending} pending</span>
                             </div>
                         )}
                         <button
-                            onClick={() => { fetchItems(); fetchStats(); }}
+                            onClick={handleRefresh}
                             className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-white/40 hover:text-orange-400"
                             title="Refresh"
                         >
-                            <RefreshCw size={18} />
+                            <RefreshCw size={18} className={loading || reportsLoading ? 'animate-spin' : ''} />
                         </button>
                     </div>
                 </div>
@@ -545,20 +712,382 @@ export default function AdminPage() {
 
             <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
                 {/* ─── SECTION SWITCHER ─── */}
-                <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-fit">
-                    <button onClick={() => setAdminSection('posts')}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'posts' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
-                        <Package size={16} /> Posts
-                    </button>
-                    <button onClick={() => setAdminSection('users')}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'users' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
-                        <Users size={16} /> Users
-                    </button>
+                <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide">
+                    <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max">
+                        <button onClick={() => setAdminSection('posts')}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'posts' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
+                            <Package size={16} /> Posts
+                        </button>
+                        <button onClick={() => setAdminSection('users')}
+                            className={`flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'users' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
+                            <Users size={16} /> Users
+                        </button>
+                        <button onClick={() => { setAdminSection('reports'); fetchReports(); }}
+                            className={`relative flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'reports' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
+                            <Flag size={16} /> Reports
+                            {reports.filter(r => r.status === 'pending').length > 0 && (
+                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] font-black text-white flex items-center justify-center">
+                                    {reports.filter(r => r.status === 'pending').length}
+                                </span>
+                            )}
+                        </button>
+                    </div>
                 </div>
 
                 <div className={adminSection === 'users' ? 'block' : 'hidden'}>
-                    <AdminUsersSection />
+                    <AdminUsersSection refreshTrigger={userRefreshTrigger} />
                 </div>
+
+                {/* ─── REPORTS SECTION ─── */}
+                <div className={adminSection === 'reports' ? 'block' : 'hidden'}>
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-lg font-black text-white">User Reports</h2>
+                                <p className="text-xs text-white/30 mt-0.5">Review reported users and take action</p>
+                            </div>
+                            <button onClick={fetchReports} className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-white/40 hover:text-orange-400">
+                                <RefreshCw size={16} className={reportsLoading ? 'animate-spin' : ''} />
+                            </button>
+                        </div>
+
+                        {/* Reports Stats */}
+                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                            {[
+                                { label: 'For Review', count: reports.filter(r => r.status === 'pending').length, icon: Clock, color: 'text-yellow-400', tab: 'pending' },
+                                { label: 'Dismissed', count: reports.filter(r => r.status === 'dismissed').length, icon: XCircle, color: 'text-white/40', tab: 'dismissed' },
+                                { label: 'Invalid', count: reports.filter(r => r.status === 'valid').length, icon: CheckCircle, color: 'text-gray-400', tab: 'valid' },
+                                { label: 'Valid + Ban', count: reports.filter(r => r.status === 'valid_ban').length, icon: Ban, color: 'text-red-500', tab: 'valid_ban' },
+                                { label: 'Total Reports', count: reports.length, icon: Flag, color: 'text-orange-400', tab: 'all' }
+                            ].map(s => (
+                                <button key={s.tab} onClick={() => { setReportFilter(s.tab); setSelectedReports(new Set()); }}
+                                    className={`p-5 rounded-2xl border transition-all text-left ${reportFilter === s.tab ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_30px_rgba(249,115,22,0.15)]' : 'bg-white/[0.03] border-white/10 hover:border-white/20'}`}>
+                                    <div className="flex items-center justify-between mb-3"><s.icon size={20} className={s.color} /><span className="text-3xl font-black text-white">{s.count}</span></div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{s.label}</p>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Filter Tabs */}
+                        <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide">
+                            <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max gap-1">
+                                {[
+                                    { key: 'all', label: 'All' },
+                                    { key: 'pending', label: 'For Review' },
+                                    { key: 'dismissed', label: 'Dismissed' },
+                                    { key: 'valid', label: 'Invalid' },
+                                    { key: 'valid_ban', label: 'Valid + Ban' },
+                                ].map(tab => (
+                                    <button key={tab.key} onClick={() => { setReportFilter(tab.key); setSelectedReports(new Set()); }}
+                                        className={`px-4 py-2 rounded-[0.9rem] text-xs font-black tracking-widest transition-all whitespace-nowrap ${reportFilter === tab.key ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
+                                        {tab.label}
+                                        {tab.key === 'pending' && reports.filter(r => r.status === 'pending').length > 0 && (
+                                            <span className="ml-1.5 px-1.5 py-0.5 bg-red-500 text-white text-[8px] rounded-full font-black">
+                                                {reports.filter(r => r.status === 'pending').length}
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {reportsLoading ? (
+                            <div className="flex items-center justify-center py-16">
+                                <Loader2 className="animate-spin text-orange-400" size={28} />
+                            </div>
+                        ) : (() => {
+                            const filteredReports = reportFilter === 'all' ? reports : reports.filter(r => r.status === reportFilter);
+
+                            // Select helpers
+                            const toggleReportSelect = (id, e) => { e.stopPropagation(); setSelectedReports(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }); };
+                            const toggleReportSelectAll = () => { selectedReports.size === filteredReports.length ? setSelectedReports(new Set()) : setSelectedReports(new Set(filteredReports.map(r => r.id))); };
+
+                            return filteredReports.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-16 text-white/20 border border-white/5 rounded-3xl">
+                                    <Flag size={32} className="mb-3 opacity-30" />
+                                    <p className="text-sm font-black uppercase tracking-widest">
+                                        {reportFilter === 'all' ? 'No reports yet' : `No ${reportFilter === 'valid_ban' ? 'valid + ban' : reportFilter} reports`}
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {/* Select all + batch actions bar */}
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                        <button onClick={toggleReportSelectAll}
+                                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedReports.size === filteredReports.length && filteredReports.length > 0 ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20 hover:border-orange-500/60'}`}>
+                                            {selectedReports.size === filteredReports.length && filteredReports.length > 0 && <CheckCircle size={14} className="text-white" />}
+                                        </button>
+                                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                                            {selectedReports.size > 0 ? `${selectedReports.size} selected` : 'Select all'}
+                                        </span>
+                                        {selectedReports.size > 0 && (
+                                            <button onClick={() => setBatchReportDeleteConfirm(true)}
+                                                className="ml-auto flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-black tracking-widest transition-all">
+                                                <Trash2 size={14} /> Delete {selectedReports.size}
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                        {filteredReports.map(report => (
+                                            <motion.div
+                                                key={report.id}
+                                                layout
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className={`text-left bg-white/[0.04] border rounded-2xl p-4 hover:border-orange-500/30 transition-all group cursor-pointer ${
+                                                    selectedReports.has(report.id) ? 'border-orange-500/60 ring-2 ring-orange-500/30' :
+                                                    report.status === 'pending' ? 'border-red-500/20' :
+                                                    report.status === 'valid' || report.status === 'valid_ban' ? 'border-green-500/20' : 'border-white/10'
+                                                }`}
+                                            >
+                                                {/* Compact header */}
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <button onClick={(e) => toggleReportSelect(report.id, e)}
+                                                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${selectedReports.has(report.id) ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20'}`}>
+                                                        {selectedReports.has(report.id) && <CheckCircle size={12} className="text-white" />}
+                                                    </button>
+                                                    <div className="flex-1 min-w-0" onClick={() => setSelectedReport(report)}>
+                                                        <p className="text-xs font-bold text-white truncate">{report.reported_user?.full_name || 'Unknown'}</p>
+                                                        <p className="text-[10px] text-white/30 truncate">Reported by {report.reporter?.full_name || 'Unknown'}</p>
+                                                    </div>
+                                                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${
+                                                        report.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' :
+                                                        report.status === 'valid_ban' ? 'bg-red-500/10 text-red-400 border-red-500/30' :
+                                                        report.status === 'valid' ? 'bg-gray-500/10 text-gray-400 border-gray-500/30' :
+                                                        'bg-white/5 text-white/30 border-white/10'
+                                                    }`}>
+                                                        {report.status === 'pending' ? 'For Review' : report.status === 'valid_ban' ? 'Valid + Ban' : report.status === 'valid' ? 'Invalid' : report.status}
+                                                    </span>
+                                                </div>
+                                                {/* Reason preview — clicks open detail */}
+                                                <div onClick={() => setSelectedReport(report)}>
+                                                    <p className="text-[11px] text-white/40 line-clamp-2 mb-2">{report.reason}</p>
+                                                    {/* Footer */}
+                                                    <div className="flex items-center justify-between text-[9px] text-white/20">
+                                                        <span>{new Date(report.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                                                        {report.chatMessages?.length > 0 && (
+                                                            <span className="flex items-center gap-1 text-orange-400/40">
+                                                                <MessageSquare size={10} /> {report.chatMessages.length} msgs
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                    </div>
+                </div>
+
+                {/* ─── REPORT DETAIL MODAL ─── */}
+                <AnimatePresence>
+                    {selectedReport && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                onClick={() => setSelectedReport(null)}
+                                className="absolute inset-0 bg-black/85 backdrop-blur-sm"
+                            />
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                className="relative w-full max-w-lg bg-[#121212] border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
+                            >
+                                <div className="p-6 space-y-5">
+                                    {/* Modal header */}
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <h3 className="text-lg font-black text-white">Report Details</h3>
+                                            <p className="text-[10px] text-white/30 uppercase tracking-widest mt-0.5">
+                                                {new Date(selectedReport.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button 
+                                                onClick={() => handleDeleteReport(selectedReport.id)}
+                                                disabled={reportProcessing === selectedReport.id}
+                                                className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all disabled:opacity-50"
+                                                title="Delete Report Permanently"
+                                            >
+                                                {reportProcessing === selectedReport.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                                            </button>
+                                            <button onClick={() => setSelectedReport(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-white/40 transition-all">
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Reported user */}
+                                    <div className="bg-red-500/5 border border-red-500/15 rounded-2xl p-4">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-red-400/60 mb-2">Reported User</p>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0 overflow-hidden">
+                                                {selectedReport.reported_user?.avatar_url
+                                                    ? <img src={selectedReport.reported_user.avatar_url} className="w-full h-full object-cover" alt="" />
+                                                    : <User size={16} className="text-red-400" />}
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold text-white">{selectedReport.reported_user?.full_name || 'Unknown'}</p>
+                                                <p className="text-[10px] text-white/30">{selectedReport.reported_user?.student_number}</p>
+                                            </div>
+                                            {selectedReport.reported_user?.is_banned && (
+                                                <span className="ml-auto px-2 py-0.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-[8px] font-black uppercase">Banned</span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Reporter */}
+                                    <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2">Reported By</p>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center shrink-0 overflow-hidden">
+                                                {selectedReport.reporter?.avatar_url
+                                                    ? <img src={selectedReport.reporter.avatar_url} className="w-full h-full object-cover" alt="" />
+                                                    : <User size={14} className="text-orange-400" />}
+                                            </div>
+                                            <p className="text-xs font-bold text-white/60">{selectedReport.reporter?.full_name || 'Unknown'}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Reason */}
+                                    <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2">Report Reason</p>
+                                        <p className="text-white/70 text-sm leading-relaxed">{selectedReport.reason}</p>
+                                    </div>
+
+                                    {/* Chat context with profiles */}
+                                    {selectedReport.chatMessages?.length > 0 && (
+                                        <div>
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-orange-400/60 mb-3 flex items-center gap-2">
+                                                <MessageSquare size={12} /> Chat Context ({selectedReport.chatMessages.length} messages)
+                                            </p>
+                                            <div className="bg-black/30 border border-white/5 rounded-2xl p-4 max-h-60 overflow-y-auto space-y-3">
+                                                {selectedReport.chatMessages.map(msg => {
+                                                    const isReported = msg.sender_id === selectedReport.reported_user?.id;
+                                                    const senderName = isReported
+                                                        ? selectedReport.reported_user?.full_name
+                                                        : selectedReport.reporter?.full_name;
+                                                    return (
+                                                        <div key={msg.id} className={`flex ${isReported ? 'justify-end' : 'justify-start'}`}>
+                                                            <div className="max-w-[80%]">
+                                                                <p className={`text-[9px] font-bold mb-0.5 ${isReported ? 'text-right text-red-400/60' : 'text-white/30'}`}>
+                                                                    {senderName || 'Unknown'} {isReported && '⚠️'}
+                                                                </p>
+                                                                <div className={`px-3 py-2 rounded-2xl text-xs ${
+                                                                    isReported
+                                                                        ? 'bg-red-500/20 text-red-200 border border-red-500/10'
+                                                                        : 'bg-white/10 text-white/60'
+                                                                }`}>
+                                                                    {msg.image_url ? (
+                                                                        <img src={msg.image_url} alt="Shared" className="max-w-[160px] rounded-xl" />
+                                                                    ) : msg.content}
+                                                                </div>
+                                                                <p className="text-[8px] text-white/15 mt-0.5 px-1">
+                                                                    {new Date(msg.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Reviewer info */}
+                                    {selectedReport.status !== 'pending' && selectedReport.reviewer && (
+                                        <div className="flex items-center gap-2 text-[10px] text-white/30">
+                                            <CheckCircle size={12} className="text-green-400/40" />
+                                            <span>Reviewed by <span className="text-white/50 font-bold">{selectedReport.reviewer.full_name}</span></span>
+                                        </div>
+                                    )}
+
+                                    {/* Actions — only for pending */}
+                                    {selectedReport.status === 'pending' && (
+                                        <div className="flex flex-col gap-2 pt-2 border-t border-white/5">
+                                            <button
+                                                onClick={() => { handleReportAction(selectedReport.id, 'dismissed', selectedReport.reported_user?.id); setSelectedReport(null); }}
+                                                disabled={reportProcessing === selectedReport.id}
+                                                className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/50 border border-white/10 rounded-2xl font-black text-xs tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                            >
+                                                {reportProcessing === selectedReport.id ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
+                                                Dismiss Report
+                                            </button>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => { handleReportAction(selectedReport.id, 'valid', selectedReport.reported_user?.id, false); setSelectedReport(null); }}
+                                                    disabled={reportProcessing === selectedReport.id}
+                                                    className="flex-1 py-3 bg-gray-500/10 hover:bg-gray-500/20 text-gray-400 border border-gray-500/30 rounded-2xl font-black text-xs tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                                >
+                                                    <Flag size={14} /> Invalid
+                                                </button>
+                                                <button
+                                                    onClick={() => setReportBanReasonTarget(selectedReport)}
+                                                    disabled={reportProcessing === selectedReport.id || selectedReport.reported_user?.is_banned}
+                                                    className="flex-1 py-3 bg-red-600/80 hover:bg-red-600 text-white border border-red-500/40 rounded-2xl font-black text-xs tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                                >
+                                                    <Ban size={14} /> {selectedReport.reported_user?.is_banned ? 'Banned' : 'Valid + Ban'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Close button for non-pending */}
+                                    {selectedReport.status !== 'pending' && (
+                                        <button onClick={() => setSelectedReport(null)}
+                                            className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-2xl font-bold text-xs tracking-widest transition-all">
+                                            CLOSE
+                                        </button>
+                                    )}
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+
+                {/* ─── BATCH REPORT DELETE CONFIRMATION ─── */}
+                <AnimatePresence>
+                    {batchReportDeleteConfirm && (
+                        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setBatchReportDeleteConfirm(false)} />
+                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                                className="relative bg-[#1a1a1a] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-2xl shadow-red-900/20">
+                                <div className="w-14 h-14 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-5">
+                                    <Trash2 size={28} className="text-red-500" />
+                                </div>
+                                <h3 className="text-lg font-bold text-white mb-2">Delete {selectedReports.size} Report{selectedReports.size > 1 ? 's' : ''}?</h3>
+                                <p className="text-white/40 text-xs mb-6">This action is permanent and cannot be undone.</p>
+                                <div className="space-y-3">
+                                    <button onClick={handleBatchDeleteReports} disabled={processing}
+                                        className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                                        {processing ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} DELETE PERMANENTLY
+                                    </button>
+                                    <button onClick={() => setBatchReportDeleteConfirm(false)}
+                                        className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl font-bold text-xs tracking-widest">CANCEL</button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+
+                {/* ─── BAN REASON MODAL (REPORTS) ─── */}
+                <AnimatePresence>
+                    {reportBanReasonTarget && (
+                        <BanReasonModal
+                            processing={reportProcessing === reportBanReasonTarget.id}
+                            onCancel={() => setReportBanReasonTarget(null)}
+                            onConfirm={(reason) => {
+                                handleReportAction(reportBanReasonTarget.id, 'valid', reportBanReasonTarget.reported_user?.id, true, reason);
+                                setReportBanReasonTarget(null);
+                                setSelectedReport(null);
+                            }}
+                        />
+                    )}
+                </AnimatePresence>
 
                 <div className={`${adminSection === 'posts' ? 'block' : 'hidden'} space-y-8`}>
                     {/* ─── STAT CARDS ─── */}
@@ -572,20 +1101,22 @@ export default function AdminPage() {
                     {/* ─── TABS + SEARCH + FILTERS ─── */}
                     <div className="relative w-full z-60">
                         <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
-                            <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md">
-                                {TABS.map(tab => (
-                                    <button
-                                        key={tab.key}
-                                        onClick={() => setActiveTab(tab.key)}
-                                        className={`flex items-center gap-2 px-5 py-2.5 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${activeTab === tab.key
-                                            ? `${tab.bg} text-white shadow-lg`
-                                            : 'text-white/30 hover:text-white/50'
-                                            }`}
-                                    >
-                                        <tab.icon size={14} />
-                                        {tab.label}
-                                    </button>
-                                ))}
+                            <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide lg:overflow-visible lg:mx-0 lg:px-0 lg:pb-0">
+                                <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max lg:w-auto">
+                                    {TABS.map(tab => (
+                                        <button
+                                            key={tab.key}
+                                            onClick={() => setActiveTab(tab.key)}
+                                            className={`flex items-center gap-2 px-5 py-2.5 rounded-[0.9rem] text-xs font-black tracking-widest transition-all whitespace-nowrap ${activeTab === tab.key
+                                                ? `${tab.bg} text-white shadow-lg`
+                                                : 'text-white/30 hover:text-white/50'
+                                                }`}
+                                        >
+                                            <tab.icon size={14} />
+                                            {tab.label}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
                             <div className="flex items-center gap-4 lg:ml-auto w-full lg:w-auto flex-1 lg:justify-end">
@@ -697,7 +1228,7 @@ export default function AdminPage() {
                                                 >
                                                     <button onClick={() => setLocationFilter('All')}
                                                         className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${locationFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>All</button>
-                                                    {LOCATIONS.map(loc => (
+                                                    {CAMPUS_LOCATIONS.map(loc => (
                                                         <button key={loc} onClick={() => setLocationFilter(loc)}
                                                             className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
                                                     ))}
@@ -707,7 +1238,7 @@ export default function AdminPage() {
                                             <div className="hidden md:flex flex-wrap gap-2 px-1 pb-1">
                                                 <button onClick={() => setLocationFilter('All')}
                                                     className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${locationFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>All</button>
-                                                {LOCATIONS.map(loc => (
+                                                {CAMPUS_LOCATIONS.map(loc => (
                                                     <button key={loc} onClick={() => setLocationFilter(loc)}
                                                         className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
                                                 ))}
@@ -881,14 +1412,20 @@ export default function AdminPage() {
                     <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }}
                         className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-6 py-4 bg-[#1a1a1a]/95 border border-white/10 rounded-2xl backdrop-blur-2xl shadow-2xl">
                         <span className="text-xs font-black text-white/60 uppercase tracking-widest mr-2">{selectedItems.size} selected</span>
-                        <button onClick={() => handleBatchModerate('approve')} disabled={processing}
-                            className="px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
-                            <CheckCircle size={12} /> Approve
-                        </button>
-                        <button onClick={() => handleBatchModerate('reject')} disabled={processing}
-                            className="px-4 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
-                            <XCircle size={12} /> Reject
-                        </button>
+                        {/* Approve: show on pending, rejected, all */}
+                        {(activeTab === 'pending' || activeTab === 'rejected' || activeTab === 'all') && (
+                            <button onClick={() => handleBatchModerate('approve')} disabled={processing}
+                                className="px-4 py-2.5 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
+                                <CheckCircle size={12} /> Approve
+                            </button>
+                        )}
+                        {/* Reject: show on pending, approved, all */}
+                        {(activeTab === 'pending' || activeTab === 'approved' || activeTab === 'all') && (
+                            <button onClick={() => handleBatchModerate('reject')} disabled={processing}
+                                className="px-4 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
+                                <XCircle size={12} /> Reject
+                            </button>
+                        )}
                         <button onClick={() => setBatchDeleteConfirm(true)} disabled={processing}
                             className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
                             <Trash2 size={12} /> Delete
