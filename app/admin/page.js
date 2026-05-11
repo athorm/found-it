@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import AdminUsersSection from '@/components/AdminUsersSection';
 import CustomDateRangePicker from '@/components/CustomDateRangePicker';
-import { ITEM_CATEGORIES } from '@/app/Home/page';
+import { ITEM_CATEGORIES, CAMPUS_LOCATIONS } from '@/lib/constants';
 
 /* ─────────────────────────── STATUS TABS ─────────────────────────── */
 const TABS = [
@@ -22,7 +22,7 @@ const TABS = [
     { key: 'all', label: 'All Items', icon: Package, color: 'text-orange-400', bg: 'bg-orange-500' },
 ];
 
-const LOCATIONS = ['Shed', 'Activity Center', 'ER Bldg.', 'ENB Bldg.', 'Volleyball Court', 'Basketball Court', 'Admin Bldg.', 'Quadrangle'];
+// LOCATIONS now imported from @/lib/constants — edit that file to add/remove locations
 
 /* ─────────────────────────── ITEM CARD ─────────────────────────── */
 function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, processing, selected, onToggleSelect }) {
@@ -1228,7 +1228,7 @@ export default function AdminPage() {
                                                 >
                                                     <button onClick={() => setLocationFilter('All')}
                                                         className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${locationFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>All</button>
-                                                    {LOCATIONS.map(loc => (
+                                                    {CAMPUS_LOCATIONS.map(loc => (
                                                         <button key={loc} onClick={() => setLocationFilter(loc)}
                                                             className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
                                                     ))}
@@ -1238,7 +1238,7 @@ export default function AdminPage() {
                                             <div className="hidden md:flex flex-wrap gap-2 px-1 pb-1">
                                                 <button onClick={() => setLocationFilter('All')}
                                                     className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${locationFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>All</button>
-                                                {LOCATIONS.map(loc => (
+                                                {CAMPUS_LOCATIONS.map(loc => (
                                                     <button key={loc} onClick={() => setLocationFilter(loc)}
                                                         className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
                                                 ))}

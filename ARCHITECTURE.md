@@ -296,7 +296,7 @@ Each module performs a single, well-defined function:
 
 **Notification Bell (FAB):** The Bell icon is a separate floating action button positioned at `fixed bottom-[112px] right-10` — above the NavBar. This keeps the NavBar symmetric (5 items) while giving notifications a prominent, always-accessible position. Shows unread count badge.
 
-**Plus button border:** Uses `border-orange-900/70` for a warm dark-orange border that blends with the gradient design (alternative: `border-[#1a0a00]` for a near-black warm tint).
+**Plus button border:** Uses `border-[#431407]` for a rich, dark burnt-orange border that provides high contrast while staying within the orange color palette.
 
 **Unread message badge:** Queries `messages` table for `is_read = false AND receiver_id = current_user` — displays count on Chat icon.
 

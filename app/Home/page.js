@@ -8,6 +8,7 @@ import ItemPostModal from "@/components/ItemPostModal";
 import MarqueeTitle from "@/components/MarqueeTitle";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { supabase } from "@/lib/supabase";
+import { ITEM_CATEGORIES, CATEGORY_EMOJI } from "@/lib/constants";
 
 // ─── Dynamic Greeting Engine ───
 // Returns a context-aware greeting based on the current hour and day of week.
@@ -66,28 +67,7 @@ function getSubtitle() {
   return pool[dayOfYear % pool.length];
 }
 
-// Emoji map for item categories (used by Recent Feed cards)
-const CATEGORY_EMOJI = {
-  Electronics: "📱", Wallets: "👛", "IDs & Cards": "🪪",
-  "School Supplies": "📚", Keys: "🔑", Books: "📖",
-  Clothing: "👕", Bags: "🎒", Accessories: "⌚",
-  Documents: "📄", Other: "📦",
-};
-
-// Shared item category list — single source of truth
-export const ITEM_CATEGORIES = [
-  { label: "Electronics", value: "Electronics", emoji: "📱" },
-  { label: "Wallets", value: "Wallets", emoji: "👛" },
-  { label: "IDs & Cards", value: "IDs & Cards", emoji: "🪪" },
-  { label: "School Supplies", value: "School Supplies", emoji: "📚" },
-  { label: "Keys", value: "Keys", emoji: "🔑" },
-  { label: "Books", value: "Books", emoji: "📖" },
-  { label: "Clothing", value: "Clothing", emoji: "👕" },
-  { label: "Bags", value: "Bags", emoji: "🎒" },
-  { label: "Accessories", value: "Accessories", emoji: "⌚" },
-  { label: "Documents", value: "Documents", emoji: "📄" },
-  { label: "Other", value: "Other", emoji: "📦" },
-];
+// Item categories and emojis now imported from @/lib/constants
 
 // Info modal content
 const INFO_SECTIONS = [
@@ -342,7 +322,7 @@ export default function HomePage() {
             transition={{ delay: 0.3 }}
             className="w-full mt-8"
           >
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 mb-3 text-left">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 mb-3 text-center">
               Recently Reported
             </p>
           </motion.div>

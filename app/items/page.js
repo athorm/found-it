@@ -13,7 +13,7 @@ import ItemPostModal from "@/components/ItemPostModal";
 import MarqueeTitle from "@/components/MarqueeTitle";
 import CustomDateRangePicker from "@/components/CustomDateRangePicker";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
-import { ITEM_CATEGORIES } from "@/app/Home/page";
+import { CAMPUS_LOCATIONS_WITH_ALL, ITEM_CATEGORIES } from "@/lib/constants";
 
 export default function ItemsPage() {
   const router = useRouter();
@@ -79,7 +79,7 @@ export default function ItemsPage() {
     router.push(`/post?preview=${encodeURIComponent(previewUrl)}`);
   };
 
-  const locations = ['All', 'Shed', 'Activity Center', 'ER Bldg.', 'ENB Bldg.', 'Volleyball Court', 'Basketball Court', 'Admin Bldg.', 'Quadrangle'];
+  const locations = CAMPUS_LOCATIONS_WITH_ALL;
   const statuses = ['All', 'Unclaimed', 'Claimed'];
 
   const statusMap = { 'Active': 'Unclaimed', 'Resolved': 'Claimed' };

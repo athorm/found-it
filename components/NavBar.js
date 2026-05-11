@@ -175,7 +175,7 @@ export default function NavBar({ activePage, onPlusClick }) {
                 */}
                 <motion.button
                     whileTap={{ scale: 0.92 }}
-                    className="p-4 rounded-full -translate-y-6 border-4 border-orange-900/70 shadow-xl shadow-orange-500/40 bg-linear-to-br from-orange-500 to-orange-700 active:scale-90 transition-transform"
+                    className="p-4 rounded-full -translate-y-6 border-4 border-[#431407] shadow-xl shadow-orange-500/40 bg-linear-to-br from-orange-500 to-orange-700 active:scale-90 transition-transform"
                     onClick={handlePlusClick}
                 >
                     <Plus size={24} color="white" strokeWidth={3} />

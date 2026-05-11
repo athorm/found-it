@@ -7,7 +7,7 @@ import { ArrowLeft, Send, Loader2, AlertCircle, ChevronDown, Check, Maximize2, C
 import ItemPostModal from '@/components/ItemPostModal';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import Cropper from 'react-easy-crop';
-import { ITEM_CATEGORIES } from '@/app/Home/page';
+import { ITEM_CATEGORIES, CAMPUS_LOCATION_OPTIONS } from '@/lib/constants';
 
 // --- CUSTOM DROPDOWN COMPONENT ---
 function CustomSelect({ label, value, options, onChange, placeholder = "Select" }) {
@@ -300,16 +300,7 @@ function PostItemContent() {
         <CustomSelect
           label="General Area"
           value={locationTag}
-          options={[
-            { label: 'Shed', value: 'Shed' },
-            { label: 'Activity Center', value: 'Activity Center' },
-            { label: 'ER Bldg.', value: 'ER Bldg.' },
-            { label: 'ENB Bldg.', value: 'ENB Bldg.' },
-            { label: 'Volleyball Court', value: 'Volleyball Court' },
-            { label: 'Basketball Court', value: 'Basketball Court' },
-            { label: 'Admin Bldg.', value: 'Admin Bldg.' },
-            { label: 'Quadrangle', value: 'Quadrangle' }
-          ]}
+          options={CAMPUS_LOCATION_OPTIONS}
           onChange={setLocationTag}
         />
 
