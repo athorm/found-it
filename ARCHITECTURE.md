@@ -231,10 +231,12 @@ Each module performs a single, well-defined function:
 
 **Actions available:**
 - **Upload Avatar**: Select image → upload to Supabase Storage bucket `avatars` → update `profiles.avatar_url`
-- **Change Password**: Opens a form to update the auth password via `supabase.auth.updateUser()`
-- **Delete Account**: Calls `/api/admin/delete-user` with the user's own ID — removes auth.users entry (cascades to profile)
+- **Change Password**: Opens a modal with two password inputs (New + Confirm). Both fields have an **Eye/EyeOff visibility toggle** button inside them. Validates minimum 6 characters and matching passwords before calling `supabase.auth.updateUser()`. Visibility state resets when modal closes.
+- **Delete Account**: Calls `/api/account` with DELETE method — removes auth.users entry (cascades to profile)
 - **Log Out**: `supabase.auth.signOut()` → redirect to `/login`
 - **Admin Dashboard** (admin users only): Button visible when `profiles.role === 'admin'`, links to `/admin`
+
+**Loading state:** Uses `min-h-[100dvh]` so the spinner is perfectly centered in the viewport regardless of mobile browser chrome.
 
 **Design:** Centered profile card with large avatar, glassmorphic info fields, action buttons with red delete styling.
 
@@ -314,7 +316,10 @@ Each module performs a single, well-defined function:
 - "Mark all as read" button clears all unread badges
 - Auto-closes on outside click
 - Relative time formatting ("Just now", "5m ago", "2h ago", "3d ago")
-- Swipe-to-delete support for individual notifications
+- **Swipe right to delete**: Drag a notification right >80px to delete it instantly
+- **Long-press multi-select** (500ms hold): Enters selection mode where notifications get checkboxes. Header swaps to show selected count + batch Delete button. A "Select all / Deselect all" bar slides in. Select mode exits cleanly on cancel or after batch delete.
+- **Animated reflow**: Deleted items animate out with `height: 0` via `AnimatePresence` + `motion.div layout` — remaining notifications smoothly slide up to fill the gap
+- Hint bar at bottom: *"Long press to select • Swipe right to delete"*
 
 **Notification types:** `item_approved`, `item_rejected`, `item_resolved` — each with a distinct icon (CheckCircle, XCircle, Package).
 
@@ -325,10 +330,14 @@ Each module performs a single, well-defined function:
 
 **Actions:**
 - **"Contact Owner"** — creates or retrieves a chat via `/api/chats` and navigates to the conversation
+- **"Mark as Claimed/Unclaimed" (owner only)** — toggles `items.status` between `Active` and `Resolved`. **Disabled (grayed out + cursor-not-allowed) when `moderation_status !== 'approved'`** — pending and rejected posts cannot have their status changed.
 - **"Delete" (owner only)** — deletes the item + cascading chats/messages
 - Self-messaging is prevented (button hidden for own items)
+- Items that are `Resolved` show a locked banner instead of the contact button
 
 **Loading state:** Shows a skeleton loader while fetching the poster's profile data to prevent stale data from previous items.
+
+> The same `moderation_status` guard also applies to the standalone item detail page at `/app/items/[id]/page.js`.
 
 ### 4.3 ItemPostModal — `/components/ItemPostModal.js`
 **Purpose:** Popup that appears when the "+" button is tapped. Offers two image source options.
