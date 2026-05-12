@@ -125,7 +125,7 @@ export default function PendingVerificationPage() {
                 {/* Logo */}
                 <div className="flex justify-center mb-6">
                     <img
-                        src="/logo.png"
+                        src="/logo2.svg"
                         alt="FoundIt Logo"
                         className="w-20 h-20 rounded-2xl mix-blend-screen drop-shadow-[0_0_15px_rgba(249,115,22,0.4)]"
                     />
@@ -134,11 +134,10 @@ export default function PendingVerificationPage() {
                 {/* Status Card */}
                 <div className="bg-black/40 backdrop-blur-2xl border border-orange-500/20 rounded-3xl p-8 shadow-2xl shadow-orange-500/10 space-y-6">
                     {/* Icon */}
-                    <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center ${
-                        isPending
+                    <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center ${isPending
                             ? 'bg-yellow-500/10 border-2 border-yellow-500/30'
                             : 'bg-red-500/10 border-2 border-red-500/30'
-                    }`}>
+                        }`}>
                         {isPending ? (
                             <Clock size={36} className="text-yellow-400" />
                         ) : (
@@ -168,11 +167,10 @@ export default function PendingVerificationPage() {
                     )}
 
                     {/* Status badge */}
-                    <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest ${
-                        isPending
+                    <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest ${isPending
                             ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
                             : 'bg-red-500/15 text-red-400 border border-red-500/30'
-                    }`}>
+                        }`}>
                         {isPending ? <Clock size={14} /> : <XCircle size={14} />}
                         {isPending ? 'Under Review' : 'Not Approved'}
                     </div>
