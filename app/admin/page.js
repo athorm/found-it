@@ -8,7 +8,7 @@ import {
     ArrowLeft, Shield, CheckCircle, XCircle, Trash2, Clock,
     Package, Search, RefreshCw, AlertTriangle, Loader2,
     Eye, ChevronDown, MapPin, User, Filter, Users, Calendar, X,
-    Flag, Ban, MessageSquare
+    Flag, Ban, MessageSquare, ShieldAlert
 } from 'lucide-react';
 import AdminUsersSection from '@/components/AdminUsersSection';
 import CustomDateRangePicker from '@/components/CustomDateRangePicker';
@@ -65,7 +65,7 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
             <div className="p-5 space-y-4 flex-1 flex flex-col">
                 <div>
                     <div className="overflow-hidden mb-2">
-                        <motion.div 
+                        <motion.div
                             drag="x"
                             dragConstraints={{ left: -200, right: 0 }}
                             className="flex items-center gap-1.5 pb-1 cursor-grab active:cursor-grabbing w-max"
@@ -79,6 +79,11 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                             <span className={`shrink-0 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest border ${item.status === 'Resolved' ? 'bg-blue-500/15 text-blue-400 border-blue-500/30' : 'bg-white/5 text-white/40 border-white/10'}`}>
                                 {item.status === 'Resolved' ? 'RESOLVED' : 'UNRESOLVED'}
                             </span>
+                            {item.ai_flagged && (
+                                <span className="shrink-0 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-widest bg-purple-500/20 text-purple-400 border border-purple-500/30 flex items-center gap-1">
+                                    <ShieldAlert size={10} /> AI FLAGGED
+                                </span>
+                            )}
                         </motion.div>
                     </div>
                     <h3 className="font-bold text-white text-lg tracking-tight line-clamp-1">{item.title}</h3>
@@ -296,11 +301,10 @@ function BanReasonModal({ onConfirm, onCancel, processing }) {
                 <div className="flex flex-wrap gap-2 mb-4">
                     {BAN_PREMADE_REASONS.map((r) => (
                         <button key={r} onClick={() => setReason(r)} type="button"
-                            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${
-                                reason === r
+                            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${reason === r
                                     ? 'bg-red-500/20 border-red-500/40 text-red-300'
                                     : 'bg-white/5 border-white/10 text-white/40 hover:border-red-500/30 hover:text-white/60'
-                            }`}>
+                                }`}>
                             {r}
                         </button>
                     ))}
@@ -328,7 +332,7 @@ export default function AdminPage() {
     const router = useRouter();
     const { user, isAdmin, guardLoading } = useAdminGuard();
 
-    const [adminSection, setAdminSection] = useState('posts'); // 'posts' | 'users' | 'reports'
+    const [adminSection, setAdminSection] = useState('posts'); // 'posts' | 'users' | 'reports' | 'ai-logs'
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
@@ -364,6 +368,13 @@ export default function AdminPage() {
     const [reportBanReasonTarget, setReportBanReasonTarget] = useState(null);
     const [selectedReports, setSelectedReports] = useState(new Set()); // multi-select for batch delete
     const [batchReportDeleteConfirm, setBatchReportDeleteConfirm] = useState(false);
+
+    // AI Moderation Logs
+    const [aiLogs, setAiLogs] = useState([]);
+    const [aiLogsLoading, setAiLogsLoading] = useState(false);
+    const [aiLogFilter, setAiLogFilter] = useState('flagged'); // 'all' | 'flagged' | 'unreviewed' | 'confirmed' | 'dismissed'
+    const [selectedAiLogs, setSelectedAiLogs] = useState(new Set());
+    const [batchAiLogDeleteConfirm, setBatchAiLogDeleteConfirm] = useState(false);
 
     // Refs for drag constraints calculation
     const typeScrollRef = useRef(null);
@@ -482,6 +493,85 @@ export default function AdminPage() {
         }
     };
 
+    const fetchAiLogs = async () => {
+        setAiLogsLoading(true);
+        try {
+            const headers = await getAuthHeaders();
+            const res = await fetch('/api/admin/ai-logs', { headers });
+            const json = await res.json();
+            if (res.ok) setAiLogs(json.logs || []);
+        } catch (err) {
+            console.error('fetchAiLogs error:', err);
+        } finally {
+            setAiLogsLoading(false);
+        }
+    };
+
+    const handleAiLogReview = async (logId, decision) => {
+        try {
+            const headers = await getAuthHeaders();
+            const res = await fetch('/api/admin/ai-logs', {
+                method: 'PATCH',
+                headers: { ...headers, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ logId, decision }),
+            });
+            if (!res.ok) throw new Error('Failed to update AI log');
+            showToast(`AI log marked as ${decision}`);
+            fetchAiLogs();
+        } catch (err) {
+            showToast(err.message, 'error');
+        }
+    };
+
+    const handleBatchDeleteAiLogs = async () => {
+        if (selectedAiLogs.size === 0) return;
+        try {
+            setProcessing(true);
+            const headers = await getAuthHeaders();
+            const res = await fetch('/api/admin/ai-logs', {
+                method: 'DELETE',
+                headers: { ...headers, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ids: [...selectedAiLogs] }),
+            });
+            if (!res.ok) throw new Error('Failed to delete AI logs');
+            const json = await res.json();
+            showToast(`${json.deleted} AI log(s) deleted`);
+            setSelectedAiLogs(new Set());
+            setBatchAiLogDeleteConfirm(false);
+            fetchAiLogs();
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            setProcessing(false);
+        }
+    };
+
+    const handleBatchAiLogReview = async (decision) => {
+        if (selectedAiLogs.size === 0) return;
+        try {
+            setProcessing(true);
+            const headers = await getAuthHeaders();
+            const results = await Promise.all(
+                [...selectedAiLogs].map(logId =>
+                    fetch('/api/admin/ai-logs', {
+                        method: 'PATCH',
+                        headers: { ...headers, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ logId, decision }),
+                    })
+                )
+            );
+            const failCount = results.filter(r => !r.ok).length;
+            if (failCount > 0) showToast(`${failCount} log(s) failed to update`, 'error');
+            else showToast(`${selectedAiLogs.size} log(s) marked as ${decision}`);
+            setSelectedAiLogs(new Set());
+            fetchAiLogs();
+        } catch (err) {
+            showToast(err.message, 'error');
+        } finally {
+            setProcessing(false);
+        }
+    };
+
     const handleRefresh = () => {
         if (adminSection === 'posts') {
             fetchItems();
@@ -490,6 +580,8 @@ export default function AdminPage() {
             setUserRefreshTrigger(prev => prev + 1);
         } else if (adminSection === 'reports') {
             fetchReports();
+        } else if (adminSection === 'ai-logs') {
+            fetchAiLogs();
         }
     };
 
@@ -685,7 +777,7 @@ export default function AdminPage() {
                             <div>
                                 <h1 className="text-lg sm:text-xl font-black tracking-tight">Admin Dashboard</h1>
                                 <p className="text-[10px] text-orange-400/50 font-bold uppercase tracking-widest">
-                                    {adminSection === 'posts' ? 'Post Moderation' : adminSection === 'users' ? 'User Moderation' : 'User Reports'}
+                                    {adminSection === 'posts' ? 'Post Moderation' : adminSection === 'users' ? 'User Moderation' : adminSection === 'ai-logs' ? 'AI Moderation Logs' : 'User Reports'}
                                 </p>
                             </div>
                         </div>
@@ -731,6 +823,15 @@ export default function AdminPage() {
                                 </span>
                             )}
                         </button>
+                        <button onClick={() => { setAdminSection('ai-logs'); fetchAiLogs(); }}
+                            className={`relative flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'ai-logs' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
+                            <ShieldAlert size={16} /> AI Logs
+                            {aiLogs.filter(l => l.flagged && !l.admin_reviewed).length > 0 && (
+                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] font-black text-white flex items-center justify-center">
+                                    {aiLogs.filter(l => l.flagged && !l.admin_reviewed).length}
+                                </span>
+                            )}
+                        </button>
                     </div>
                 </div>
 
@@ -772,11 +873,11 @@ export default function AdminPage() {
                         <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide">
                             <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max gap-1">
                                 {[
-                                    { key: 'all', label: 'All' },
                                     { key: 'pending', label: 'For Review' },
                                     { key: 'dismissed', label: 'Dismissed' },
                                     { key: 'valid', label: 'Invalid' },
                                     { key: 'valid_ban', label: 'Valid + Ban' },
+                                    { key: 'all', label: 'All' },
                                 ].map(tab => (
                                     <button key={tab.key} onClick={() => { setReportFilter(tab.key); setSelectedReports(new Set()); }}
                                         className={`px-4 py-2 rounded-[0.9rem] text-xs font-black tracking-widest transition-all whitespace-nowrap ${reportFilter === tab.key ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
@@ -835,11 +936,10 @@ export default function AdminPage() {
                                                 layout
                                                 initial={{ opacity: 0, y: 10 }}
                                                 animate={{ opacity: 1, y: 0 }}
-                                                className={`text-left bg-white/[0.04] border rounded-2xl p-4 hover:border-orange-500/30 transition-all group cursor-pointer ${
-                                                    selectedReports.has(report.id) ? 'border-orange-500/60 ring-2 ring-orange-500/30' :
-                                                    report.status === 'pending' ? 'border-red-500/20' :
-                                                    report.status === 'valid' || report.status === 'valid_ban' ? 'border-green-500/20' : 'border-white/10'
-                                                }`}
+                                                className={`text-left bg-white/[0.04] border rounded-2xl p-4 hover:border-orange-500/30 transition-all group cursor-pointer ${selectedReports.has(report.id) ? 'border-orange-500/60 ring-2 ring-orange-500/30' :
+                                                        report.status === 'pending' ? 'border-red-500/20' :
+                                                            report.status === 'valid' || report.status === 'valid_ban' ? 'border-green-500/20' : 'border-white/10'
+                                                    }`}
                                             >
                                                 {/* Compact header */}
                                                 <div className="flex items-center gap-3 mb-3">
@@ -851,12 +951,11 @@ export default function AdminPage() {
                                                         <p className="text-xs font-bold text-white truncate">{report.reported_user?.full_name || 'Unknown'}</p>
                                                         <p className="text-[10px] text-white/30 truncate">Reported by {report.reporter?.full_name || 'Unknown'}</p>
                                                     </div>
-                                                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${
-                                                        report.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' :
-                                                        report.status === 'valid_ban' ? 'bg-red-500/10 text-red-400 border-red-500/30' :
-                                                        report.status === 'valid' ? 'bg-gray-500/10 text-gray-400 border-gray-500/30' :
-                                                        'bg-white/5 text-white/30 border-white/10'
-                                                    }`}>
+                                                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${report.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' :
+                                                            report.status === 'valid_ban' ? 'bg-red-500/10 text-red-400 border-red-500/30' :
+                                                                report.status === 'valid' ? 'bg-gray-500/10 text-gray-400 border-gray-500/30' :
+                                                                    'bg-white/5 text-white/30 border-white/10'
+                                                        }`}>
                                                         {report.status === 'pending' ? 'For Review' : report.status === 'valid_ban' ? 'Valid + Ban' : report.status === 'valid' ? 'Invalid' : report.status}
                                                     </span>
                                                 </div>
@@ -907,7 +1006,7 @@ export default function AdminPage() {
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <button 
+                                            <button
                                                 onClick={() => handleDeleteReport(selectedReport.id)}
                                                 disabled={reportProcessing === selectedReport.id}
                                                 className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all disabled:opacity-50"
@@ -977,11 +1076,10 @@ export default function AdminPage() {
                                                                 <p className={`text-[9px] font-bold mb-0.5 ${isReported ? 'text-right text-red-400/60' : 'text-white/30'}`}>
                                                                     {senderName || 'Unknown'} {isReported && '⚠️'}
                                                                 </p>
-                                                                <div className={`px-3 py-2 rounded-2xl text-xs ${
-                                                                    isReported
+                                                                <div className={`px-3 py-2 rounded-2xl text-xs ${isReported
                                                                         ? 'bg-red-500/20 text-red-200 border border-red-500/10'
                                                                         : 'bg-white/10 text-white/60'
-                                                                }`}>
+                                                                    }`}>
                                                                     {msg.image_url ? (
                                                                         <img src={msg.image_url} alt="Shared" className="max-w-[160px] rounded-xl" />
                                                                     ) : msg.content}
@@ -1089,6 +1187,220 @@ export default function AdminPage() {
                     )}
                 </AnimatePresence>
 
+                {/* ─── AI LOGS SECTION ─── */}
+                <div className={adminSection === 'ai-logs' ? 'block' : 'hidden'}>
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-lg font-black text-white">AI Moderation Logs</h2>
+                                <p className="text-xs text-white/30 mt-0.5">Review content flagged by AI — confirm threats or dismiss false positives</p>
+                            </div>
+                            <button onClick={fetchAiLogs} className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-white/40 hover:text-orange-400">
+                                <RefreshCw size={16} className={aiLogsLoading ? 'animate-spin' : ''} />
+                            </button>
+                        </div>
+
+                        {/* AI Stats */}
+                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                            {[
+                                { label: 'Flagged', count: aiLogs.filter(l => l.flagged).length, icon: ShieldAlert, color: 'text-orange-400', tab: 'flagged' },
+                                { label: 'Unreviewed', count: aiLogs.filter(l => l.flagged && !l.admin_reviewed).length, icon: Clock, color: 'text-yellow-400', tab: 'unreviewed' },
+                                { label: 'Confirmed', count: aiLogs.filter(l => l.admin_decision === 'confirmed').length, icon: CheckCircle, color: 'text-red-400', tab: 'confirmed' },
+                                { label: 'Dismissed', count: aiLogs.filter(l => l.admin_decision === 'dismissed').length, icon: XCircle, color: 'text-green-400', tab: 'dismissed' },
+                                { label: 'Total Logs', count: aiLogs.length, icon: Shield, color: 'text-orange-400', tab: 'all' },
+                            ].map(s => (
+                                <button key={s.tab} onClick={() => { setAiLogFilter(s.tab); setSelectedAiLogs(new Set()); }}
+                                    className={`p-5 rounded-2xl border transition-all text-left ${aiLogFilter === s.tab ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_30px_rgba(249,115,22,0.15)]' : 'bg-white/[0.03] border-white/10 hover:border-white/20'}`}>
+                                    <div className="flex items-center justify-between mb-3"><s.icon size={20} className={s.color} /><span className="text-3xl font-black text-white">{s.count}</span></div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{s.label}</p>
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Filter Tabs */}
+                        <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide">
+                            <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max gap-1">
+                                {[
+                                    { key: 'flagged', label: 'Flagged' },
+                                    { key: 'unreviewed', label: 'Unreviewed' },
+                                    { key: 'confirmed', label: 'Confirmed' },
+                                    { key: 'dismissed', label: 'Dismissed' },
+                                    { key: 'all', label: 'All' },
+                                ].map(tab => (
+                                    <button key={tab.key} onClick={() => { setAiLogFilter(tab.key); setSelectedAiLogs(new Set()); }}
+                                        className={`px-4 py-2 rounded-[0.9rem] text-xs font-black tracking-widest transition-all whitespace-nowrap ${aiLogFilter === tab.key ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
+                                        {tab.label}
+                                        {tab.key === 'unreviewed' && aiLogs.filter(l => l.flagged && !l.admin_reviewed).length > 0 && (
+                                            <span className="ml-1.5 px-1.5 py-0.5 bg-red-500 text-white text-[8px] rounded-full font-black">
+                                                {aiLogs.filter(l => l.flagged && !l.admin_reviewed).length}
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {aiLogsLoading ? (
+                            <div className="flex items-center justify-center py-16">
+                                <Loader2 className="animate-spin text-orange-400" size={28} />
+                            </div>
+                        ) : (() => {
+                            // Apply filter
+                            const filteredAiLogs = aiLogs.filter(l => {
+                                switch (aiLogFilter) {
+                                    case 'flagged': return l.flagged;
+                                    case 'unreviewed': return l.flagged && !l.admin_reviewed;
+                                    case 'confirmed': return l.admin_decision === 'confirmed';
+                                    case 'dismissed': return l.admin_decision === 'dismissed';
+                                    default: return true; // 'all'
+                                }
+                            }).sort((a, b) => {
+                                if (a.admin_reviewed !== b.admin_reviewed) return a.admin_reviewed ? 1 : -1;
+                                return new Date(b.created_at) - new Date(a.created_at);
+                            });
+
+                            const toggleAiLogSelect = (id, e) => { e.stopPropagation(); setSelectedAiLogs(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }); };
+                            const toggleAiLogSelectAll = () => { selectedAiLogs.size === filteredAiLogs.length ? setSelectedAiLogs(new Set()) : setSelectedAiLogs(new Set(filteredAiLogs.map(l => l.id))); };
+
+                            return filteredAiLogs.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-16 text-white/20 border border-white/5 rounded-3xl">
+                                    <ShieldAlert size={32} className="mb-3 opacity-30" />
+                                    <p className="text-sm font-black uppercase tracking-widest">
+                                        {aiLogFilter === 'all' ? 'No AI moderation logs yet' : `No ${aiLogFilter} logs`}
+                                    </p>
+                                    <p className="text-xs text-white/15 mt-1">Logs appear when AI scans text or images</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    {/* Select all + batch actions */}
+                                    <div className="flex items-center gap-3 flex-wrap">
+                                        <button onClick={toggleAiLogSelectAll}
+                                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedAiLogs.size === filteredAiLogs.length && filteredAiLogs.length > 0 ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20 hover:border-orange-500/60'}`}>
+                                            {selectedAiLogs.size === filteredAiLogs.length && filteredAiLogs.length > 0 && <CheckCircle size={14} className="text-white" />}
+                                        </button>
+                                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                                            {selectedAiLogs.size > 0 ? `${selectedAiLogs.size} selected` : 'Select all'}
+                                        </span>
+                                        {selectedAiLogs.size > 0 && (
+                                            <div className="ml-auto flex items-center gap-2 flex-wrap">
+                                                {/* Show Confirm only when viewing flagged/unreviewed/all logs */}
+                                                {(aiLogFilter === 'flagged' || aiLogFilter === 'unreviewed' || aiLogFilter === 'all') && (
+                                                    <button onClick={() => handleBatchAiLogReview('confirmed')} disabled={processing}
+                                                        className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-black tracking-widest transition-all disabled:opacity-50">
+                                                        <CheckCircle size={14} /> Confirm {selectedAiLogs.size}
+                                                    </button>
+                                                )}
+                                                {/* Show Dismiss only when viewing flagged/unreviewed/all logs */}
+                                                {(aiLogFilter === 'flagged' || aiLogFilter === 'unreviewed' || aiLogFilter === 'all') && (
+                                                    <button onClick={() => handleBatchAiLogReview('dismissed')} disabled={processing}
+                                                        className="flex items-center gap-2 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 rounded-xl text-xs font-black tracking-widest transition-all disabled:opacity-50">
+                                                        <XCircle size={14} /> Dismiss {selectedAiLogs.size}
+                                                    </button>
+                                                )}
+                                                <button onClick={() => setBatchAiLogDeleteConfirm(true)}
+                                                    className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-black tracking-widest transition-all">
+                                                    <Trash2 size={14} /> Delete {selectedAiLogs.size}
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                        {filteredAiLogs.map(log => (
+                                            <motion.div key={log.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                                                className={`bg-white/[0.04] border rounded-2xl p-4 transition-all ${selectedAiLogs.has(log.id) ? 'border-orange-500/60 ring-2 ring-orange-500/30' :
+                                                        !log.admin_reviewed && log.flagged ? 'border-orange-500/30' :
+                                                            log.admin_decision === 'confirmed' ? 'border-red-500/20' :
+                                                                'border-white/10'
+                                                    }`}>
+                                                {/* Compact header — mirrors Report card: checkbox | user info | status */}
+                                                <div className="flex items-center gap-3 mb-3">
+                                                    <button onClick={(e) => toggleAiLogSelect(log.id, e)}
+                                                        className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${selectedAiLogs.has(log.id) ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20'}`}>
+                                                        {selectedAiLogs.has(log.id) && <CheckCircle size={12} className="text-white" />}
+                                                    </button>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-xs font-bold text-white truncate">{log.user?.full_name || 'Unknown User'}</p>
+                                                        <p className="text-[10px] text-white/30 truncate">{log.content_type} • {log.ai_model}</p>
+                                                    </div>
+                                                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${
+                                                        log.admin_reviewed && log.admin_decision === 'confirmed' ? 'bg-red-500/10 text-red-400 border-red-500/30' :
+                                                        log.admin_reviewed && log.admin_decision === 'dismissed' ? 'bg-green-500/10 text-green-400 border-green-500/30' :
+                                                        log.flagged ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' :
+                                                        'bg-white/5 text-white/30 border-white/10'
+                                                    }`}>
+                                                        {log.admin_reviewed ? log.admin_decision : log.flagged ? 'Needs Review' : 'Clean'}
+                                                    </span>
+                                                </div>
+                                                {/* Body */}
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${
+                                                            log.flagged
+                                                                ? 'bg-orange-500/15 text-orange-400 border-orange-500/30'
+                                                                : 'bg-white/5 text-white/30 border-white/10'
+                                                        }`}>
+                                                            {log.flagged ? '⚠ Flagged' : 'Clean'}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-[11px] text-white/40 line-clamp-2">Action: {log.action_taken}</p>
+                                                    <div className="flex items-center justify-between text-[9px] text-white/20">
+                                                        <span>{new Date(log.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                                                        {log.user?.student_number && (
+                                                            <span className="text-orange-400/40">{log.user.student_number}</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                {/* Admin actions — only for flagged + unreviewed */}
+                                                {log.flagged && !log.admin_reviewed && (
+                                                    <div className="flex gap-2 pt-3 mt-3 border-t border-white/5">
+                                                        <button onClick={() => handleAiLogReview(log.id, 'confirmed')}
+                                                            title="Confirm — the AI was right, content is harmful"
+                                                            className="flex-1 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center justify-center gap-1 active:scale-95">
+                                                            <CheckCircle size={12} /> Confirm
+                                                        </button>
+                                                        <button onClick={() => handleAiLogReview(log.id, 'dismissed')}
+                                                            title="Dismiss — false positive, content is actually fine"
+                                                            className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white/40 border border-white/10 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center justify-center gap-1 active:scale-95">
+                                                            <XCircle size={12} /> Dismiss
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })()}
+                    </div>
+                </div>
+
+                {/* ─── BATCH AI LOG DELETE CONFIRMATION ─── */}
+                <AnimatePresence>
+                    {batchAiLogDeleteConfirm && (
+                        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setBatchAiLogDeleteConfirm(false)} />
+                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+                                className="relative bg-[#1a1a1a] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-2xl shadow-red-900/20">
+                                <div className="w-14 h-14 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-5">
+                                    <Trash2 size={28} className="text-red-500" />
+                                </div>
+                                <h3 className="text-lg font-bold text-white mb-2">Delete {selectedAiLogs.size} AI Log{selectedAiLogs.size > 1 ? 's' : ''}?</h3>
+                                <p className="text-white/40 text-xs mb-6">This action is permanent and cannot be undone.</p>
+                                <div className="space-y-3">
+                                    <button onClick={handleBatchDeleteAiLogs} disabled={processing}
+                                        className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                                        {processing ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} DELETE PERMANENTLY
+                                    </button>
+                                    <button onClick={() => setBatchAiLogDeleteConfirm(false)}
+                                        className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl font-bold text-xs tracking-widest">CANCEL</button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+
                 <div className={`${adminSection === 'posts' ? 'block' : 'hidden'} space-y-8`}>
                     {/* ─── STAT CARDS ─── */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1183,7 +1495,7 @@ export default function AdminPage() {
                                         <div className="relative overflow-hidden rounded-xl -mx-1">
                                             {/* Mobile: horizontal drag scroll */}
                                             <div className="md:hidden" ref={typeScrollRef}>
-                                                <motion.div 
+                                                <motion.div
                                                     drag="x"
                                                     dragConstraints={typeConstraints}
                                                     className="flex gap-2 px-1 pb-1 cursor-grab active:cursor-grabbing w-max"
@@ -1221,7 +1533,7 @@ export default function AdminPage() {
                                         <div className="relative overflow-hidden rounded-xl -mx-1">
                                             {/* Mobile: horizontal drag scroll */}
                                             <div className="md:hidden" ref={locScrollRef}>
-                                                <motion.div 
+                                                <motion.div
                                                     drag="x"
                                                     dragConstraints={locConstraints}
                                                     className="flex gap-2 px-1 pb-1 cursor-grab active:cursor-grabbing w-max"

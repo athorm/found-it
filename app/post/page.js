@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Send, Loader2, AlertCircle, ChevronDown, Check, Maximize2, Clock, Info } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, AlertCircle, ChevronDown, Check, Maximize2, Clock, Info, ShieldAlert } from 'lucide-react';
 import ItemPostModal from '@/components/ItemPostModal';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import Cropper from 'react-easy-crop';
@@ -76,6 +76,7 @@ function PostItemContent() {
   const [specificLocation, setSpecificLocation] = useState('');
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [aiRejected, setAiRejected] = useState(false);  // AI image moderation rejection
 
   // --- CROP & PREVIEW STATES ---[cite: 4]
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -147,6 +148,32 @@ function PostItemContent() {
       // Fetch the current version of the image (either cropped or original)
       const fetchResponse = await fetch(finalImage || preview);
       const blob = await fetchResponse.blob();
+
+      // ─── AI Image Moderation ───
+      // Screen the image BEFORE uploading to Storage
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const aiForm = new FormData();
+          aiForm.append('image', blob);
+          aiForm.append('content_type', 'image');
+          const aiRes = await fetch('/api/ai/moderate-image', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            body: aiForm,
+          });
+          const aiResult = await aiRes.json();
+          if (aiResult.flagged) {
+            setAiRejected(true);
+            setLoading(false);
+            return; // Block the post — user sees rejection modal
+          }
+        }
+      } catch (aiErr) {
+        // Fail-open: if AI service is down, allow the post through
+        console.warn('AI moderation unavailable, proceeding:', aiErr.message);
+      }
+
       const fileName = `${user.id}/${Date.now()}.jpg`;
 
       const { error: uploadError } = await supabase.storage
@@ -190,6 +217,31 @@ function PostItemContent() {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // AI Rejection screen
+  if (aiRejected) {
+    return (
+      <div className="min-h-screen text-white flex flex-col items-center justify-center p-6">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="text-center space-y-4"
+        >
+          <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto">
+            <ShieldAlert size={36} className="text-red-400" />
+          </div>
+          <h2 className="text-2xl font-black">Image Not Appropriate</h2>
+          <p className="text-white/50 text-sm max-w-xs mx-auto">Our AI detected potentially inappropriate content in your image. Please choose a different photo and try again.</p>
+          <button
+            onClick={() => { setAiRejected(false); setIsCropping(false); }}
+            className="mt-4 px-8 py-3 bg-orange-500 rounded-2xl font-bold text-sm active:scale-95 transition-all"
+          >
+            Choose Another Photo
+          </button>
+        </motion.div>
       </div>
     );
   }

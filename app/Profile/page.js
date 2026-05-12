@@ -79,6 +79,30 @@ export default function ProfilePage() {
       const file = event.target.files[0];
       if (!file) return;
 
+      // ─── AI Image Moderation ───
+      // Screen avatar before uploading
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const aiForm = new FormData();
+          aiForm.append('image', file);
+          aiForm.append('content_type', 'avatar');
+          const aiRes = await fetch('/api/ai/moderate-image', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            body: aiForm,
+          });
+          const aiResult = await aiRes.json();
+          if (aiResult.flagged) {
+            alert('This image was detected as inappropriate by our AI. Please choose a different photo.');
+            setUploading(false);
+            return;
+          }
+        }
+      } catch (aiErr) {
+        console.warn('AI moderation unavailable, proceeding:', aiErr.message);
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}-${Math.random()}.${fileExt}`;
