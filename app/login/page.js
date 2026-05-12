@@ -191,7 +191,7 @@ export default function LoginPage() {
     }
 
     return (
-        <div style={{ background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, rgba(124, 45, 18, 0.2) 100%)' }} className="min-h-screen flex items-center justify-center p-4">
+        <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
             <div className="w-full max-w-md bg-black/40 backdrop-blur-2xl border border-orange-500/20 rounded-3xl p-8 shadow-2xl shadow-orange-500/10">
                 <div className="text-center mb-8">
                     <div className="flex justify-center mb-4">

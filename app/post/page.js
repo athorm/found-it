@@ -188,7 +188,7 @@ function PostItemContent() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -326,7 +326,7 @@ function PostItemContent() {
 
 export default function PostItem() {
   return (
-    <Suspense fallback={<div className="bg-black min-h-screen" />}>
+    <Suspense fallback={<div className="bg-transparent min-h-screen" />}>
       <PostItemContent />
     </Suspense>
   );

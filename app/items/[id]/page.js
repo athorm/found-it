@@ -62,7 +62,7 @@ export default function ItemDetailPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center text-white bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233]">
+            <div className="min-h-screen flex flex-col items-center justify-center text-white bg-transparent">
                 <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4" />
                 <p className="font-medium opacity-50">Loading item...</p>
             </div>
@@ -71,7 +71,7 @@ export default function ItemDetailPage() {
 
     if (!item) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center text-white bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233]">
+            <div className="min-h-screen flex flex-col items-center justify-center text-white bg-transparent">
                 <p className="text-lg font-semibold text-orange-400">Item not found</p>
                 <button
                     onClick={() => router.back()}
@@ -175,7 +175,7 @@ export default function ItemDetailPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] text-white pb-32 font-sans">
+        <div className="min-h-screen bg-transparent text-white pb-32 font-sans">
             {/* Header */}
             <header className="sticky top-0 z-50 bg-black/40 backdrop-blur-xl border-b border-orange-500/20 p-5">
                 <div className="max-w-6xl mx-auto flex items-center justify-between">
