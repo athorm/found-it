@@ -132,34 +132,35 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
                     <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                        className="absolute inset-0 bg-black/80 md:backdrop-blur-sm"
                     />
                     <motion.div
                         initial={{ scale: 0.9, opacity: 0, y: 20 }}
                         animate={{ scale: 1, opacity: 1, y: 0 }}
                         exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                        className="relative w-full max-w-lg bg-[#121212] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl"
+                        style={{ transform: "translateZ(0)" }}
+                        className="relative w-full max-w-lg bg-[#121212] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-xl md:shadow-2xl"
                     >
                         {/* Header Image */}
                         <div className="relative aspect-video w-full group cursor-pointer" onClick={() => setIsLightboxOpen(true)}>
-                            <img src={item.image_url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt={item.title} />
+                            <img src={item.image_url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 will-change-transform" alt={item.title} />
 
                             {/* Tap to enlarge hint */}
                             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <div className="bg-black/50 backdrop-blur-md p-3 rounded-full border border-white/20">
+                                <div className="bg-black/50 md:backdrop-blur-md p-3 rounded-full border border-white/20">
                                     <Maximize2 size={24} className="text-white" />
                                 </div>
                             </div>
 
                             <button
                                 onClick={(e) => { e.stopPropagation(); onClose(); }}
-                                className="absolute top-4 right-4 p-2 bg-black/50 backdrop-blur-md rounded-full text-white/70 hover:text-white z-10"
+                                className="absolute top-4 right-4 p-2 bg-black/50 md:backdrop-blur-md rounded-full text-white/70 hover:text-white z-10"
                             >
                                 <X size={20} />
                             </button>
                         </div>
 
-                        <div className="p-8 space-y-6">
+                        <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <h2 className="text-2xl font-black text-white mb-1">{item.title}</h2>
@@ -307,7 +308,7 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
                 <div key="delete-confirm-overlay" className="fixed inset-0 z-210 flex items-center justify-center p-6">
                     <motion.div
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                        className="absolute inset-0 bg-black/90 backdrop-blur-sm"
+                        className="absolute inset-0 bg-black/90 md:backdrop-blur-sm"
                         onClick={() => setShowDeleteConfirm(false)}
                     />
                     <motion.div

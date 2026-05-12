@@ -295,49 +295,52 @@ export default function ItemsPage() {
     <div className="min-h-full font-sans">
 
       {/* HEADER */}
-      <header className="sticky top-0 z-50 bg-transparent backdrop-blur-xl border-b border-white/5 py-3 px-5">
-        <div className="max-w-6xl mx-auto flex items-center justify-center">
-          <div className="flex items-center gap-2">
-            <img src="/logo2.svg" alt="FoundIt Logo" className="w-9 h-9 mix-blend-screen drop-shadow-[0_0_15px_rgba(249,115,22,0.6)] object-contain" />
-            <span className="text-lg font-black tracking-widest text-transparent bg-clip-text bg-linear-to-r from-orange-400 via-orange-500 to-orange-600 drop-shadow-[0_0_10px_rgba(249,115,22,0.2)] hidden sm:block">FOUNDIT</span>
-          </div>
+      {/* SEAMLESS STICKY HEADER AREA */}
+      <header className="sticky top-0 z-50 bg-transparent backdrop-blur-xl border-b border-white/5 transform-gpu will-change-transform [backface-visibility:hidden]">
+        {/* TOPBAR */}
+        <div className="py-3 px-5">
+          <div className="max-w-6xl mx-auto flex items-center justify-center">
+            <div className="flex items-center gap-2">
+              <img src="/logo2.svg" alt="FoundIt Logo" className="w-9 h-9 mix-blend-screen drop-shadow-[0_0_15px_rgba(249,115,22,0.6)] object-contain" />
+              <span className="text-lg font-black tracking-widest text-transparent bg-clip-text bg-linear-to-r from-orange-400 via-orange-500 to-orange-600 drop-shadow-[0_0_10px_rgba(249,115,22,0.2)] hidden sm:block">FOUNDIT</span>
+            </div>
 
-          <div className="ml-auto">
-            <button 
-              onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")} 
-              className="bg-white/5 p-2 rounded-xl border border-white/10 backdrop-blur-md flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 shadow-[0_0_15px_rgba(0,0,0,0.2)]"
-              title={`Switch to ${viewMode === "grid" ? "List" : "Grid"} View`}
-            >
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={viewMode}
-                  initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
-                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                  exit={{ opacity: 0, scale: 0.5, rotate: 90 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex items-center justify-center text-orange-400 drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]"
-                >
-                  {viewMode === "grid" ? <Grid size={18} /> : <List size={18} />}
-                </motion.div>
-              </AnimatePresence>
-            </button>
+            <div className="ml-auto">
+              <button 
+                onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")} 
+                className="bg-white/5 p-2 rounded-xl border border-white/10 backdrop-blur-md flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 shadow-[0_0_15px_rgba(0,0,0,0.2)]"
+                title={`Switch to ${viewMode === "grid" ? "List" : "Grid"} View`}
+              >
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={viewMode}
+                    initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    exit={{ opacity: 0, scale: 0.5, rotate: 90 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center justify-center text-orange-400 drop-shadow-[0_0_8px_rgba(249,115,22,0.5)]"
+                  >
+                    {viewMode === "grid" ? <Grid size={18} /> : <List size={18} />}
+                  </motion.div>
+                </AnimatePresence>
+              </button>
+            </div>
           </div>
         </div>
-      </header>
 
-      <main className="max-w-6xl mx-auto px-6 pt-6 pb-40 space-y-6">
-
-        {/* TAB SWITCHER */}
-        <div className="relative flex bg-white/5 p-1.5 rounded-[1.5rem] border border-white/10 shadow-2xl backdrop-blur-md">
-          <motion.div
-            className="absolute inset-y-1.5 bg-orange-500 rounded-[1.1rem] shadow-[0_0_30px_rgba(249,115,22,0.4)]"
-            animate={{ x: activeTab === 'lost' ? 0 : '100%' }}
-            transition={{ type: "spring", stiffness: 350, damping: 30 }}
-            style={{ width: 'calc(50% - 6px)' }}
-          />
-          <button onClick={() => setActiveTab('lost')} className={`relative z-10 flex-1 py-3 text-xs font-black tracking-widest transition-colors ${activeTab === 'lost' ? 'text-white' : 'text-white/30'}`}>LOST</button>
-          <button onClick={() => setActiveTab('found')} className={`relative z-10 flex-1 py-3 text-xs font-black tracking-widest transition-colors ${activeTab === 'found' ? 'text-white' : 'text-white/30'}`}>FOUND</button>
-        </div>
+        {/* CONTROLS AREA */}
+        <div className="max-w-6xl mx-auto px-6 pt-1 pb-4 space-y-4">
+          {/* TAB SWITCHER */}
+          <div className="relative flex bg-white/5 p-1.5 rounded-[1.5rem] border border-white/10 shadow-2xl backdrop-blur-md">
+            <motion.div
+              className="absolute inset-y-1.5 bg-orange-500 rounded-[1.1rem] shadow-[0_0_30px_rgba(249,115,22,0.4)]"
+              animate={{ x: activeTab === 'lost' ? 0 : '100%' }}
+              transition={{ type: "spring", stiffness: 350, damping: 30 }}
+              style={{ width: 'calc(50% - 6px)' }}
+            />
+            <button onClick={() => setActiveTab('lost')} className={`relative z-10 flex-1 py-2.5 text-xs font-black tracking-widest transition-colors ${activeTab === 'lost' ? 'text-white' : 'text-white/30'}`}>LOST</button>
+            <button onClick={() => setActiveTab('found')} className={`relative z-10 flex-1 py-2.5 text-xs font-black tracking-widest transition-colors ${activeTab === 'found' ? 'text-white' : 'text-white/30'}`}>FOUND</button>
+          </div>
 
         {/* CONTROLS */}
         <div className="relative flex gap-3">
@@ -348,7 +351,7 @@ export default function ItemsPage() {
               placeholder={`Search ${activeTab} items...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/[0.04] border border-white/10 py-4 pl-12 pr-4 rounded-2xl outline-none text-sm focus:border-orange-500/50 transition-all placeholder:text-white/20"
+              className="w-full bg-white/[0.04] border border-white/10 py-3.5 pl-12 pr-4 rounded-2xl outline-none text-sm focus:border-orange-500/50 transition-all placeholder:text-white/20"
             />
           </div>
           <button
@@ -377,7 +380,7 @@ export default function ItemsPage() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="absolute top-full right-0 mt-2 z-50 w-80 md:w-[450px] bg-[#121212]/95 border border-white/10 rounded-[2rem] backdrop-blur-2xl shadow-2xl"
+                className="absolute top-full right-0 mt-2 z-50 w-80 md:w-[450px] bg-[#121212] border border-white/10 rounded-[2rem] backdrop-blur-3xl shadow-2xl max-h-[70vh] overflow-y-auto"
               >
                 <div className="p-6 space-y-5">
                   {/* Header with clear button */}
@@ -406,7 +409,7 @@ export default function ItemsPage() {
                         >
                           <button
                             onClick={() => setCategoryFilter('All')}
-                            className={`shrink-0 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}
+                            className={`shrink-0 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}
                           >
                             All
                           </button>
@@ -414,7 +417,7 @@ export default function ItemsPage() {
                             <button
                               key={cat.value}
                               onClick={() => setCategoryFilter(cat.value)}
-                              className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}
+                              className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}
                             >
                               <span className="text-xs">{cat.emoji}</span>
                               {cat.label}
@@ -426,7 +429,7 @@ export default function ItemsPage() {
                       <div className="hidden md:flex flex-wrap gap-2 px-1 pb-2">
                         <button
                           onClick={() => setCategoryFilter('All')}
-                          className={`px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}
+                          className={`px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}
                         >
                           All
                         </button>
@@ -434,7 +437,7 @@ export default function ItemsPage() {
                           <button
                             key={cat.value}
                             onClick={() => setCategoryFilter(cat.value)}
-                            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}
+                            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}
                           >
                             <span className="text-xs">{cat.emoji}</span>
                             {cat.label}
@@ -456,14 +459,14 @@ export default function ItemsPage() {
                           className="flex gap-2 px-1 pb-2 cursor-grab active:cursor-grabbing w-max"
                         >
                           {locations.map(loc => (
-                            <button key={loc} onClick={() => setLocationFilter(loc)} className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
+                            <button key={loc} onClick={() => setLocationFilter(loc)} className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}>{loc}</button>
                           ))}
                         </motion.div>
                       </div>
                       {/* Desktop: wrapping grid */}
                       <div className="hidden md:flex flex-wrap gap-2 px-1 pb-2">
                         {locations.map(loc => (
-                          <button key={loc} onClick={() => setLocationFilter(loc)} className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
+                          <button key={loc} onClick={() => setLocationFilter(loc)} className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}>{loc}</button>
                         ))}
                       </div>
                     </div>
@@ -474,7 +477,7 @@ export default function ItemsPage() {
                     <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-3 block">Status</label>
                     <div className="flex gap-2">
                       {statuses.map(stat => (
-                        <button key={stat} onClick={() => setStatusFilter(stat)} className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${statusFilter === stat ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/5 text-white/40'}`}>{stat}</button>
+                        <button key={stat} onClick={() => setStatusFilter(stat)} className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${statusFilter === stat ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/5 text-white/60'}`}>{stat}</button>
                       ))}
                     </div>
                   </div>
@@ -541,9 +544,13 @@ export default function ItemsPage() {
             </motion.div>
           )}
         </AnimatePresence>
+        </div>
+      </header>
 
+      <main className="max-w-6xl mx-auto px-6 pb-40">
+        
         {/* CONTENT AREA WITH LOADING & ANIMATION[cite: 3] */}
-        <div className="relative min-h-[400px]">
+        <div className="relative min-h-[400px] pt-6">
           <AnimatePresence mode="wait">
             {loading ? (
               <motion.div

@@ -150,7 +150,7 @@ export default function NotificationDropdown({ isOpen, onClose, userId }) {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 10, scale: 0.95 }}
           transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-          className="absolute bottom-full mb-3 right-0 w-[320px] max-h-[420px] flex flex-col bg-[#111]/95 backdrop-blur-2xl border border-orange-500/20 rounded-3xl shadow-2xl shadow-black/60 overflow-hidden z-[999]"
+          className="fixed sm:absolute bottom-[165px] sm:bottom-full mb-3 left-4 right-4 sm:left-auto sm:right-0 w-auto sm:w-[320px] max-h-[60vh] sm:max-h-[420px] flex flex-col bg-[#111]/95 backdrop-blur-2xl border border-orange-500/20 rounded-3xl shadow-2xl shadow-black/60 overflow-hidden z-[999]"
         >
           {/* ─── Header ─── */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/5 shrink-0">

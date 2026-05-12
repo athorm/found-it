@@ -659,7 +659,7 @@ export default function AdminPage() {
     /* ───── Loading guard ───── */
     if (guardLoading) {
         return (
-            <div className="min-h-[100dvh] bg-[#0a0a0a] flex flex-col items-center justify-center gap-4">
+            <div className="min-h-screen bg-transparent flex flex-col items-center justify-center gap-4">
                 <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
                 <p className="text-[10px] font-black tracking-widest text-orange-500/40 uppercase">Verifying admin access...</p>
             </div>

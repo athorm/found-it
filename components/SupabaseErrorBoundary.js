@@ -108,7 +108,7 @@ export class SupabaseErrorBoundary extends React.Component {
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="min-h-screen bg-gradient-to-br from-[#0a0a0a] via-[#1a1a1a] to-[#7c2d1233] flex items-center justify-center p-4"
+                className="min-h-screen bg-transparent flex items-center justify-center p-4"
             >
                 <div className="bg-black/40 backdrop-blur-2xl border border-red-500/30 rounded-3xl p-8 max-w-md w-full text-center shadow-2xl shadow-red-500/10">
                     <motion.div

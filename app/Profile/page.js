@@ -205,7 +205,7 @@ export default function ProfilePage() {
   };
 
   if (authLoading || loading) return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-center text-white">
+    <div className="min-h-screen flex flex-col items-center justify-center text-white">
       <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4" />
       <p className="font-medium opacity-50">Loading profile...</p>
     </div>
