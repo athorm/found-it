@@ -28,8 +28,8 @@ export default function RootLayout({ children }) {
     >
       <body className="min-h-full flex flex-col">
         {/* GLOBAL FIXED BACKGROUND — radial orange glow at bottom on dark base */}
-        <div 
-          className="fixed inset-0 z-[-1] pointer-events-none" 
+        <div
+          className="fixed inset-0 z-[-1] pointer-events-none"
           style={{
             background: `
               radial-gradient(circle at center bottom, #c2410c11 0%, transparent 60%),
@@ -39,8 +39,8 @@ export default function RootLayout({ children }) {
           }}
         />
         {/* Extra subtle orange glow — mobile only */}
-        <div 
-          className="md:hidden fixed inset-0 z-[-1] pointer-events-none" 
+        <div
+          className="md:hidden fixed inset-0 z-[-1] pointer-events-none"
           style={{
             background: `radial-gradient(circle at center bottom, #c2410c22 0%, transparent 70%)`,
           }}
