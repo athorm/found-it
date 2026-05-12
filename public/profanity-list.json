@@ -7,7 +7,7 @@
     "etits",
     "fag", "faggot", "fck", "fuck", "fucker", "fucking",
     "gago", "gaga", "goddamn",
-    "hayop", "hell", "hibang", "hudas", "hudas",
+    "hayop", "hell", "hibang", "hudas",
     "idiot", "inutil",
     "jackass", "jabol", "jebat",
     "kantut", "kantutan", "kupal",
@@ -23,5 +23,12 @@
     "vagina",
     "wanker", "whore",
     "yawa"
+  ],
+  "substrings": [
+    "tangina", "putangina", "tanginamo", "putanginamo", "putangamo",
+    "gago", "bobo", "tanga", "ulol", "puta",
+    "kantut", "pekpek", "kinginamo","burat", "titi", "tite",
+    "pakyu", "pakshet", "punyeta", "leche", "letse",
+    "fuck", "shit", "bitch", "ass", "dick", "cock", "cunt"
   ]
 }

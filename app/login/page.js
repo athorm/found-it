@@ -83,6 +83,31 @@ export default function LoginPage() {
                 throw new Error('Please upload your Certificate of Registration or Student ID for verification.')
             }
 
+            // ─── AI Image Moderation for Verification Docs ───
+            // Only screen image files (JPEG/PNG/WebP), skip PDFs
+            if (verificationFile.type.startsWith('image/')) {
+                try {
+                    const aiForm = new FormData()
+                    aiForm.append('image', verificationFile)
+                    aiForm.append('content_type', 'avatar')
+                    // Note: no auth token yet (user not signed up), so we call without Bearer
+                    // The API route will handle unauthenticated requests gracefully
+                    const aiRes = await fetch('/api/ai/moderate-image', {
+                        method: 'POST',
+                        body: aiForm,
+                    })
+                    const aiResult = await aiRes.json()
+                    if (aiResult.flagged) {
+                        throw new Error('The uploaded document was detected as inappropriate by our AI. Please upload a legitimate verification document.')
+                    }
+                } catch (aiErr) {
+                    // If the error is our own rejection, re-throw it
+                    if (aiErr.message.includes('inappropriate')) throw aiErr
+                    // Otherwise fail-open: AI unavailable, proceed with signup
+                    console.warn('AI moderation unavailable during signup:', aiErr.message)
+                }
+            }
+
             // Custom Strict Email Validation (Check MX Records)
             const emailCheckRes = await fetch('/api/validate-email', {
                 method: 'POST',

@@ -56,9 +56,10 @@
 
 
 ## Very Hard to Implement But Noted (Priority 4 - when have time or when the school accepts it)
-- [ ] Implement the use of AI to detect if the picture of the item is appropriate to be posted or not. (Use AI for the detection of the item picture)
-- [ ] Implement the use of AI to detect if the user is only trolling or not when messaging or claiming an item.
-- [ ] Implement the use of AI to flagged inappropriate messages so that they cannot message that kind of messages anymore or at least warn the user that the message is inappropriate. 
+- [x] Implement the use of AI to detect if the picture of the item is appropriate to be posted or not. (Use AI for the detection of the item picture)
+- [x] Implement the use of AI to detect if the user is only trolling or not when messaging or claiming an item.
+- [x] Implement the use of AI to flagged inappropriate messages so that they cannot message that kind of messages anymore or at least warn the user that the message is inappropriate.
+- [ ] Fix AI Bugs
 
 ## Admin Moderation Refinements (Priority 3.5 — Done May 10, 2025)
 - [x] **Context-aware batch action bar (Post Moderation)** — The batch action bar in Post Moderation now shows only relevant buttons depending on the active tab: Pending→Approve+Reject+Delete, Approved→Reject+Delete only, Rejected→Approve+Delete only, All Items→all options.

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Send, Loader2, User, Trash2, X, CheckCircle2, AlertCircle, Lock, AlertTriangle, Flag, ImageIcon, Plus, Camera } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User, Trash2, X, CheckCircle2, AlertCircle, Lock, AlertTriangle, Flag, ImageIcon, Plus, Camera, ShieldAlert } from "lucide-react";
 import { containsProfanity } from "@/utils/profanityFilter";
 import { motion, AnimatePresence } from "framer-motion";
 import NavBar from "@/components/NavBar";
@@ -43,6 +43,7 @@ export default function ChatPage() {
   const [reportSuccess, setReportSuccess] = useState(false);
   // Image sharing state
   const [imageUploading, setImageUploading] = useState(false);
+  const [imageWarning, setImageWarning] = useState(false);
   const imageInputRef = useRef(null);
   const cameraInputRef = useRef(null);
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
@@ -224,8 +225,7 @@ export default function ChatPage() {
     if (!newMessage.trim() || !selectedConversation || !user) return;
     const content = newMessage.trim();
 
-    // ─── Profanity Check ───
-    // Check before sending — if flagged, show warning modal and do NOT send.
+    // ─── Profanity Check FIRST (fast, local — instant blocker) ───
     const { isClean } = await containsProfanity(content);
     if (!isClean) {
       profanityStrikeRef.current += 1;
@@ -233,15 +233,10 @@ export default function ChatPage() {
       return; // Block the send — message stays in the input box
     }
 
-    // If clean, proceed with sending
+    // If profanity filter passes, send immediately (no waiting for AI)
     setNewMessage("");
     profanityStrikeRef.current = 0; // Reset strike count on clean message
 
-    // BUG FIX: Supabase Realtime postgres_changes does NOT deliver INSERT events
-    // back to the client that performed the insert. This means the sender never
-    // saw their own message in real-time — they had to reload. Fix: capture the
-    // inserted row from the DB response and append it immediately (optimistic UI).
-    // The realtime channel still handles the OTHER user's incoming messages.
     const { data: inserted, error } = await supabase
       .from("messages")
       .insert({
@@ -267,6 +262,35 @@ export default function ChatPage() {
         prev.some((m) => m.id === inserted.id) ? prev : [...prev, inserted]
       );
     }
+
+    // ─── AI Toxicity Check (BACKGROUND — fire-and-forget) ───
+    // Runs after the message is already sent so the user doesn't wait.
+    // If AI flags it, the message is retroactively deleted and a warning is shown.
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return;
+        const aiRes = await fetch('/api/ai/moderate-text', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ text: content }),
+        });
+        const aiResult = await aiRes.json();
+        if (aiResult.flagged && inserted) {
+          // Retroactively remove the flagged message
+          await supabase.from('messages').delete().eq('id', inserted.id);
+          setMessages((prev) => prev.filter((m) => m.id !== inserted.id));
+          profanityStrikeRef.current += 1;
+          setProfanityWarning(profanityStrikeRef.current >= 2 ? 'repeat' : 'first');
+        }
+      } catch (aiErr) {
+        // Fail-open: if AI is down, message stays
+        console.warn('AI text moderation unavailable:', aiErr.message);
+      }
+    })();
   };
 
   // ─── Image sharing helpers ───
@@ -293,6 +317,30 @@ export default function ChatPage() {
     setImageUploading(true);
     try {
       const compressed = await compressImage(file);
+
+      // ─── AI Image Moderation ───
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const aiForm = new FormData();
+          aiForm.append('image', new Blob([compressed], { type: 'image/jpeg' }));
+          aiForm.append('content_type', 'message');
+          const aiRes = await fetch('/api/ai/moderate-image', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${session.access_token}` },
+            body: aiForm,
+          });
+          const aiResult = await aiRes.json();
+          if (aiResult.flagged) {
+            setImageWarning(true);
+            setImageUploading(false);
+            return;
+          }
+        }
+      } catch (aiErr) {
+        console.warn('AI image moderation unavailable, proceeding:', aiErr.message);
+      }
+
       const path = `${selectedConversation.id}/${crypto.randomUUID()}.jpg`;
       const { error: uploadErr } = await supabase.storage
         .from('chat-images')
@@ -800,6 +848,35 @@ export default function ChatPage() {
               </p>
               <button
                 onClick={() => setProfanityWarning(null)}
+                style={{ background: 'linear-gradient(90deg, #f97316, #fb923c)' }}
+                className="w-full py-4 text-white font-black rounded-2xl tracking-widest text-sm transition-all active:scale-95 shadow-lg shadow-orange-500/20"
+              >
+                I UNDERSTAND
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── Inappropriate Image Warning Modal ─── */}
+      <AnimatePresence>
+        {imageWarning && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-black/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="w-full max-w-xs bg-[#111] border border-red-500/30 rounded-[2.5rem] p-8 text-center"
+            >
+              <div className="w-16 h-16 rounded-full bg-red-500/10 border-2 border-red-500/30 flex items-center justify-center mx-auto mb-4">
+                <ShieldAlert size={32} className="text-red-400" />
+              </div>
+              <h3 className="text-xl font-black text-white mb-2">Inappropriate Image</h3>
+              <p className="text-white/50 text-sm leading-relaxed mb-6">
+                This image was detected as inappropriate by our AI moderation system. Please choose a different photo to send.
+              </p>
+              <button
+                onClick={() => setImageWarning(false)}
                 style={{ background: 'linear-gradient(90deg, #f97316, #fb923c)' }}
                 className="w-full py-4 text-white font-black rounded-2xl tracking-widest text-sm transition-all active:scale-95 shadow-lg shadow-orange-500/20"
               >

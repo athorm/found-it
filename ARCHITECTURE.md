@@ -221,6 +221,8 @@ Each module performs a single, well-defined function:
 **Features:**
 - **Image Sharing:** Users can upload images via camera/gallery to Supabase Storage, displayed seamlessly in the chat.
 - **Profanity Filter:** Client-side filtering blocks inappropriate messages based on a JSON word list before they are sent.
+- **AI Text Moderation:** Server-side toxicity screening via `martin-ha/toxic-comment-model` (English) through the Hugging Face Router API (`router.huggingface.co`). Messages flagged above the confidence threshold are retroactively deleted and the user is warned. An emergency keyword blocklist provides instant blocking for obvious threats in both English and Tagalog.
+- **AI Image Moderation:** Before any image is sent in chat, it is screened by the `Falconsai/nsfw_image_detection` model. Inappropriate images are blocked with a styled warning modal before they are uploaded.
 
 **Resolution flow:**
 - Either user can tap "Mark as Resolved" (or "Mark as Found" for lost items)
@@ -286,6 +288,11 @@ Each module performs a single, well-defined function:
 - **Premade Reason Chips**: Admin modals (Reject, Ban, Unban) now feature clickable chips for common violations, ensuring consistency and speed.
 - **Context-Aware Batch Actions**: The batch action bar dynamically filters available actions (Approve/Reject/Unban) based on the active moderation tab.
 - **Automated Email Notifications**: Critical moderation actions (Ban, Unban, Verification Approval/Rejection) trigger automated emails to users explaining the decision and providing relevant reasons.
+
+#### AI Moderation Logs
+- **AI Logs Dashboard**: Dedicated tab displaying all AI-flagged content with user info, content type, model used, and action taken.
+- **Batch Review Actions**: Select multiple AI logs and batch Confirm (content is harmful), Dismiss (false positive), or Delete. Confirm/Dismiss buttons are context-aware — only visible on Flagged, Unreviewed, and All tabs.
+- **Single-Entry Review**: Each flagged card also has inline Confirm/Dismiss buttons for quick individual review.
 
 **Design:** Desktop-optimized grid layout with sidebar filters, stat dashboard at top, glassmorphic cards throughout.
 
@@ -608,7 +615,8 @@ found-it/
 │           ├── items/route.js          # Item moderation (GET/PATCH/DELETE)
 │           ├── users/route.js          # User management (GET/PATCH/DELETE)
 │           ├── ban-user/route.js       # Ban/Unban with email notification
-│           └── reports/route.js        # Report management (GET/PATCH/DELETE)
+│           ├── reports/route.js        # Report management (GET/PATCH/DELETE)
+│           └── ai-logs/route.js       # AI moderation logs (GET/PATCH/DELETE)
 ├── components/
 │   ├── NavBar.js                       # Bottom nav + notification bell FAB
 │   ├── NotificationDropdown.js         # In-app notification center dropdown
@@ -625,7 +633,8 @@ found-it/
 ├── lib/
 │   ├── supabase.js                     # Client-side Supabase instance
 │   ├── supabaseAdmin.js                # Server-side Supabase (service role)
-│   └── mailer.js                       # Nodemailer email functions (ban/unban/verification)
+│   ├── mailer.js                       # Nodemailer email functions (ban/unban/verification)
+│   └── ai.js                           # HuggingFace AI moderation (image NSFW + text toxicity)
 ├── utils/
 │   ├── cropImage.js                    # Canvas-based image crop utility
 │   └── profanityFilter.js             # Client-side profanity checking
@@ -641,10 +650,15 @@ found-it/
 
 ### Current Limitations
 1. Single Campus Only — designed specifically for one LSPU campus without multi-campus support.
-2. Manual Admin Review — all postings and reports require manual intervention (no AI pre-screening).
+2. **Async Text Moderation Delay** — AI text moderation runs asynchronously *after* the message is sent. There is a 1–3 second window where a flagged message may be visible to the recipient before being retroactively deleted. The local profanity filter covers most obvious cases instantly.
+3. **Tagalog AI Model Unavailable** — The Tagalog hate speech model (`ggpt1006/tl-hatespeech-detection`) is no longer supported on the new HuggingFace Router API (`router.huggingface.co`). Tagalog profanity is handled by the local word list and emergency keyword blocklist instead.
+4. **HuggingFace Free Tier** — AI models run on HuggingFace's free inference tier, which may experience cold start delays (10–20 seconds) after periods of inactivity.
 
 ### Successfully Implemented Enhancements (Priority 3.5 & Below)
-- **In-App Notification Center** *(NEW)*: Bell icon in NavBar with real-time badge powered by Supabase Realtime `postgres_changes`. Notifications are created when admin approves/rejects posts and when items are resolved. Uses a dedicated `notifications` table with RLS and a PostgreSQL trigger (`trg_notify_item_resolved`).
+- **AI-Powered Content Moderation** *(Updated)*: Integrates HuggingFace's Router API (`router.huggingface.co/hf-inference`) with two AI models: `Falconsai/nsfw_image_detection` for NSFW image screening and `martin-ha/toxic-comment-model` for English toxicity detection. An emergency keyword blocklist provides instant blocking of obvious threats in both English and Tagalog. Features a fail-open architecture with retry logic for model cold starts. Moderation spans post uploads, avatar updates, verification documents, and real-time chat messages/images.
+- **Admin AI Logs Dashboard** *(Updated)*: Admins have a dedicated "AI Logs" section with filter tabs (Flagged, Unreviewed, Confirmed, Dismissed, All). Supports batch Confirm, Dismiss, and Delete actions. Cards display user info, content type, model used, and admin review status.
+- **Inappropriate Image Warning Modal** *(NEW)*: When AI detects an inappropriate image in chat, a styled red-themed modal with a ShieldAlert icon is shown instead of a browser alert, matching the profanity warning design.
+- **In-App Notification Center**: Bell icon in NavBar with real-time badge powered by Supabase Realtime `postgres_changes`. Notifications are created when admin approves/rejects posts and when items are resolved. Uses a dedicated `notifications` table with RLS and a PostgreSQL trigger (`trg_notify_item_resolved`).
 - **Cursor-Based Pagination** *(NEW)*: Items page loads in batches of 12 using `created_at` cursor. `IntersectionObserver` triggers infinite scroll. Tab/filter changes reset pagination. "My Posts" mode bypasses pagination.
 - **User Reporting & Ban System**: Admins can review reports with full chat context and issue bans with premade reasons.
 - **Automated Moderation Emails**: Branded Nodemailer emails sent for account verification and ban/unban events.
