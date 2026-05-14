@@ -295,18 +295,55 @@ export default function ChatPage() {
 
   // ─── Image sharing helpers ───
   const compressImage = (file) =>
-    new Promise((resolve) => {
+    new Promise((resolve, reject) => {
+      // Timeout guard: Samsung phones capture HEIF/HEIC images by default.
+      // Some mobile browsers can't decode these via HTMLImageElement, causing
+      // img.onload to never fire (silent hang → infinite spinner).
+      const COMPRESS_TIMEOUT_MS = 10000;
+      let settled = false;
+      const timer = setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          // Fall back to sending the original file as-is (the server can still process it)
+          reject(new Error("Image compression timed out. Your photo format may not be supported for compression."));
+        }
+      }, COMPRESS_TIMEOUT_MS);
+
       const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
       img.onload = () => {
-        const MAX = 800;
-        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.75);
+        if (settled) return;
+        try {
+          const MAX = 800;
+          const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob((blob) => {
+            if (settled) return;
+            settled = true;
+            clearTimeout(timer);
+            URL.revokeObjectURL(objectUrl);
+            if (blob) resolve(blob);
+            else reject(new Error("Could not compress image"));
+          }, 'image/jpeg', 0.75);
+        } catch (err) {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          URL.revokeObjectURL(objectUrl);
+          reject(err);
+        }
       };
-      img.src = URL.createObjectURL(file);
+      img.onerror = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Failed to read image file. The format might be unsupported by your browser."));
+      };
+      img.src = objectUrl;
     });
 
   const handleImageSend = async (e) => {
@@ -316,20 +353,30 @@ export default function ChatPage() {
     if (file.size > 10 * 1024 * 1024) { alert('Image must be under 10 MB'); return; }
     setImageUploading(true);
     try {
-      const compressed = await compressImage(file);
+      // Compress image — if compression fails on mobile (HEIC format), fall back to raw file
+      let compressed;
+      try {
+        compressed = await compressImage(file);
+      } catch (compressErr) {
+        console.warn('Image compression failed, using original file:', compressErr.message);
+        compressed = file;
+      }
 
       // ─── AI Image Moderation (with timeout to avoid indefinite spinner) ───
+      let aiFlagged = false;
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           const aiForm = new FormData();
-          aiForm.append('image', new Blob([compressed], { type: 'image/jpeg' }));
+          aiForm.append('image', new Blob([compressed], { type: compressed.type || 'image/jpeg' }));
           aiForm.append('content_type', 'message');
 
-          // Race the moderation call against an 8-second timeout.
-          // If the HF model is cold-starting, we fail-open so the user
-          // isn't stuck staring at a loading spinner for 15+ seconds.
-          const AI_TIMEOUT_MS = 8000;
+          // Race the moderation call against a 12-second timeout.
+          // Mobile networks (5G/LTE) have higher latency than desktop WiFi,
+          // and HF model cold-starts add 2-4s on top. 12s gives enough room
+          // for the server-side retries (2 × 2s) while still failing-open
+          // before the user gives up.
+          const AI_TIMEOUT_MS = 12000;
           const controller = new AbortController();
           const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
 
@@ -343,21 +390,24 @@ export default function ChatPage() {
             clearTimeout(timeoutId);
             const aiResult = await aiRes.json();
             if (aiResult.flagged) {
-              setImageWarning(true);
-              setImageUploading(false);
-              return;
+              aiFlagged = true;
             }
           } catch (fetchErr) {
             clearTimeout(timeoutId);
-            if (fetchErr.name === 'AbortError') {
-              console.warn('AI image moderation timed out, proceeding with upload.');
-            } else {
-              throw fetchErr; // re-throw unexpected errors
-            }
+            // AbortError = timeout, any other error = network issue on mobile
+            // Either way: fail-open, let the image through
+            console.warn('AI image moderation fetch error:', fetchErr.name, fetchErr.message);
           }
         }
       } catch (aiErr) {
         console.warn('AI image moderation unavailable, proceeding:', aiErr.message);
+      }
+
+      // If AI flagged the image, block and show warning
+      if (aiFlagged) {
+        setImageWarning(true);
+        setImageUploading(false);
+        return;
       }
 
       const path = `${selectedConversation.id}/${crypto.randomUUID()}.jpg`;
