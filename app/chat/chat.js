@@ -318,23 +318,42 @@ export default function ChatPage() {
     try {
       const compressed = await compressImage(file);
 
-      // ─── AI Image Moderation ───
+      // ─── AI Image Moderation (with timeout to avoid indefinite spinner) ───
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           const aiForm = new FormData();
           aiForm.append('image', new Blob([compressed], { type: 'image/jpeg' }));
           aiForm.append('content_type', 'message');
-          const aiRes = await fetch('/api/ai/moderate-image', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${session.access_token}` },
-            body: aiForm,
-          });
-          const aiResult = await aiRes.json();
-          if (aiResult.flagged) {
-            setImageWarning(true);
-            setImageUploading(false);
-            return;
+
+          // Race the moderation call against an 8-second timeout.
+          // If the HF model is cold-starting, we fail-open so the user
+          // isn't stuck staring at a loading spinner for 15+ seconds.
+          const AI_TIMEOUT_MS = 8000;
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
+
+          try {
+            const aiRes = await fetch('/api/ai/moderate-image', {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${session.access_token}` },
+              body: aiForm,
+              signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+            const aiResult = await aiRes.json();
+            if (aiResult.flagged) {
+              setImageWarning(true);
+              setImageUploading(false);
+              return;
+            }
+          } catch (fetchErr) {
+            clearTimeout(timeoutId);
+            if (fetchErr.name === 'AbortError') {
+              console.warn('AI image moderation timed out, proceeding with upload.');
+            } else {
+              throw fetchErr; // re-throw unexpected errors
+            }
           }
         }
       } catch (aiErr) {
