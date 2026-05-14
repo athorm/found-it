@@ -295,17 +295,25 @@ export default function ChatPage() {
 
   // ─── Image sharing helpers ───
   const compressImage = (file) =>
-    new Promise((resolve) => {
+    new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => {
-        const MAX = 800;
-        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width * scale;
-        canvas.height = img.height * scale;
-        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => resolve(blob), 'image/jpeg', 0.75);
+        try {
+          const MAX = 800;
+          const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          canvas.toBlob((blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error("Could not compress image"));
+          }, 'image/jpeg', 0.75);
+        } catch (err) {
+          reject(err);
+        }
       };
+      img.onerror = () => reject(new Error("Failed to read image file. The format might be unsupported by your browser."));
       img.src = URL.createObjectURL(file);
     });
 
