@@ -70,3 +70,9 @@
 - [x] **Automated unban email notification** — When a user is unbanned, an automated branded email (dark/green theme) is sent to their email with the unban reason.
 - [x] **Approve button green glassmorphic styling** — All Approve buttons across admin UI updated to `bg-green-600/30 text-green-400 border border-green-500/30` for a consistent glassmorphic look.
 - [x] **Toast shows email sent status** — After ban/unban, the toast notification includes "— email sent" if the email was successfully delivered.
+
+
+## New Issues (May 14, 2026)
+- [x] When logging out on one device, it should not log out on other devices. (Fixed: `signOut()` defaulted to `scope: 'global'` which revoked all sessions. Changed to `scope: 'local'` in Profile/page.js so only the current device is logged out — like Facebook.)
+- [ ] On AI flagged, Admin should see the context why the AI Flagged it. So that the Admin can determine if the admin should confirm or dismiss it. The only question I have is why do we confirm or dismiss the flags? It does nothing right? It just counts how many confirms and dismiss of admin. I wonder if we could implement that when an Admin confirmed the flag, if the user got flagged and get confirmed many times. They would get suspended for a week or so?
+- [x] Determine in which image posting is AI moderation moderating, is it just the chat, profile, etc. (Answer: AI image moderation (Falconsai/nsfw_image_detection) runs on **4 locations**: 1) Chat images in chat.js, 2) Item post images in post/page.js, 3) Profile avatar uploads in Profile/page.js, 4) Signup verification documents in login/page.js. All use 40% NSFW threshold, fail-open design, and log to ai_moderation_logs table.)

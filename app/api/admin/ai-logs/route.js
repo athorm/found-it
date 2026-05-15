@@ -31,7 +31,7 @@ export async function GET(request) {
     // Fetch logs with user info
     const { data: logs, error } = await adminDb
       .from('ai_moderation_logs')
-      .select('*, user:profiles!ai_moderation_logs_user_id_fkey(full_name, student_number, avatar_url)')
+      .select('*, user:profiles!ai_moderation_logs_user_id_fkey(id, full_name, student_number, avatar_url, is_banned), reviewer:profiles!ai_moderation_logs_reviewed_by_fkey(full_name)')
       .order('created_at', { ascending: false })
       .limit(200)
 
