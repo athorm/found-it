@@ -68,6 +68,7 @@ export async function POST(request) {
           ai_result: result.raw || {},
           flagged: result.flagged,
           action_taken: result.flagged ? 'blocked' : 'none',
+          input_content: text.substring(0, 500),
         })
         if (insertErr) {
           console.error('AI log DB insert error:', insertErr.message, insertErr.details)

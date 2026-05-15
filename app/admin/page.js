@@ -375,6 +375,7 @@ export default function AdminPage() {
     const [aiLogFilter, setAiLogFilter] = useState('flagged'); // 'all' | 'flagged' | 'unreviewed' | 'confirmed' | 'dismissed'
     const [selectedAiLogs, setSelectedAiLogs] = useState(new Set());
     const [batchAiLogDeleteConfirm, setBatchAiLogDeleteConfirm] = useState(false);
+    const [selectedAiLog, setSelectedAiLog] = useState(null);
 
     // Refs for drag constraints calculation
     const typeScrollRef = useRef(null);
@@ -1332,8 +1333,8 @@ export default function AdminPage() {
                                                         {log.admin_reviewed ? log.admin_decision : log.flagged ? 'Needs Review' : 'Clean'}
                                                     </span>
                                                 </div>
-                                                {/* Body */}
-                                                <div className="space-y-2">
+                                                {/* Body — clickable to open detail */}
+                                                <div className="space-y-2 cursor-pointer" onClick={() => setSelectedAiLog(log)}>
                                                     <div className="flex items-center gap-2">
                                                         <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${
                                                             log.flagged
@@ -1342,7 +1343,9 @@ export default function AdminPage() {
                                                         }`}>
                                                             {log.flagged ? '⚠ Flagged' : 'Clean'}
                                                         </span>
+                                                        <span className="text-[9px] text-purple-400/60 ml-auto flex items-center gap-1"><Eye size={10} /> View Context</span>
                                                     </div>
+                                                    {log.input_content && <p className="text-[11px] text-white/50 line-clamp-2 italic">"{log.input_content}"</p>}
                                                     <p className="text-[11px] text-white/40 line-clamp-2">Action: {log.action_taken}</p>
                                                     <div className="flex items-center justify-between text-[9px] text-white/20">
                                                         <span>{new Date(log.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
@@ -1395,6 +1398,193 @@ export default function AdminPage() {
                                     </button>
                                     <button onClick={() => setBatchAiLogDeleteConfirm(false)}
                                         className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl font-bold text-xs tracking-widest">CANCEL</button>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+
+                {/* ─── AI LOG DETAIL MODAL ─── */}
+                <AnimatePresence>
+                    {selectedAiLog && (
+                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                            <motion.div
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                onClick={() => setSelectedAiLog(null)}
+                                className="absolute inset-0 bg-black/85 backdrop-blur-sm"
+                            />
+                            <motion.div
+                                initial={{ scale: 0.9, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.9, opacity: 0 }}
+                                className="relative w-full max-w-lg bg-[#121212] border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
+                            >
+                                <div className="p-6 space-y-5">
+                                    {/* Modal header */}
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <h3 className="text-lg font-black text-white">AI Log Context</h3>
+                                            <p className="text-[10px] text-white/30 uppercase tracking-widest mt-0.5">
+                                                {new Date(selectedAiLog.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                        </div>
+                                        <button onClick={() => setSelectedAiLog(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-white/40 transition-all">
+                                            <X size={16} />
+                                        </button>
+                                    </div>
+
+                                    {/* User info */}
+                                    <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2">Flagged User</p>
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center shrink-0 overflow-hidden">
+                                                {selectedAiLog.user?.avatar_url
+                                                    ? <img src={selectedAiLog.user.avatar_url} className="w-full h-full object-cover" alt="" />
+                                                    : <User size={16} className="text-orange-400" />}
+                                            </div>
+                                            <div className="flex-1">
+                                                <p className="text-sm font-bold text-white">{selectedAiLog.user?.full_name || 'Unknown User'}</p>
+                                                <p className="text-[10px] text-white/30">{selectedAiLog.user?.student_number || 'No student number'}</p>
+                                            </div>
+                                            {selectedAiLog.user?.is_banned && (
+                                                <span className="px-2 py-0.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-[8px] font-black uppercase">Banned</span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Content type + Model */}
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4">
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-1">Content Type</p>
+                                            <p className="text-sm font-bold text-white capitalize">{selectedAiLog.content_type}</p>
+                                        </div>
+                                        <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4">
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-1">AI Model</p>
+                                            <p className="text-[11px] font-bold text-white break-all">{selectedAiLog.ai_model}</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Flagged content preview */}
+                                    {selectedAiLog.input_content && (
+                                        <div className={`border rounded-2xl p-4 ${selectedAiLog.flagged ? 'bg-red-500/5 border-red-500/15' : 'bg-white/[0.04] border-white/10'}`}>
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-red-400/60 mb-2 flex items-center gap-1.5">
+                                                <MessageSquare size={10} /> {selectedAiLog.content_type === 'message' ? 'Flagged Message' : 'Content Info'}
+                                            </p>
+                                            <p className="text-white/70 text-sm leading-relaxed break-words">{selectedAiLog.input_content}</p>
+                                        </div>
+                                    )}
+
+                                    {/* AI Analysis — WHY it was flagged */}
+                                    <div className="bg-purple-500/5 border border-purple-500/15 rounded-2xl p-4">
+                                        <p className="text-[9px] font-black uppercase tracking-widest text-purple-400/60 mb-3 flex items-center gap-1.5">
+                                            <ShieldAlert size={10} /> AI Analysis — Why It Was Flagged
+                                        </p>
+                                        <div className="space-y-2">
+                                            {/* Flag status */}
+                                            <div className="flex items-center gap-2">
+                                                <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${selectedAiLog.flagged ? 'bg-red-500/15 text-red-400 border-red-500/30' : 'bg-green-500/15 text-green-400 border-green-500/30'}`}>
+                                                    {selectedAiLog.flagged ? '⚠ FLAGGED' : '✓ CLEAN'}
+                                                </span>
+                                                <span className="text-[10px] text-white/30">Action: {selectedAiLog.action_taken}</span>
+                                            </div>
+                                            {/* Parse ai_result for human-readable display */}
+                                            {(() => {
+                                                const result = selectedAiLog.ai_result;
+                                                if (!result || Object.keys(result).length === 0) return <p className="text-[11px] text-white/30 italic">No detailed AI result data available</p>;
+
+                                                // Emergency blocklist hit
+                                                if (result.blocklist_phrase) {
+                                                    return (
+                                                        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mt-2">
+                                                            <p className="text-[10px] font-black text-red-400 mb-1">🚨 Emergency Blocklist Match</p>
+                                                            <p className="text-sm text-red-300 font-mono">"{result.blocklist_phrase}"</p>
+                                                            <p className="text-[10px] text-white/30 mt-1">Instantly blocked — matched a known harmful phrase</p>
+                                                        </div>
+                                                    );
+                                                }
+
+                                                // Text model (english scores)
+                                                if (result.english) {
+                                                    const scores = Array.isArray(result.english?.[0]) ? result.english[0] : (Array.isArray(result.english) ? result.english : null);
+                                                    return (
+                                                        <div className="space-y-2 mt-2">
+                                                            <p className="text-[10px] font-black text-purple-400/80">Toxicity Scores</p>
+                                                            {scores ? scores.map((s, i) => (
+                                                                <div key={i} className="flex items-center gap-3">
+                                                                    <span className="text-[10px] font-bold text-white/50 w-24 uppercase">{s.label}</span>
+                                                                    <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                                                                        <div className={`h-full rounded-full transition-all ${s.label === 'TOXIC' || s.label === 'toxic' ? 'bg-red-500' : 'bg-green-500'}`}
+                                                                            style={{ width: `${(s.score * 100).toFixed(0)}%` }} />
+                                                                    </div>
+                                                                    <span className="text-[10px] font-mono text-white/40 w-12 text-right">{(s.score * 100).toFixed(1)}%</span>
+                                                                </div>
+                                                            )) : <p className="text-[11px] text-white/30">Raw: {JSON.stringify(result.english)}</p>}
+                                                        </div>
+                                                    );
+                                                }
+
+                                                // Image model (nsfw scores array)
+                                                if (Array.isArray(result)) {
+                                                    const scores = Array.isArray(result[0]) ? result[0] : result;
+                                                    return (
+                                                        <div className="space-y-2 mt-2">
+                                                            <p className="text-[10px] font-black text-purple-400/80">NSFW Detection Scores</p>
+                                                            {scores.map((s, i) => (
+                                                                <div key={i} className="flex items-center gap-3">
+                                                                    <span className="text-[10px] font-bold text-white/50 w-24 uppercase">{s.label}</span>
+                                                                    <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                                                                        <div className={`h-full rounded-full transition-all ${s.label === 'nsfw' || s.label === 'NSFW' ? 'bg-red-500' : 'bg-green-500'}`}
+                                                                            style={{ width: `${(s.score * 100).toFixed(0)}%` }} />
+                                                                    </div>
+                                                                    <span className="text-[10px] font-mono text-white/40 w-12 text-right">{(s.score * 100).toFixed(1)}%</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    );
+                                                }
+
+                                                // Fallback: raw JSON display
+                                                return (
+                                                    <div className="bg-black/30 rounded-xl p-3 mt-2">
+                                                        <p className="text-[10px] font-black text-white/30 mb-1">Raw AI Result</p>
+                                                        <pre className="text-[10px] text-white/40 font-mono whitespace-pre-wrap break-all max-h-32 overflow-y-auto">{JSON.stringify(result, null, 2)}</pre>
+                                                    </div>
+                                                );
+                                            })()}
+                                        </div>
+                                    </div>
+
+                                    {/* Reviewer info */}
+                                    {selectedAiLog.admin_reviewed && selectedAiLog.reviewer && (
+                                        <div className="flex items-center gap-2 text-[10px] text-white/30">
+                                            <CheckCircle size={12} className="text-green-400/40" />
+                                            <span>Reviewed by <span className="text-white/50 font-bold">{selectedAiLog.reviewer.full_name}</span> — <span className={selectedAiLog.admin_decision === 'confirmed' ? 'text-red-400' : 'text-green-400'}>{selectedAiLog.admin_decision}</span></span>
+                                        </div>
+                                    )}
+
+                                    {/* Actions — only for flagged + unreviewed */}
+                                    {selectedAiLog.flagged && !selectedAiLog.admin_reviewed && (
+                                        <div className="flex gap-2 pt-2 border-t border-white/5">
+                                            <button
+                                                onClick={() => { handleAiLogReview(selectedAiLog.id, 'confirmed'); setSelectedAiLog(null); }}
+                                                className="flex-1 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-2xl font-black text-xs tracking-widest transition-all flex items-center justify-center gap-2 active:scale-95">
+                                                <CheckCircle size={14} /> Confirm Flag
+                                            </button>
+                                            <button
+                                                onClick={() => { handleAiLogReview(selectedAiLog.id, 'dismissed'); setSelectedAiLog(null); }}
+                                                className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white/50 border border-white/10 rounded-2xl font-black text-xs tracking-widest transition-all flex items-center justify-center gap-2 active:scale-95">
+                                                <XCircle size={14} /> Dismiss
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {/* Close for reviewed logs */}
+                                    {(selectedAiLog.admin_reviewed || !selectedAiLog.flagged) && (
+                                        <button onClick={() => setSelectedAiLog(null)}
+                                            className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-2xl font-bold text-xs tracking-widest transition-all">
+                                            CLOSE
+                                        </button>
+                                    )}
                                 </div>
                             </motion.div>
                         </div>

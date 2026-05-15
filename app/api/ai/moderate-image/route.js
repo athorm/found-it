@@ -51,6 +51,7 @@ export async function POST(request) {
     // ─── Log to ai_moderation_logs (fire-and-forget) ───
     try {
       const contentType = formData.get('content_type') || 'image'
+      const sourceContext = formData.get('source') || contentType
       const adminClient = getSupabaseAdmin()
       const logEntry = {
         content_type: contentType,
@@ -58,6 +59,7 @@ export async function POST(request) {
         ai_result: result.raw || {},
         flagged: result.flagged,
         action_taken: result.flagged ? 'flagged_for_review' : 'none',
+        input_content: `[Image upload] Source: ${sourceContext}, Confidence: ${(result.confidence * 100).toFixed(1)}%`,
       }
       if (userId) logEntry.user_id = userId
       const { error: insertErr } = await adminClient.from('ai_moderation_logs').insert(logEntry)
