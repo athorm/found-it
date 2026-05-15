@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Send, Loader2, AlertCircle, ChevronDown, Check, Maximize2, Clock, Info, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Send, Loader2, AlertCircle, ChevronDown, Check, Maximize2, Clock, Info, ShieldAlert, RotateCw, Crop as CropIcon } from 'lucide-react';
 import ItemPostModal from '@/components/ItemPostModal';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import Cropper from 'react-easy-crop';
@@ -81,6 +81,8 @@ function PostItemContent() {
   // --- CROP & PREVIEW STATES ---[cite: 4]
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
+  const [rotation, setRotation] = useState(0);
+  const [aspect, setAspect] = useState(16 / 9);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [isCropping, setIsCropping] = useState(false);
   const [finalImage, setFinalImage] = useState(preview);
@@ -102,12 +104,33 @@ function PostItemContent() {
       await new Promise((resolve) => (img.onload = resolve));
 
       const canvas = document.createElement('canvas');
-      canvas.width = croppedAreaPixels.width;
-      canvas.height = croppedAreaPixels.height;
       const ctx = canvas.getContext('2d');
+      
+      // Calculate bounding box of the rotated image
+      const rotRad = (rotation * Math.PI) / 180;
+      const bBoxWidth = Math.abs(Math.cos(rotRad) * img.width) + Math.abs(Math.sin(rotRad) * img.height);
+      const bBoxHeight = Math.abs(Math.sin(rotRad) * img.width) + Math.abs(Math.cos(rotRad) * img.height);
 
-      ctx.drawImage(
-        img,
+      canvas.width = bBoxWidth;
+      canvas.height = bBoxHeight;
+
+      // Translate canvas context to a central location to allow rotating around the center
+      ctx.translate(bBoxWidth / 2, bBoxHeight / 2);
+      ctx.rotate(rotRad);
+      ctx.translate(-img.width / 2, -img.height / 2);
+
+      // Draw rotated image
+      ctx.drawImage(img, 0, 0);
+
+      // Create a new canvas for the cropped area
+      const croppedCanvas = document.createElement('canvas');
+      const croppedCtx = croppedCanvas.getContext('2d');
+
+      croppedCanvas.width = croppedAreaPixels.width;
+      croppedCanvas.height = croppedAreaPixels.height;
+
+      croppedCtx.drawImage(
+        canvas,
         croppedAreaPixels.x,
         croppedAreaPixels.y,
         croppedAreaPixels.width,
@@ -119,7 +142,7 @@ function PostItemContent() {
       );
 
       return new Promise((resolve) => {
-        canvas.toBlob((blob) => resolve(blob), 'image/jpeg');
+        croppedCanvas.toBlob((blob) => resolve(blob), 'image/jpeg');
       });
     } catch (e) {
       console.error("Cropping error:", e);
@@ -236,7 +259,7 @@ function PostItemContent() {
           <h2 className="text-2xl font-black">Image Not Appropriate</h2>
           <p className="text-white/50 text-sm max-w-xs mx-auto">Our AI detected potentially inappropriate content in your image. Please choose a different photo and try again.</p>
           <button
-            onClick={() => { setAiRejected(false); setIsCropping(false); }}
+            onClick={() => { setAiRejected(false); setIsCropping(false); setRotation(0); setAspect(16/9); }}
             className="mt-4 px-8 py-3 bg-orange-500 rounded-2xl font-bold text-sm active:scale-95 transition-all"
           >
             Choose Another Photo
@@ -289,17 +312,37 @@ function PostItemContent() {
               image={preview}
               crop={crop}
               zoom={zoom}
-              aspect={16 / 9}
+              rotation={rotation}
+              aspect={aspect}
               onCropChange={setCrop}
+              onRotationChange={setRotation}
               onCropComplete={onCropComplete}
               onZoomChange={setZoom}
             />
-            <button
-              onClick={handleDoneAdjusting}
-              className="absolute bottom-4 right-4 bg-orange-500 text-black px-6 py-3 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition-all"
-            >
-              Done Adjusting
-            </button>
+            <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center z-50">
+              <div className="flex gap-2">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setRotation((prev) => (prev + 90) % 360); }}
+                  className="bg-white/20 backdrop-blur-md p-3 rounded-2xl text-white shadow-lg active:scale-95 transition-all"
+                  aria-label="Rotate 90 degrees"
+                >
+                  <RotateCw size={18} />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setAspect((prev) => prev === 16/9 ? 9/16 : prev === 9/16 ? 1 : 16/9); }}
+                  className="bg-white/20 backdrop-blur-md p-3 rounded-2xl text-white shadow-lg active:scale-95 transition-all"
+                  aria-label="Toggle aspect ratio"
+                >
+                  <CropIcon size={18} />
+                </button>
+              </div>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDoneAdjusting(); }}
+                className="bg-orange-500 text-black px-6 py-3 rounded-2xl font-black text-xs shadow-lg active:scale-95 transition-all"
+              >
+                Done Adjusting
+              </button>
+            </div>
           </div>
         ) : (
           <div className="relative w-full h-full cursor-pointer" onClick={() => setIsCropping(true)}>
