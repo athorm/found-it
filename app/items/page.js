@@ -43,6 +43,7 @@ export default function ItemsPage() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   
   // Refs for drag constraints calculation
   const categoryScrollRef = useRef(null);
@@ -98,12 +99,45 @@ export default function ItemsPage() {
 
     const savedViewMode = localStorage.getItem("itemsViewMode");
     if (savedViewMode) setViewMode(savedViewMode);
+    
+    setIsInitialized(true);
   }, []);
+
+  // Sync state back to URL when filters change
+  useEffect(() => {
+    if (!isInitialized) return;
+    
+    const params = new URLSearchParams(window.location.search);
+    let changed = false;
+
+    if (categoryFilter === 'All' && params.has('item_category')) {
+      params.delete('item_category');
+      changed = true;
+    } else if (categoryFilter !== 'All' && params.get('item_category') !== categoryFilter) {
+      params.set('item_category', categoryFilter);
+      changed = true;
+    }
+
+    if (!searchQuery && params.has('search')) {
+      params.delete('search');
+      changed = true;
+    } else if (searchQuery && params.get('search') !== searchQuery) {
+      params.set('search', searchQuery);
+      changed = true;
+    }
+
+    if (changed) {
+      const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+      router.replace(newUrl, { scroll: false });
+    }
+  }, [categoryFilter, searchQuery, isInitialized, router]);
 
   // Save view mode preference whenever it changes
   useEffect(() => {
-    localStorage.setItem("itemsViewMode", viewMode);
-  }, [viewMode]);
+    if (isInitialized) {
+      localStorage.setItem("itemsViewMode", viewMode);
+    }
+  }, [viewMode, isInitialized]);
 
   useEffect(() => { fetchItems(false); }, [activeTab]);
 
@@ -567,7 +601,7 @@ export default function ItemsPage() {
               <motion.div
                 key="list"
                 layout
-                className={viewMode === "grid" ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "space-y-4"}
+                className={viewMode === "grid" ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "flex flex-col gap-4"}
               >
                 <AnimatePresence mode="popLayout">
                   {currentDisplayList.length > 0 ? (
