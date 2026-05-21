@@ -222,7 +222,7 @@ export default function LoginPage() {
                     <div className="flex justify-center mb-4">
                         <img src="/logo2.svg" alt="FoundIt Logo" className="w-20 h-20 rounded-2xl mix-blend-screen drop-shadow-[0_0_15px_rgba(249,115,22,0.4)]" />
                     </div>
-                    <h1 className="text-5xl font-extrabold gradient-text mb-2 tracking-tight">FoundIt</h1>
+                    <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-linear-to-r from-orange-400 via-orange-500 to-orange-600 drop-shadow-[0_0_10px_rgba(249,115,22,0.2)] mb-2 tracking-tight">FoundIt</h1>
                     <p className="text-orange-300/70 text-sm font-semibold">LSPU Lost and Found System</p>
                 </div>
 
@@ -231,16 +231,14 @@ export default function LoginPage() {
                     <button
                         type="button"
                         onClick={() => { setIsSignUp(false); setError(''); setMessage(''); }}
-                        style={!isSignUp ? { background: 'linear-gradient(90deg, #ff6b35 0%, #ff8c42 100%)' } : {}}
-                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all ${!isSignUp ? 'text-white shadow-lg shadow-orange-500/30' : 'text-orange-300/60 hover:text-orange-300'}`}
+                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all ${!isSignUp ? 'bg-orange-500 text-white shadow-[0_0_30px_rgba(249,115,22,0.4)]' : 'text-orange-300/60 hover:text-orange-300'}`}
                     >
                         Sign In
                     </button>
                     <button
                         type="button"
                         onClick={() => { setIsSignUp(true); setError(''); setMessage(''); }}
-                        style={isSignUp ? { background: 'linear-gradient(90deg, #ff6b35 0%, #ff8c42 100%)' } : {}}
-                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all ${isSignUp ? 'text-white shadow-lg shadow-orange-500/30' : 'text-orange-300/60 hover:text-orange-300'}`}
+                        className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all ${isSignUp ? 'bg-orange-500 text-white shadow-[0_0_30px_rgba(249,115,22,0.4)]' : 'text-orange-300/60 hover:text-orange-300'}`}
                     >
                         Sign Up
                     </button>
@@ -391,8 +389,7 @@ export default function LoginPage() {
                     <button
                         type="submit"
                         disabled={loading}
-                        style={{ background: 'linear-gradient(90deg, #ff6b35 0%, #ff8c42 100%)' }}
-                        className="w-full py-4 text-white font-bold rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-xl shadow-orange-500/30 hover:opacity-90"
+                        className="w-full py-4 bg-orange-500 text-white font-bold rounded-xl active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_30px_rgba(249,115,22,0.4)] hover:bg-orange-400"
                     >
                         {loading ? (
                             <span className="flex items-center justify-center gap-2">

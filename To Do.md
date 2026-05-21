@@ -32,7 +32,7 @@
 - [x] Remove notification settings on profile
 - [x] Suggest a way to verify if the user is a student of the school, 
 - [x] Implementing logo on pages such as in, login page, home page, item page, chat page, and profile page.
-- [ ] Choosing an appropriate and cohesive font text, font style, font size, with cohesion of the theme's orange palette and iOS feel, design. (This is a must)
+- [x] Choosing an appropriate and cohesive font text, font style, font size, with cohesion of the theme's orange palette and iOS feel, design. (This is a must)
 - [x] Instead of having the lost on the right side of item page.js, and the found on the left side. Switch them. So lost on the left, found on the right.
 - [x] Make a loading process when loading who posted the item in ItemDetailModal.js since I see a bug where the picture and the text is a different user because it was recently viewed on other items. 
 - [x] When users on their conversation both press mark as resolved. It would automatically be updated on the list of item in pages. (Mark as Claimed). But the thing is that I feel that when on the lost page, when you posted a lost item and then you resolved it rather than marking it as claimed, it says mark as found to make it appropriate and connected so that users do not get confused. How do we implement this? Should we use supabase?
@@ -76,3 +76,8 @@
 - [x] When logging out on one device, it should not log out on other devices. (Fixed: `signOut()` defaulted to `scope: 'global'` which revoked all sessions. Changed to `scope: 'local'` in Profile/page.js so only the current device is logged out — like Facebook.)
 - [ ] On AI flagged, Admin should see the context why the AI Flagged it. So that the Admin can determine if the admin should confirm or dismiss it. The only question I have is why do we confirm or dismiss the flags? It does nothing right? It just counts how many confirms and dismiss of admin. I wonder if we could implement that when an Admin confirmed the flag, if the user got flagged and get confirmed many times. They would get suspended for a week or so?
 - [x] Determine in which image posting is AI moderation moderating, is it just the chat, profile, etc. (Answer: AI image moderation (Falconsai/nsfw_image_detection) runs on **4 locations**: 1) Chat images in chat.js, 2) Item post images in post/page.js, 3) Profile avatar uploads in Profile/page.js, 4) Signup verification documents in login/page.js. All use 40% NSFW threshold, fail-open design, and log to ai_moderation_logs table.)
+
+
+## New Issues (May 19, 2026)
+- [x] When choosing an item type category from the home page, its working on the item page but even when clearing all the filters then going to other pages then goes back to the item page. The filter is still there. It should reset or go back to default when going to other pages. Example: Pressed ID Card on the Home page, it goes to item page with the filter of ID Card, then user removes the filter and then goes to messages or chat, then goes back to item page. The filter of ID Card is still there. It should go back to the default filter.
+- [x] When viewing the item page to list, the two item is closer while the third and so on seems to have different margin/padding to the first two items. Why is that and how do we fix it?
