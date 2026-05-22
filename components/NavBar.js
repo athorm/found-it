@@ -3,6 +3,7 @@ import { Search, Tag, Plus, MessageCircle, User, Shield, Bell } from "lucide-rea
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import NotificationDropdown from "@/components/NotificationDropdown";
 
@@ -149,7 +150,7 @@ export default function NavBar({ activePage, onPlusClick }) {
                 <button
                     id="notif-bell-button"
                     onClick={() => setShowNotifDropdown(prev => !prev)}
-                    className="p-3 bg-white/5 border border-white/10 rounded-2xl text-orange-400/70 hover:text-orange-400 hover:bg-white/10 transition-all backdrop-blur-md relative shadow-lg shadow-black/50"
+                    className="p-3 bg-white/5 border border-white/10 rounded-2xl text-orange-400/70 hover:text-orange-400 hover:bg-white/10 transition-all duration-200 active:scale-95 backdrop-blur-md relative shadow-[0_4px_15px_rgba(0,0,0,0.5)]"
                     aria-label="Alerts"
                 >
                     <Bell size={20} />
@@ -166,22 +167,22 @@ export default function NavBar({ activePage, onPlusClick }) {
                 />
             </div>
 
-            <nav className="fixed bottom-6 left-6 right-6 h-18 bg-black/50 backdrop-blur-2xl rounded-[2.5rem] border border-orange-500/20 shadow-2xl flex items-center justify-around px-4 z-50">
-                <NavIcon icon={<Search size={22} />} label="Explore" active={activePage === 'home'} onClick={() => router.push('/Home')} />
-                <NavIcon icon={<Tag size={22} />} label="Items" active={activePage === 'items'} onClick={() => router.push('/items')} />
+            <nav className="fixed bottom-6 left-6 right-6 h-18 bg-black/50 backdrop-blur-2xl rounded-[2.5rem] border border-orange-500/20 shadow-[0_4px_30px_rgba(0,0,0,0.5)] flex items-center justify-around px-4 z-50">
+                <NavIcon icon={<Search size={22} />} label="Explore" active={activePage === 'home'} href="/Home" />
+                <NavIcon icon={<Tag size={22} />} label="Items" active={activePage === 'items'} href="/items" />
                 {/* Plus button border options:
                     OPTION A (current): border-orange-900/70 — warm dark-orange, blends with the design
                     OPTION B: border-[#1a0a00] — near-black with a warm tint
                 */}
                 <motion.button
                     whileTap={{ scale: 0.92 }}
-                    className="p-4 rounded-full -translate-y-6 border-4 border-[#431407] shadow-xl shadow-orange-500/40 bg-linear-to-br from-orange-500 to-orange-700 active:scale-90 transition-transform"
+                    className="p-4 rounded-full -translate-y-6 border-4 border-[#431407] shadow-[0_0_20px_rgba(249,115,22,0.4)] bg-linear-to-br from-orange-500 to-orange-700 hover:shadow-[0_0_25px_rgba(249,115,22,0.6)] active:scale-90 transition-all duration-300"
                     onClick={handlePlusClick}
                 >
                     <Plus size={24} color="white" strokeWidth={3} />
                 </motion.button>
-                <NavIcon icon={<MessageCircle size={22} />} label="Chat" active={activePage === 'chat'} onClick={() => router.push('/chat')} badgeCount={unreadCount} />
-                <NavIcon icon={<User size={22} />} label="Profile" active={activePage === 'profile'} onClick={() => router.push('/Profile')} />
+                <NavIcon icon={<MessageCircle size={22} />} label="Chat" active={activePage === 'chat'} href="/chat" badgeCount={unreadCount} />
+                <NavIcon icon={<User size={22} />} label="Profile" active={activePage === 'profile'} href="/Profile" />
 
                 {/* Admin View button — only visible on desktop for admin users */}
                 {isAdmin && isDesktop && (
@@ -201,18 +202,23 @@ export default function NavBar({ activePage, onPlusClick }) {
     );
 }
 
-function NavIcon({ icon, label, active = false, onClick, badgeCount = 0 }) {
+function NavIcon({ icon, label, active = false, onClick, href, badgeCount = 0 }) {
+    const Component = href ? Link : 'button';
     return (
-        <button onClick={onClick} className={`flex flex-col items-center gap-1 relative ${active ? 'text-orange-400' : 'text-orange-300/50'}`}>
-            <div className={`${active ? 'bg-orange-500/10 p-2 rounded-xl' : ''}`}>
+        <Component 
+            href={href} 
+            onClick={onClick} 
+            className={`flex flex-col items-center gap-1 relative transition-colors duration-200 group active:scale-95 ${active ? 'text-orange-400' : 'text-orange-300/50 hover:text-orange-300/80'}`}
+        >
+            <div className={`transition-all duration-300 ${active ? 'bg-orange-500/15 p-2 rounded-xl shadow-[inset_0_0_12px_rgba(249,115,22,0.15)]' : 'p-2 group-hover:bg-white/5 rounded-xl'}`}>
                 {icon}
                 {badgeCount > 0 && (
-                    <span className="absolute top-0 right-0 -translate-y-1 translate-x-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-black shadow-lg">
+                    <span className="absolute top-0 right-0 -translate-y-1 translate-x-1 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-black flex items-center justify-center rounded-full border-2 border-[#0a0a0a] shadow-[0_0_10px_rgba(239,68,68,0.5)]">
                         {badgeCount > 9 ? '9+' : badgeCount}
                     </span>
                 )}
             </div>
             <span className="text-[10px] font-bold uppercase tracking-tighter">{label}</span>
-        </button>
+        </Component>
     );
 }

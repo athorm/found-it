@@ -50,8 +50,8 @@ body {
 @keyframes marquee-scroll {
   0% { transform: translateX(0); }
   10% { transform: translateX(0); } /* Pause at start */
-  45% { transform: translateX(calc(-100% + 100px)); } /* Scroll to end */
-  55% { transform: translateX(calc(-100% + 100px)); } /* Pause at end */
+  45% { transform: translateX(var(--marquee-dist, 0px)); } /* Scroll to end */
+  55% { transform: translateX(var(--marquee-dist, 0px)); } /* Pause at end */
   90% { transform: translateX(0); } /* Scroll back */
   100% { transform: translateX(0); }
 }

@@ -49,6 +49,10 @@ export default function ChatPage() {
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   // Lightbox for image messages
   const [lightboxUrl, setLightboxUrl] = useState(null);
+  // Unsend (delete own message) state
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [deletingMsgId, setDeletingMsgId] = useState(null);
+  const longPressTimerRef = useRef(null);
 
   const toggleTime = (msgId) => {
     setVisibleTimes(prev => ({ ...prev, [msgId]: !prev[msgId] }));
@@ -197,6 +201,19 @@ export default function ChatPage() {
               .update({ is_read: true })
               .eq('id', payload.new.id)
               .then(() => { }); // fire-and-forget
+          }
+        }
+      )
+      // Listen for message DELETE so AI-moderated messages disappear on the receiver's screen
+      // without requiring a refresh. The `old` payload contains only the primary key (`id`)
+      // because the table uses default replica identity — that's all we need.
+      .on(
+        'postgres_changes',
+        { event: 'DELETE', schema: 'public', table: 'messages', filter: `chat_id=eq.${conv.id}` },
+        (payload) => {
+          const deletedId = payload.old?.id;
+          if (deletedId) {
+            setMessages((prev) => prev.filter((m) => m.id !== deletedId));
           }
         }
       )
@@ -536,6 +553,37 @@ export default function ChatPage() {
     }
   };
 
+  // ─── Unsend (delete own message) ───
+  const handleDeleteMessage = async (msgId) => {
+    if (!msgId) return;
+    try {
+      setDeletingMsgId(msgId);
+      // If the message has an image, try to delete it from storage too
+      const targetMsg = messages.find((m) => m.id === msgId);
+      if (targetMsg?.image_url) {
+        try {
+          // Extract storage path from the public URL
+          const urlObj = new URL(targetMsg.image_url);
+          const pathMatch = urlObj.pathname.match(/\/chat-images\/(.+)$/);
+          if (pathMatch) {
+            await supabase.storage.from('chat-images').remove([pathMatch[1]]);
+          }
+        } catch (storageErr) {
+          console.warn('Could not delete image from storage:', storageErr.message);
+        }
+      }
+      const { error } = await supabase.from('messages').delete().eq('id', msgId);
+      if (error) throw error;
+      // Optimistically remove from local state (realtime DELETE will also fire)
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    } catch (err) {
+      console.error('Delete message error:', err);
+    } finally {
+      setDeleteConfirmId(null);
+      setDeletingMsgId(null);
+    }
+  };
+
   // Fix: forward file selection to /post page (was missing onFileSelect before)
   const handleFileSelected = (file) => {
     const previewUrl = URL.createObjectURL(file);
@@ -585,19 +633,21 @@ export default function ChatPage() {
               <button
                 key={conv.id}
                 onClick={() => selectConversation(conv)}
-                className="w-full bg-black/30 border border-orange-500/20 rounded-2xl p-4 flex items-center gap-4 hover:bg-orange-500/10 transition-all text-left"
+                className="w-full bg-orange-500/[0.03] backdrop-blur-md border border-orange-500/20 rounded-3xl p-4 flex items-center gap-4 hover:bg-orange-500/10 hover:border-orange-500/40 hover:shadow-[0_0_15px_rgba(249,115,22,0.15)] transition-all text-left group"
               >
-                <div className="w-12 h-12 bg-orange-500/20 rounded-full border border-orange-500/30 overflow-hidden shrink-0">
+                <div className="w-14 h-14 bg-orange-500/10 rounded-full border border-orange-500/30 overflow-hidden shrink-0 shadow-[0_0_10px_rgba(249,115,22,0.1)]">
                   {conv.otherUser?.avatar_url
                     ? <img src={conv.otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex items-center justify-center"><User size={20} className="text-orange-400" /></div>}
+                    : <div className="w-full h-full flex items-center justify-center"><User size={24} className="text-orange-400" /></div>}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold truncate">{conv.otherUser?.full_name}</p>
-                  <p className="text-sm text-orange-300/60 truncate">{conv.lastMessage}</p>
-                </div>
-                <div className="text-[10px] text-orange-400/40 shrink-0 uppercase">
-                  {conv.lastMessageTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                <div className="flex-1 min-w-0 flex flex-col gap-1 justify-center">
+                  <div className="flex items-center justify-between w-full">
+                    <p className="font-bold text-white tracking-wide truncate pr-2">{conv.otherUser?.full_name}</p>
+                    <div className="text-[9px] text-orange-300/80 font-bold tracking-widest shrink-0 uppercase">
+                      {conv.lastMessageTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                  <p className="text-xs text-orange-100/70 truncate">{conv.lastMessage}</p>
                 </div>
               </button>
             ))}
@@ -606,54 +656,46 @@ export default function ChatPage() {
       ) : (
         <div className="flex flex-col h-screen overflow-hidden">
           {/* HEADER */}
-          <div className="flex items-center p-4 border-b border-orange-500/10 bg-black/40 backdrop-blur-md">
-            <button onClick={backToList} className="p-2 mr-2"><ArrowLeft size={22} className="text-orange-400" /></button>
-            <div className="flex-1">
-              <h2 className="font-bold text-base leading-tight">{selectedConversation?.otherUser?.full_name}</h2>
-              <p className="text-[10px] text-orange-400/60 uppercase tracking-wider">{selectedConversation?.itemTitle}</p>
+          <div className="flex items-center p-4 border-b border-white/5 bg-black/40 backdrop-blur-xl z-10 sticky top-0">
+            <button onClick={backToList} className="p-2 mr-1 hover:bg-white/5 rounded-full transition-colors"><ArrowLeft size={22} className="text-orange-400" /></button>
+            <div className="flex-1 min-w-0 pr-2">
+              <h2 className="font-bold text-[15px] leading-tight text-white/90 truncate">{selectedConversation?.otherUser?.full_name}</h2>
+              <p className="text-[9px] text-orange-400/60 uppercase tracking-widest font-bold truncate">{selectedConversation?.itemTitle}</p>
             </div>
-            {/* Delete chat button — only visible to the finder (item poster) */}
+            {/* Delete chat button */}
             {selectedConversation?.isFinder && (
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="p-2 mr-1 text-red-400/60 hover:text-red-400 transition-colors"
-                title="Delete this conversation"
-              >
-                <Trash2 size={20} />
+              <button onClick={() => setShowDeleteConfirm(true)} className="p-2 mr-1 text-white/20 hover:text-red-400 hover:bg-white/5 rounded-full transition-all">
+                <Trash2 size={18} />
               </button>
             )}
-            {/* Report user button — visible to all non-poster participants */}
+            {/* Report user button */}
             {!selectedConversation?.isResolved && (
-              <button
-                onClick={() => setShowReportModal(true)}
-                className="p-2 mr-1 text-white/20 hover:text-yellow-400 transition-colors"
-                title="Report this user"
-              >
+              <button onClick={() => setShowReportModal(true)} className="p-2 mr-2 text-white/20 hover:text-yellow-400 hover:bg-white/5 rounded-full transition-all">
                 <Flag size={18} />
               </button>
             )}
-            <div className="w-9 h-9 rounded-full border border-orange-500/30 overflow-hidden bg-orange-500/10">
+            <div className="w-10 h-10 rounded-full border border-orange-500/30 overflow-hidden bg-orange-500/10 shrink-0 shadow-[0_0_10px_rgba(249,115,22,0.1)]">
               {selectedConversation?.otherUser?.avatar_url
                 ? <img src={selectedConversation.otherUser.avatar_url} className="w-full h-full object-cover" alt="" />
-                : <div className="w-full h-full flex items-center justify-center"><User size={16} className="text-orange-400" /></div>}
+                : <div className="w-full h-full flex items-center justify-center"><User size={18} className="text-orange-400/50" /></div>}
             </div>
           </div>
 
           {/* RESOLUTION BAR */}
-          <div className="px-4 py-2 bg-black/20 border-b border-orange-500/5">
+          <div className="w-full px-4 pt-4 pb-2 bg-transparent z-0">
             {selectedConversation?.isResolved ? (
-              <div className="flex items-center justify-center gap-2 py-2 text-green-400">
-                <CheckCircle2 size={16} />
-                <span className="text-[10px] font-black uppercase tracking-widest">Item Retrieved</span>
+              <div className="flex items-center justify-center gap-2 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.05)]">
+                <CheckCircle2 size={14} />
+                <span className="text-[9px] font-black uppercase tracking-widest">Item Retrieved</span>
               </div>
             ) : (
-              <div className="flex items-center justify-between py-1">
+              <div className="flex items-center justify-between py-2.5 px-4 bg-white/5 border border-white/5 backdrop-blur-md rounded-2xl">
                 <div className="flex items-center gap-2">
-                  <AlertCircle size={14} className="text-orange-500/40" />
-                  <span className="text-[9px] text-white/30 font-bold uppercase tracking-tight">
+                  <AlertCircle size={14} className="text-orange-500/60" />
+                  <span className="text-[9px] text-white/40 font-bold uppercase tracking-widest">
                     {selectedConversation?.isFinder
-                      ? (selectedConversation?.finderConfirmed ? "Waiting for claimer..." : "Is this item resolved?")
-                      : (selectedConversation?.claimerConfirmed ? "Waiting for finder..." : "Is this item resolved?")
+                      ? (selectedConversation?.finderConfirmed ? "Waiting for claimer..." : "Resolve this item?")
+                      : (selectedConversation?.claimerConfirmed ? "Waiting for finder..." : "Resolve this item?")
                     }
                   </span>
                 </div>
@@ -663,17 +705,17 @@ export default function ChatPage() {
                   <button
                     onClick={() => handleResolve(true)}
                     disabled={resolving}
-                    className="px-4 py-1.5 bg-orange-500/10 hover:bg-orange-500 text-orange-400 hover:text-white border border-orange-500/20 rounded-full text-[9px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                    className="px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-full text-[8px] font-black uppercase tracking-widest transition-all disabled:opacity-50 shadow-[0_0_10px_rgba(249,115,22,0.2)]"
                   >
-                    {resolving ? "Updating..." : "Mark as Resolved"}
+                    {resolving ? "..." : "Resolve"}
                   </button>
                 ) : (
                   <button
                     onClick={() => handleResolve(false)}
                     disabled={resolving}
-                    className="text-[9px] text-orange-500/40 hover:text-orange-500 font-bold uppercase tracking-widest transition-all underline underline-offset-4"
+                    className="text-[9px] text-orange-500/60 hover:text-orange-500 font-bold uppercase tracking-widest transition-all underline underline-offset-4"
                   >
-                    Cancel Request
+                    Cancel
                   </button>
                 )}
               </div>
@@ -681,65 +723,128 @@ export default function ChatPage() {
           </div>
 
           {/* CHAT AREA */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-transparent">
-            {messages.map((msg) => {
+          <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-4 bg-transparent scroll-smooth" onClick={() => deleteConfirmId && setDeleteConfirmId(null)}>
+            {messages.map((msg, idx) => {
               const isMe = msg.sender_id === user.id;
+              const showAvatar = !isMe && (idx === messages.length - 1 || messages[idx + 1]?.sender_id === user.id);
+              
               return (
                 <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}>
                   {!isMe && (
-                    <div className="w-7 h-7 rounded-full bg-orange-500/10 overflow-hidden shrink-0 border border-white/5">
+                    <div className={`w-8 h-8 rounded-full bg-orange-500/10 overflow-hidden shrink-0 border border-white/5 ${!showAvatar && 'opacity-0'}`}>
                       {selectedConversation?.otherUser?.avatar_url
                         ? <img src={selectedConversation.otherUser.avatar_url} className="w-full h-full object-cover" alt="" />
-                        : <div className="w-full h-full flex items-center justify-center"><User size={12} className="text-orange-400" /></div>}
+                        : <div className="w-full h-full flex items-center justify-center"><User size={14} className="text-orange-400/50" /></div>}
                     </div>
                   )}
-                  <div className="flex flex-col max-w-[75%]">
+                  <div className={`relative flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]`}>
                     <motion.div
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      onClick={() => msg.image_url ? setLightboxUrl(msg.image_url) : toggleTime(msg.id)}
-                      className={`overflow-hidden rounded-2xl ${
+                      initial={{ scale: 0.95, opacity: 0, y: 5 }}
+                      animate={{ scale: 1, opacity: 1, y: 0 }}
+                      onClick={() => {
+                        // Dismiss any open delete confirm when tapping elsewhere
+                        if (deleteConfirmId && deleteConfirmId !== msg.id) {
+                          setDeleteConfirmId(null);
+                        }
+                        msg.image_url ? setLightboxUrl(msg.image_url) : toggleTime(msg.id);
+                      }}
+                      // Long-press on own messages → show unsend option (mobile)
+                      onTouchStart={() => {
+                        if (!isMe) return;
+                        longPressTimerRef.current = setTimeout(() => {
+                          setDeleteConfirmId(msg.id);
+                        }, 500);
+                      }}
+                      onTouchEnd={() => clearTimeout(longPressTimerRef.current)}
+                      onTouchMove={() => clearTimeout(longPressTimerRef.current)}
+                      // Right-click on own messages → show unsend option (desktop)
+                      onContextMenu={(e) => {
+                        if (!isMe) return;
+                        e.preventDefault();
+                        setDeleteConfirmId(msg.id);
+                      }}
+                      className={`overflow-hidden cursor-pointer ${
                         msg.image_url
-                          ? 'cursor-pointer p-0'
-                          : `px-4 py-2 text-[15px] ${isMe ? 'bg-orange-600 rounded-br-none' : 'bg-white/10 rounded-bl-none shadow-lg'}`
+                          ? 'p-0 rounded-2xl border border-white/10'
+                          : `px-4 py-2.5 text-[14px] leading-relaxed ${
+                              isMe 
+                                ? 'bg-gradient-to-br from-orange-500 to-orange-600 rounded-[20px] rounded-br-[4px] shadow-[0_4px_15px_rgba(249,115,22,0.2)] border border-orange-400/50' 
+                                : 'bg-white/10 backdrop-blur-md rounded-[20px] rounded-bl-[4px] shadow-lg border border-white/5 text-white/90'
+                            }`
                       }`}
                     >
                       {msg.image_url ? (
                         <img
                           src={msg.image_url}
                           alt="Shared image"
-                          className="max-w-[220px] max-h-[220px] object-cover rounded-2xl block"
+                          className="max-w-[220px] max-h-[220px] object-cover block"
                         />
                       ) : (
                         msg.content
                       )}
                     </motion.div>
-                    {visibleTimes[msg.id] && (
-                      <span className="text-[9px] text-white/30 mt-1 px-1">
-                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    )}
+                    {/* Unsend confirmation popup */}
+                    <AnimatePresence>
+                      {deleteConfirmId === msg.id && isMe && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.9, y: 4 }}
+                          animate={{ opacity: 1, scale: 1, y: 0 }}
+                          exit={{ opacity: 0, scale: 0.9, y: 4 }}
+                          className="absolute -top-12 right-0 z-50 flex items-center gap-1.5 bg-[#1a1a1a] border border-white/10 rounded-2xl p-1.5 shadow-2xl shadow-black/60"
+                        >
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteMessage(msg.id); }}
+                            disabled={deletingMsgId === msg.id}
+                            className="flex items-center gap-1.5 px-3 py-1.5 text-red-400 hover:bg-red-500/10 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all disabled:opacity-50"
+                          >
+                            {deletingMsgId === msg.id
+                              ? <Loader2 size={12} className="animate-spin" />
+                              : <Trash2 size={12} />}
+                            Unsend
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }}
+                            className="p-1.5 text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                          >
+                            <X size={12} />
+                          </button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    <AnimatePresence>
+                      {visibleTimes[msg.id] && (
+                        <motion.span 
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="text-[9px] text-white/40 mt-1.5 px-2 font-bold tracking-wider uppercase"
+                        >
+                          {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {isMe && <span className="ml-2 text-orange-400/60">{msg.is_read ? 'Read' : 'Delivered'}</span>}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </div>
               );
             })}
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} className="h-2" />
           </div>
 
           {/* INPUT */}
-          <div className="p-4 border-t border-white/5 bg-black/40 backdrop-blur-lg">
+          <div className="p-4 bg-gradient-to-t from-black/80 to-transparent pb-6 z-10">
             {selectedConversation?.isResolved ? (
-              <div className="flex items-center justify-center gap-3 py-4 bg-white/5 border border-white/10 rounded-full text-white/30">
+              <div className="flex items-center justify-center gap-3 py-4 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl text-white/30">
                 <Lock size={16} />
-                <span className="text-xs font-black uppercase tracking-widest">Messaging Disabled</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">Messaging Disabled</span>
               </div>
             ) : selectedConversation?.otherUserIsBanned ? (
-              <div className="flex items-center justify-center gap-3 py-4 bg-yellow-500/10 border border-yellow-500/20 rounded-2xl text-yellow-400">
+              <div className="flex items-center justify-center gap-3 py-4 bg-yellow-500/10 backdrop-blur-xl border border-yellow-500/20 rounded-3xl text-yellow-400">
                 <AlertTriangle size={16} />
-                <span className="text-xs font-black uppercase tracking-widest">User Suspended — Messaging Unavailable</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">User Suspended</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2 bg-white/5 rounded-full px-4 py-1 border border-white/10 focus-within:border-orange-500/40 transition-all">
+              <div className="flex items-end gap-2 bg-white/5 backdrop-blur-xl rounded-3xl p-2 border border-white/10 focus-within:border-orange-500/40 focus-within:bg-black/40 transition-all shadow-xl">
                 {/* Hidden file input for image sharing */}
                 <input
                   ref={imageInputRef}
@@ -756,24 +861,16 @@ export default function ChatPage() {
                   className="hidden"
                   onChange={handleImageSend}
                 />
-                <input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Message"
-                  className="flex-1 bg-transparent py-3 focus:outline-none text-sm"
-                  onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                />
-                <button onClick={sendMessage} className="text-orange-500 p-2"><Send size={20} /></button>
-                <div className="relative">
+                <div className="relative pb-1 px-1">
                   <button
                     onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
                     disabled={imageUploading}
-                    className="text-white/20 hover:text-orange-400 transition-colors p-1 shrink-0 disabled:opacity-50"
+                    className="p-2 text-white/40 hover:text-orange-400 hover:bg-white/5 rounded-full transition-all shrink-0 disabled:opacity-50"
                     title="Attach"
                   >
                     {imageUploading
-                      ? <Loader2 size={18} className="animate-spin text-orange-400" />
-                      : <Plus size={22} />}
+                      ? <Loader2 size={20} className="animate-spin text-orange-400" />
+                      : <Plus size={20} />}
                   </button>
 
                   <AnimatePresence>
@@ -782,18 +879,18 @@ export default function ChatPage() {
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute bottom-full right-0 mb-3 w-36 bg-[#1a1a1a] border border-white/10 rounded-2xl p-2 shadow-xl shadow-black/50 origin-bottom-right z-50"
+                        className="absolute bottom-full left-0 mb-3 w-40 bg-[#1a1a1a] border border-white/10 rounded-3xl p-2 shadow-2xl shadow-black origin-bottom-left z-50"
                       >
                         <button
                           onClick={() => { setShowAttachmentMenu(false); cameraInputRef.current?.click(); }}
-                          className="w-full flex items-center gap-3 px-3 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-2xl transition-all"
                         >
                           <Camera size={16} className="text-orange-400" />
                           Camera
                         </button>
                         <button
                           onClick={() => { setShowAttachmentMenu(false); imageInputRef.current?.click(); }}
-                          className="w-full flex items-center gap-3 px-3 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                          className="w-full flex items-center gap-3 px-4 py-3 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-2xl transition-all"
                         >
                           <ImageIcon size={16} className="text-orange-400" />
                           Gallery
@@ -801,6 +898,32 @@ export default function ChatPage() {
                       </motion.div>
                     )}
                   </AnimatePresence>
+                </div>
+                <textarea
+                  value={newMessage}
+                  onChange={(e) => {
+                    setNewMessage(e.target.value);
+                    e.target.style.height = 'auto';
+                    e.target.style.height = Math.min(e.target.scrollHeight, 100) + 'px';
+                  }}
+                  placeholder="Message..."
+                  className="flex-1 bg-transparent py-3 px-2 focus:outline-none text-sm text-white/90 placeholder:text-white/30 resize-none max-h-[100px]"
+                  rows={1}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      sendMessage();
+                    }
+                  }}
+                />
+                <div className="pb-1 pr-1">
+                  <button 
+                    onClick={sendMessage} 
+                    disabled={!newMessage.trim()}
+                    className="p-2.5 bg-orange-500 hover:bg-orange-600 disabled:bg-white/5 disabled:text-white/20 text-white rounded-full transition-all shadow-[0_0_10px_rgba(249,115,22,0.2)] disabled:shadow-none"
+                  >
+                    <Send size={18} />
+                  </button>
                 </div>
               </div>
             )}

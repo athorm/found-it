@@ -15,6 +15,22 @@ import CustomDateRangePicker from "@/components/CustomDateRangePicker";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { CAMPUS_LOCATIONS_WITH_ALL, ITEM_CATEGORIES } from "@/lib/constants";
 
+// ─── Time Ago Helper ───
+function getTimeAgo(dateString) {
+  const now = new Date();
+  const then = new Date(dateString);
+  const diffMs = now - then;
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHrs = Math.floor(diffMins / 60);
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  const diffDays = Math.floor(diffHrs / 24);
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return `${Math.floor(diffDays / 7)}w ago`;
+}
+
 export default function ItemsPage() {
   const router = useRouter();
   const { user, authLoading } = useAuthGuard();
@@ -363,7 +379,10 @@ export default function ItemsPage() {
         </div>
 
         {/* CONTROLS AREA */}
-        <div className="max-w-6xl mx-auto px-6 pt-1 pb-4 space-y-4">
+        <div className="max-w-6xl mx-auto px-6 pt-1 pb-4 space-y-4 relative">
+          {/* Ambient Glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] h-[100px] bg-[radial-gradient(ellipse_at_center,rgba(249,115,22,0.15)_0%,transparent_70%)] pointer-events-none blur-xl" />
+          
           {/* TAB SWITCHER */}
           <div className="relative flex bg-white/5 p-1.5 rounded-[1.5rem] border border-white/10 shadow-2xl backdrop-blur-md">
             <motion.div
@@ -385,12 +404,12 @@ export default function ItemsPage() {
               placeholder={`Search ${activeTab} items...`}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/[0.04] border border-white/10 py-3.5 pl-12 pr-4 rounded-2xl outline-none text-sm focus:border-orange-500/50 transition-all placeholder:text-white/20"
+              className="w-full bg-white/[0.04] border border-white/10 py-3.5 pl-12 pr-4 min-h-[44px] rounded-2xl outline-none text-sm focus:border-orange-500/50 transition-all placeholder:text-white/40"
             />
           </div>
           <button
             onClick={() => setViewUserPosts(!viewUserPosts)}
-            className={`p-4 rounded-2xl border transition-all flex items-center gap-2 ${viewUserPosts ? 'bg-orange-500 border-orange-400 text-white shadow-[0_0_20px_rgba(249,115,22,0.4)]' : 'bg-white/5 border-white/10 text-white/40'}`}
+            className={`p-4 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-2xl border transition-all gap-2 ${viewUserPosts ? 'bg-orange-500 border-orange-400 text-white shadow-[0_0_20px_rgba(249,115,22,0.4)]' : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'}`}
             title="My Posts"
           >
             <Bookmark size={22} fill={viewUserPosts ? "currentColor" : "none"} />
@@ -398,7 +417,7 @@ export default function ItemsPage() {
           </button>
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={`relative p-4 rounded-2xl border transition-all ${showFilters ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/10 text-orange-500'}`}
+            className={`relative p-4 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-2xl border transition-all ${showFilters ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/10 text-orange-500 hover:bg-white/10'}`}
           >
             <SlidersHorizontal size={22} />
             {/* Active filter indicator dot */}
@@ -414,7 +433,7 @@ export default function ItemsPage() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="absolute top-full right-0 mt-2 z-50 w-80 md:w-[450px] bg-[#121212] border border-white/10 rounded-[2rem] backdrop-blur-3xl shadow-2xl max-h-[70vh] overflow-y-auto"
+                className="absolute top-full right-0 mt-2 z-[100] w-[calc(100vw-3rem)] max-w-[450px] bg-[#121212]/95 border border-white/10 rounded-[2rem] backdrop-blur-3xl shadow-2xl max-h-[70vh] overflow-y-auto"
               >
                 <div className="p-6 space-y-5">
                   {/* Header with clear button */}
@@ -627,7 +646,7 @@ export default function ItemsPage() {
                         whileHover={{ y: -4 }} // Gentle lift-up instead of scaling out
 
                         onClick={() => handleItemClick(item)}
-                        className={`group bg-white/[0.04] border border-white/10 rounded-[2.2rem] overflow-hidden hover:border-orange-500/40 transition-colors duration-300 backdrop-blur-sm shadow-xl cursor-pointer active:bg-white/[0.08] ${viewMode === "list" ? "flex p-3 gap-5 items-center" : "flex flex-col"
+                        className={`group relative bg-white/[0.04] border border-white/10 rounded-[2.2rem] overflow-hidden hover:border-orange-500/40 transition-colors duration-300 backdrop-blur-sm shadow-xl cursor-pointer active:bg-white/[0.08] ${viewMode === "list" ? "flex p-3 gap-5 items-center" : "flex flex-col"
                           }`}
                       >
                         <div className={`relative shrink-0 overflow-hidden ${viewMode === "list" ? "w-24 h-24 rounded-[1.5rem]" : "aspect-square w-full"
@@ -649,17 +668,33 @@ export default function ItemsPage() {
                           )}
                         </div>
 
-                        <div className={`flex-1 min-w-0 ${viewMode === "list" ? "py-1" : "p-5"}`}>
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex-1 min-w-0 mr-2">
-                                <MarqueeTitle text={item.title} className="font-bold text-sm tracking-tight" />
+                        <div className={`flex-1 min-w-0 flex flex-col justify-center ${viewMode === "list" ? "py-1 pr-2" : "p-5"}`}>
+                          <div className="flex items-start justify-between mb-1 w-full">
+                            <div className="flex-1 min-w-0 mr-2 mt-0.5">
+                                <MarqueeTitle text={item.title} className="font-bold text-sm tracking-tight text-white/90" />
+                                <span className="flex items-center gap-1 text-[8px] text-white/50 font-bold tracking-wider mt-1.5">
+                                  <Clock size={10} className="opacity-60" />
+                                  {getTimeAgo(item.created_at)}
+                                </span>
                             </div>
-                            <span className="text-[7px] font-black uppercase text-orange-500 bg-orange-500/10 px-2 py-0.5 rounded border border-orange-500/20 shrink-0">
-                              {/* Context-aware: Lost→Found/Unfound, Found→Claimed/Unclaimed */}
-                              {item.status === 'Resolved'
-                                ? (item.category === 'Lost' ? 'Found' : 'Claimed')
-                                : 'Unclaimed'}
-                            </span>
+                            
+                            {/* Status Tag */}
+                            <div className="shrink-0">
+                                {(() => {
+                                  const isResolved = item.status === 'Resolved';
+                                  const tagLabel = isResolved ? 'Claimed' : 'Unclaimed';
+                                  const tagColor = isResolved 
+                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                                    : 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+                                  const dotColor = isResolved ? 'bg-emerald-400' : 'bg-orange-500';
+                                  return (
+                                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-[7px] font-black uppercase tracking-widest ${tagColor}`}>
+                                      <span className={`w-1 h-1 rounded-full shadow-[0_0_5px_currentColor] ${dotColor}`} />
+                                      {tagLabel}
+                                    </span>
+                                  );
+                                })()}
+                            </div>
                           </div>
 
                           {/* Moderation badge — only shown for the user's own pending/rejected posts */}

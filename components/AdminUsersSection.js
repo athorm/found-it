@@ -19,25 +19,26 @@ function RejectReasonModal({ onConfirm, onCancel, processing }) {
     const [reason, setReason] = useState('');
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onCancel} />
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-[#1a1a1a] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl">
-                <div className="w-14 h-14 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-5">
-                    <XCircle size={28} className="text-red-500" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={onCancel} />
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="relative bg-[#111] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full shadow-[0_0_50px_rgba(239,68,68,0.15)] overflow-hidden">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150px] h-[50px] bg-red-500/30 blur-[40px] rounded-full pointer-events-none" />
+                <div className="w-20 h-20 bg-red-500/10 border-2 border-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
+                    <XCircle size={36} className="text-red-500" />
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2 text-center">Reject Verification</h3>
-                <p className="text-white/40 text-xs mb-4 text-center">Provide a reason so the student knows what to fix.</p>
+                <h3 className="text-2xl font-black text-white mb-2 text-center relative z-10">Reject Verification</h3>
+                <p className="text-white/40 text-sm mb-6 text-center leading-relaxed relative z-10">Provide a reason so the student knows what to fix.</p>
                 <textarea
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     placeholder="e.g. Document is blurry, please re-upload a clearer image..."
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-white/20 outline-none focus:border-red-500/50 resize-none h-24 mb-4"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-white/20 outline-none focus:border-red-500/50 resize-none h-24 mb-4 relative z-10"
                 />
-                <div className="space-y-3">
+                <div className="space-y-3 relative z-10">
                     <button onClick={() => onConfirm(reason || 'Document could not be verified')} disabled={processing}
-                        className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                        {processing ? <Loader2 size={14} className="animate-spin" /> : <><XCircle size={14} /> REJECT</>}
+                        className="w-full py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black text-xs tracking-widest uppercase transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                        {processing ? <Loader2 size={16} className="animate-spin" /> : <><XCircle size={16} className="text-red-500" /> REJECT</>}
                     </button>
-                    <button onClick={onCancel} className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl font-bold text-xs tracking-widest">CANCEL</button>
+                    <button onClick={onCancel} className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs tracking-widest uppercase transition-all">CANCEL</button>
                 </div>
             </motion.div>
         </div>
@@ -63,15 +64,16 @@ function BanReasonModal({ onConfirm, onCancel, processing }) {
     const [reason, setReason] = useState('');
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onCancel} />
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-[#1a1a1a] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl max-h-[90vh] overflow-y-auto">
-                <div className="w-14 h-14 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-5">
-                    <Ban size={28} className="text-red-500" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={onCancel} />
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="relative bg-[#111] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full shadow-[0_0_50px_rgba(239,68,68,0.15)] max-h-[90vh] overflow-y-auto overflow-hidden">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150px] h-[50px] bg-red-500/30 blur-[40px] rounded-full pointer-events-none" />
+                <div className="w-20 h-20 bg-red-500/10 border-2 border-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
+                    <Ban size={36} className="text-red-500" />
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2 text-center">Ban User</h3>
-                <p className="text-white/40 text-xs mb-4 text-center">Select a reason or type a custom one. The user will be notified via email.</p>
+                <h3 className="text-2xl font-black text-white mb-2 text-center relative z-10">Ban User</h3>
+                <p className="text-white/40 text-sm mb-6 text-center leading-relaxed relative z-10">Select a reason or type a custom one. The user will be notified via email.</p>
                 {/* Premade reason chips */}
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-2 mb-4 relative z-10">
                     {BAN_PREMADE_REASONS.map((r) => (
                         <button key={r} onClick={() => setReason(r)} type="button"
                             className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${
@@ -87,14 +89,14 @@ function BanReasonModal({ onConfirm, onCancel, processing }) {
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     placeholder="Or type a custom reason..."
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-white/20 outline-none focus:border-red-500/50 resize-none h-20 mb-4"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-white/20 outline-none focus:border-red-500/50 resize-none h-20 mb-4 relative z-10"
                 />
-                <div className="space-y-3">
+                <div className="space-y-3 relative z-10">
                     <button onClick={() => onConfirm(reason || 'Violated community guidelines')} disabled={processing}
-                        className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                        {processing ? <Loader2 size={14} className="animate-spin" /> : <><Ban size={14} /> BAN USER</>}
+                        className="w-full py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
+                        {processing ? <Loader2 size={16} className="animate-spin" /> : <><Ban size={16} className="text-red-500" /> BAN USER</>}
                     </button>
-                    <button onClick={onCancel} className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl font-bold text-xs tracking-widest">CANCEL</button>
+                    <button onClick={onCancel} className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">CANCEL</button>
                 </div>
             </motion.div>
         </div>
@@ -105,21 +107,22 @@ function UnbanReasonModal({ onConfirm, onCancel, processing }) {
     const [reason, setReason] = useState('');
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onCancel} />
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-[#1a1a1a] border border-green-500/30 rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl max-h-[90vh] overflow-y-auto">
-                <div className="w-14 h-14 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-5">
-                    <ShieldCheck size={28} className="text-green-400" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={onCancel} />
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="relative bg-[#111] border border-orange-500/30 rounded-[2.5rem] p-8 max-w-sm w-full shadow-[0_0_50px_rgba(249,115,22,0.15)] max-h-[90vh] overflow-y-auto overflow-hidden">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150px] h-[50px] bg-orange-500/30 blur-[40px] rounded-full pointer-events-none" />
+                <div className="w-20 h-20 bg-orange-500/10 border-2 border-orange-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
+                    <ShieldCheck size={36} className="text-orange-500" />
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2 text-center">Unban User</h3>
-                <p className="text-white/40 text-xs mb-4 text-center">Select a reason or type a custom one. The user will be notified via email.</p>
+                <h3 className="text-2xl font-black text-white mb-2 text-center relative z-10">Unban User</h3>
+                <p className="text-white/40 text-sm mb-6 text-center leading-relaxed relative z-10">Select a reason or type a custom one. The user will be notified via email.</p>
                 {/* Premade reason chips */}
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-2 mb-4 relative z-10">
                     {UNBAN_PREMADE_REASONS.map((r) => (
                         <button key={r} onClick={() => setReason(r)} type="button"
                             className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${
                                 reason === r
-                                    ? 'bg-green-500/20 border-green-500/40 text-green-300'
-                                    : 'bg-white/5 border-white/10 text-white/40 hover:border-green-500/30 hover:text-white/60'
+                                    ? 'bg-orange-500/20 border-orange-500/40 text-orange-300'
+                                    : 'bg-white/5 border-white/10 text-white/40 hover:border-orange-500/30 hover:text-white/60'
                             }`}>
                             {r}
                         </button>
@@ -129,14 +132,14 @@ function UnbanReasonModal({ onConfirm, onCancel, processing }) {
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     placeholder="Or type a custom reason..."
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-white/20 outline-none focus:border-green-500/50 resize-none h-20 mb-4"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-white/20 outline-none focus:border-orange-500/50 resize-none h-20 mb-4 relative z-10"
                 />
-                <div className="space-y-3">
+                <div className="space-y-3 relative z-10">
                     <button onClick={() => onConfirm(reason || 'Unbanned by admin')} disabled={processing}
-                        className="w-full py-3 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl font-bold text-xs tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                        {processing ? <Loader2 size={14} className="animate-spin" /> : <><ShieldCheck size={14} /> UNBAN USER</>}
+                        className="w-full py-4 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
+                        {processing ? <Loader2 size={16} className="animate-spin" /> : <><ShieldCheck size={16} className="text-orange-500" /> UNBAN USER</>}
                     </button>
-                    <button onClick={onCancel} className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl font-bold text-xs tracking-widest">CANCEL</button>
+                    <button onClick={onCancel} className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">CANCEL</button>
                 </div>
             </motion.div>
         </div>
@@ -148,16 +151,16 @@ function DocPreviewModal({ url, onClose }) {
     const isPdf = url.includes('.pdf');
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/85 backdrop-blur-sm" />
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-                className="relative w-full max-w-2xl bg-[#121212] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl max-h-[90vh]">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} className="absolute inset-0 bg-black/90 backdrop-blur-xl" />
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                className="relative w-full max-w-2xl bg-[#111] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] max-h-[90vh]">
                 {isPdf ? (
                     <iframe src={url} className="w-full h-[80vh]" title="Verification Document" />
                 ) : (
-                    <img src={url} alt="Verification Document" className="w-full max-h-[80vh] object-contain" />
+                    <img src={url} alt="Verification Document" className="w-full max-h-[80vh] object-contain bg-black/50" />
                 )}
-                <div className="p-4">
-                    <button onClick={onClose} className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-2xl font-bold text-xs tracking-widest">CLOSE</button>
+                <div className="p-4 border-t border-white/10">
+                    <button onClick={onClose} className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs tracking-widest uppercase transition-all">CLOSE</button>
                 </div>
             </motion.div>
         </div>
@@ -323,9 +326,15 @@ export default function AdminUsersSection({ refreshTrigger }) {
                 { label: 'Total Users', count: stats.total, icon: Users, color: 'text-orange-400', tab: 'all' }
                 ].map(s => (
                     <button key={s.tab} onClick={() => setActiveTab(s.tab)}
-                        className={`p-5 rounded-2xl border transition-all text-left ${activeTab === s.tab ? 'bg-orange-500/10 border-orange-500/40' : 'bg-white/[0.03] border-white/10 hover:border-white/20'}`}>
-                        <div className="flex items-center justify-between mb-3"><s.icon size={20} className={s.color} /><span className="text-3xl font-black text-white">{s.count}</span></div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{s.label}</p>
+                        className={`p-5 rounded-[1.5rem] border transition-all duration-300 text-left backdrop-blur-md relative overflow-hidden group ${activeTab === s.tab ? 'bg-orange-500/15 border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'}`}>
+                        <div className={`absolute top-0 right-0 w-24 h-24 blur-[40px] rounded-full pointer-events-none opacity-20 transition-opacity duration-300 ${activeTab === s.tab ? 'opacity-40' : 'group-hover:opacity-30'} ${s.color === 'text-yellow-400' ? 'bg-yellow-500' : s.color === 'text-green-400' ? 'bg-green-500' : s.color === 'text-red-500' || s.color === 'text-red-400' ? 'bg-red-500' : 'bg-orange-500'}`} />
+                        <div className="flex items-center justify-between mb-3 relative z-10">
+                            <div className={`p-2 rounded-xl bg-white/5 border border-white/5 ${activeTab === s.tab ? 'scale-110 shadow-lg' : ''} transition-transform`}>
+                                <s.icon size={20} className={s.color} />
+                            </div>
+                            <span className="text-3xl font-black text-white">{s.count}</span>
+                        </div>
+                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 relative z-10">{s.label}</p>
                     </button>
                 ))}
             </div>
@@ -377,7 +386,7 @@ export default function AdminUsersSection({ refreshTrigger }) {
                             {filtered.map(u => (
                                 <motion.div key={u.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
                                     onClick={() => toggleSelect(u.id)}
-                                    className={`bg-white/[0.04] border rounded-3xl p-5 flex flex-col h-full hover:border-orange-500/30 transition-all cursor-pointer ${selectedUsers.has(u.id) ? 'border-orange-500/60 ring-2 ring-orange-500/30' : 'border-white/10'}`}>
+                                    className={`bg-white/[0.02] backdrop-blur-md border rounded-3xl p-5 flex flex-col h-full hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] transition-all duration-300 cursor-pointer ${selectedUsers.has(u.id) ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'border-white/5'}`}>
                                     <div className="space-y-4 mb-4">
                                         {/* User header */}
                                         <div className="flex items-center gap-3">
@@ -431,41 +440,41 @@ export default function AdminUsersSection({ refreshTrigger }) {
                                         <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                                             {u.verification_status === 'pending' && (<>
                                                 <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
-                                                    className="flex-1 py-2.5 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                    <CheckCircle size={12} /> APPROVE
+                                                    className="flex-1 py-2.5 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    <CheckCircle size={12} className="text-green-500" /> APPROVE
                                                 </button>
                                                 <button onClick={() => setRejectTarget(u.id)} disabled={processing}
-                                                    className="flex-1 py-2.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                    <XCircle size={12} /> REJECT
+                                                    className="flex-1 py-2.5 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    <XCircle size={12} className="text-red-500" /> REJECT
                                                 </button>
                                             </>)}
                                             {u.verification_status === 'rejected' && (
                                                 <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
-                                                    className="flex-1 py-2.5 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                    <CheckCircle size={12} /> APPROVE
+                                                    className="flex-1 py-2.5 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    <CheckCircle size={12} className="text-green-500" /> APPROVE
                                                 </button>
                                             )}
                                             {u.verification_status === 'approved' && !u.is_banned && (
                                                 <button onClick={() => setRejectTarget(u.id)} disabled={processing}
-                                                    className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400/60 border border-red-500/20 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                    <XCircle size={12} /> REVOKE
+                                                    className="flex-1 py-2.5 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    <XCircle size={12} className="text-red-500" /> REVOKE
                                                 </button>
                                             )}
                                             {/* Ban / Unban toggle */}
                                             {u.is_banned ? (
                                                 <button onClick={() => setUnbanTarget(u.id)} disabled={processing}
-                                                    className="flex-1 py-2.5 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                    <ShieldCheck size={12} /> UNBAN
+                                                    className="flex-1 py-2.5 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    <ShieldCheck size={12} className="text-orange-500" /> UNBAN
                                                 </button>
                                             ) : u.verification_status === 'approved' && (
                                                 <button onClick={() => setBanTarget(u.id)} disabled={processing}
-                                                    className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl transition-all disabled:opacity-50" title="Ban user">
-                                                    <Ban size={12} />
+                                                    className="p-2.5 bg-white/[0.03] hover:bg-red-500/10 text-white/50 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl transition-all active:scale-95 disabled:opacity-50" title="Ban user">
+                                                    <Ban size={12} className="text-red-500" />
                                                 </button>
                                             )}
                                             <button onClick={() => setDeleteTarget(u.id)} disabled={processing}
-                                                className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 rounded-xl transition-all disabled:opacity-50" title="Delete account">
-                                                <Trash2 size={12} />
+                                                className="p-2.5 bg-white/[0.03] hover:bg-red-500/10 text-white/50 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl transition-all active:scale-95 disabled:opacity-50" title="Delete account">
+                                                <Trash2 size={12} className="text-red-500" />
                                             </button>
                                         </div>
                                     </div>
@@ -498,18 +507,19 @@ export default function AdminUsersSection({ refreshTrigger }) {
             {/* Delete user confirm */}
             <AnimatePresence>{deleteTarget && (
                 <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setDeleteTarget(null)} />
-                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                        className="relative bg-[#1a1a1a] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-2xl">
-                        <div className="w-14 h-14 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-5"><Trash2 size={28} className="text-red-500" /></div>
-                        <h3 className="text-lg font-bold text-white mb-2">Delete Account?</h3>
-                        <p className="text-white/40 text-xs mb-6">This will permanently delete the user, their posts, chats, and messages. This cannot be undone.</p>
-                        <div className="space-y-3">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setDeleteTarget(null)} />
+                    <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }}
+                        className="relative bg-[#111] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(239,68,68,0.15)] overflow-hidden">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150px] h-[50px] bg-red-500/30 blur-[40px] rounded-full pointer-events-none" />
+                        <div className="w-20 h-20 bg-red-500/10 border-2 border-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10"><Trash2 size={36} className="text-red-500" /></div>
+                        <h3 className="text-2xl font-black text-white mb-2 relative z-10">Delete Account?</h3>
+                        <p className="text-white/40 text-sm mb-6 leading-relaxed relative z-10">This will permanently delete the user, their posts, chats, and messages. This cannot be undone.</p>
+                        <div className="space-y-3 relative z-10">
                             <button onClick={() => handleDeleteUser(deleteTarget)} disabled={processing}
-                                className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs tracking-widest flex items-center justify-center gap-2 disabled:opacity-50">
-                                {processing ? <Loader2 size={14} className="animate-spin" /> : <><Trash2 size={14} /> DELETE ACCOUNT</>}
+                                className="w-full py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
+                                {processing ? <Loader2 size={16} className="animate-spin" /> : <><Trash2 size={16} className="text-red-500" /> DELETE ACCOUNT</>}
                             </button>
-                            <button onClick={() => setDeleteTarget(null)} className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl font-bold text-xs tracking-widest">CANCEL</button>
+                            <button onClick={() => setDeleteTarget(null)} className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">CANCEL</button>
                         </div>
                     </motion.div>
                 </div>
@@ -518,18 +528,19 @@ export default function AdminUsersSection({ refreshTrigger }) {
             {/* Batch delete confirm */}
             <AnimatePresence>{batchDeleteConfirm && (
                 <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setBatchDeleteConfirm(false)} />
-                    <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                        className="relative bg-[#1a1a1a] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-2xl">
-                        <div className="w-14 h-14 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-5"><AlertTriangle size={28} className="text-red-500" /></div>
-                        <h3 className="text-lg font-bold text-white mb-2">Delete {selectedUsers.size} account(s)?</h3>
-                        <p className="text-white/40 text-xs mb-6">All their posts, chats, and messages will be permanently deleted.</p>
-                        <div className="space-y-3">
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setBatchDeleteConfirm(false)} />
+                    <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }}
+                        className="relative bg-[#111] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(239,68,68,0.15)] overflow-hidden">
+                        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150px] h-[50px] bg-red-500/30 blur-[40px] rounded-full pointer-events-none" />
+                        <div className="w-20 h-20 bg-red-500/10 border-2 border-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10"><AlertTriangle size={36} className="text-red-500" /></div>
+                        <h3 className="text-2xl font-black text-white mb-2 relative z-10">Delete {selectedUsers.size} account(s)?</h3>
+                        <p className="text-white/40 text-sm mb-6 leading-relaxed relative z-10">All their posts, chats, and messages will be permanently deleted.</p>
+                        <div className="space-y-3 relative z-10">
                             <button onClick={handleBatchDelete} disabled={processing}
-                                className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs tracking-widest flex items-center justify-center gap-2 disabled:opacity-50">
-                                {processing ? <Loader2 size={14} className="animate-spin" /> : <><Trash2 size={14} /> DELETE ALL</>}
+                                className="w-full py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
+                                {processing ? <Loader2 size={16} className="animate-spin" /> : <><Trash2 size={16} className="text-red-500" /> DELETE ALL</>}
                             </button>
-                            <button onClick={() => setBatchDeleteConfirm(false)} className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl font-bold text-xs tracking-widest">CANCEL</button>
+                            <button onClick={() => setBatchDeleteConfirm(false)} className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">CANCEL</button>
                         </div>
                     </motion.div>
                 </div>
@@ -539,35 +550,35 @@ export default function AdminUsersSection({ refreshTrigger }) {
             <AnimatePresence>
                 {selectedUsers.size > 0 && (
                     <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }}
-                        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-6 py-4 bg-[#1a1a1a]/95 border border-white/10 rounded-2xl backdrop-blur-2xl shadow-2xl">
+                        className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] flex items-center gap-3 px-6 py-4 bg-white/[0.04] border border-white/10 rounded-2xl backdrop-blur-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)]">
                         <span className="text-xs font-black text-white/60 uppercase tracking-widest mr-2">{selectedUsers.size} selected</span>
                         {/* Approve: show on pending, rejected, all */}
                         {(activeTab === 'pending' || activeTab === 'rejected' || activeTab === 'all') && (
                             <button onClick={() => handleBatchModerate('approve')} disabled={processing}
-                                className="px-4 py-2 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
-                                <CheckCircle size={12} /> Approve
+                                className="px-4 py-2 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
+                                <CheckCircle size={12} className="text-orange-500" /> Approve
                             </button>
                         )}
                         {/* Reject: show on pending, approved, all */}
                         {(activeTab === 'pending' || activeTab === 'approved' || activeTab === 'all') && (
                             <button onClick={() => handleBatchModerate('reject')} disabled={processing}
-                                className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
-                                <XCircle size={12} /> Reject
+                                className="px-4 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
+                                <XCircle size={12} className="text-red-500" /> Reject
                             </button>
                         )}
                         {/* Unban: show on banned, all */}
                         {(activeTab === 'banned' || activeTab === 'all') && (
                             <button onClick={() => handleBatchModerate('approve')} disabled={processing}
-                                className="px-4 py-2 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
-                                <ShieldCheck size={12} /> Unban
+                                className="px-4 py-2 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
+                                <ShieldCheck size={12} className="text-orange-500" /> Unban
                             </button>
                         )}
                         <button onClick={() => setBatchDeleteConfirm(true)} disabled={processing}
-                            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
-                            <Trash2 size={12} /> Delete
+                            className="px-4 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-1.5 disabled:opacity-50">
+                            <Trash2 size={12} className="text-red-500" /> Delete
                         </button>
                         <button onClick={() => setSelectedUsers(new Set())}
-                            className="px-3 py-2.5 bg-white/5 hover:bg-white/10 text-white/40 rounded-xl text-[10px] font-black tracking-widest">Cancel</button>
+                            className="px-3 py-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-xl text-[10px] font-black tracking-widest transition-all">Cancel</button>
                     </motion.div>
                 )}
             </AnimatePresence>

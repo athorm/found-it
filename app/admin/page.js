@@ -43,7 +43,7 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className={`bg-white/4 border rounded-3xl overflow-hidden hover:border-orange-500/30 transition-all duration-300 group flex flex-col h-full ${selected ? 'border-orange-500/60 ring-2 ring-orange-500/30' : 'border-white/10'}`}
+            className={`bg-white/[0.02] backdrop-blur-md border rounded-3xl overflow-hidden hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] transition-all duration-300 group flex flex-col h-full ${selected ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'border-white/5'}`}
         >
             {/* Image + Status Badge + Checkbox */}
             <div className="relative aspect-video w-full cursor-pointer overflow-hidden" onClick={() => onPreview(item)}>
@@ -124,22 +124,22 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                     </p>
 
                     {/* Action buttons */}
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 mt-2">
                         {isPending && (
                             <>
                                 <button
                                     onClick={() => onApprove(item.id)}
                                     disabled={processing}
-                                    className="flex-1 py-2.5 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                    className="flex-1 py-2.5 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                                 >
-                                    <CheckCircle size={12} /> APPROVE
+                                    <CheckCircle size={12} className="text-green-500" /> APPROVE
                                 </button>
                                 <button
                                     onClick={() => onReject(item.id)}
                                     disabled={processing}
-                                    className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                    className="flex-1 py-2.5 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                                 >
-                                    <XCircle size={12} /> REJECT
+                                    <XCircle size={12} className="text-red-500" /> REJECT
                                 </button>
                             </>
                         )}
@@ -147,27 +147,27 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                             <button
                                 onClick={() => onApprove(item.id)}
                                 disabled={processing}
-                                className="flex-1 py-2.5 bg-green-600/30 hover:bg-green-600/40 text-green-400 border border-green-500/30 rounded-xl font-bold text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                className="flex-1 py-2.5 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                             >
-                                <CheckCircle size={12} /> RE-APPROVE
+                                <CheckCircle size={12} className="text-green-500" /> RE-APPROVE
                             </button>
                         )}
                         {isApproved && (
                             <button
                                 onClick={() => onReject(item.id)}
                                 disabled={processing}
-                                className="flex-1 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400/60 border border-red-500/20 rounded-xl font-bold text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                className="flex-1 py-2.5 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                             >
-                                <XCircle size={12} /> REVOKE
+                                <XCircle size={12} className="text-red-500" /> REVOKE
                             </button>
                         )}
                         <button
                             onClick={() => onDelete(item.id)}
                             disabled={processing}
-                            className="p-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border-2 border-red-500/20 rounded-xl transition-all active:scale-95 disabled:opacity-50"
+                            className="p-2.5 bg-white/[0.03] hover:bg-red-500/10 text-white/50 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl transition-all active:scale-95 disabled:opacity-50"
                             title="Delete permanently"
                         >
-                            <Trash2 size={14} />
+                            <Trash2 size={16} className="text-red-500" />
                         </button>
                     </div>
                 </div>
@@ -184,35 +184,36 @@ function PreviewModal({ item, onClose }) {
             <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 onClick={onClose}
-                className="absolute inset-0 bg-black/85 backdrop-blur-sm"
+                className="absolute inset-0 bg-black/90 backdrop-blur-xl"
             />
             <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="relative w-full max-w-2xl bg-[#121212] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                className="relative w-full max-w-2xl bg-[#111]/80 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] max-h-[90vh] overflow-y-auto"
             >
                 <img src={item.image_url} alt={item.title} className="w-full aspect-video object-cover" />
-                <div className="p-8 space-y-4">
-                    <h2 className="text-2xl font-black text-white">{item.title}</h2>
-                    <div className="flex items-center gap-2 text-orange-500">
+                <div className="p-8 space-y-4 relative">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-[50px] rounded-full pointer-events-none" />
+                    <h2 className="text-2xl font-black text-white relative z-10">{item.title}</h2>
+                    <div className="flex items-center gap-2 text-orange-500 relative z-10">
                         <MapPin size={14} />
                         <span className="text-xs font-bold uppercase tracking-widest">{item.location_tag}</span>
                     </div>
-                    <p className="text-white/60 text-sm leading-relaxed">{item.description || 'No description provided.'}</p>
-                    <div className="grid grid-cols-2 gap-4 text-xs">
-                        <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                            <p className="text-white/30 uppercase tracking-widest font-bold mb-1">Category</p>
+                    <p className="text-white/60 text-sm leading-relaxed relative z-10">{item.description || 'No description provided.'}</p>
+                    <div className="grid grid-cols-2 gap-4 text-xs relative z-10 mt-6">
+                        <div className="bg-white/[0.02] p-5 rounded-3xl border border-white/5 shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]">
+                            <p className="text-white/30 uppercase tracking-widest font-black mb-2 text-[10px]">Category</p>
                             <p className="text-white font-bold">{item.category}</p>
                         </div>
-                        <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
-                            <p className="text-white/30 uppercase tracking-widest font-bold mb-1">Status</p>
+                        <div className="bg-white/[0.02] p-5 rounded-3xl border border-white/5 shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]">
+                            <p className="text-white/30 uppercase tracking-widest font-black mb-2 text-[10px]">Status</p>
                             <p className="text-white font-bold">{item.status}</p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
-                        className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/60 rounded-2xl font-bold text-xs tracking-widest transition-all mt-4"
+                        className="w-full py-4 bg-white/5 hover:bg-white/10 text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs tracking-widest transition-all mt-6 relative z-10"
                     >
                         CLOSE PREVIEW
                     </button>
@@ -227,14 +228,17 @@ function StatCard({ label, count, icon: Icon, color, active, onClick }) {
     return (
         <button
             onClick={onClick}
-            className={`p-5 rounded-2xl border transition-all text-left ${active ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_30px_rgba(249,115,22,0.15)]' : 'bg-white/3 border-white/10 hover:border-white/20'
+            className={`p-5 rounded-[1.5rem] border transition-all duration-300 text-left backdrop-blur-md relative overflow-hidden group ${active ? 'bg-orange-500/15 border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'
                 }`}
         >
-            <div className="flex items-center justify-between mb-3">
-                <Icon size={20} className={color} />
+            <div className={`absolute top-0 right-0 w-24 h-24 blur-[40px] rounded-full pointer-events-none opacity-20 transition-opacity duration-300 ${active ? 'opacity-40' : 'group-hover:opacity-30'} ${color === 'text-yellow-400' ? 'bg-yellow-500' : color === 'text-green-400' ? 'bg-green-500' : color === 'text-red-500' || color === 'text-red-400' ? 'bg-red-500' : 'bg-orange-500'}`} />
+            <div className="flex items-center justify-between mb-3 relative z-10">
+                <div className={`p-2 rounded-xl bg-white/5 border border-white/5 ${active ? 'scale-110 shadow-lg' : ''} transition-transform`}>
+                    <Icon size={20} className={color} />
+                </div>
                 <span className="text-3xl font-black text-white">{count}</span>
             </div>
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{label}</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 relative z-10">{label}</p>
         </button>
     );
 }
@@ -245,30 +249,31 @@ function DeleteConfirmModal({ onConfirm, onCancel, processing, message }) {
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
             <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="absolute inset-0 bg-black/90 backdrop-blur-sm"
+                className="absolute inset-0 bg-black/90 backdrop-blur-xl"
                 onClick={onCancel}
             />
             <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="relative bg-[#1a1a1a] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-2xl shadow-red-900/20"
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                className="relative bg-[#111] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(239,68,68,0.15)] overflow-hidden"
             >
-                <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <AlertTriangle size={32} className="text-red-500" />
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150px] h-[50px] bg-red-500/30 blur-[40px] rounded-full pointer-events-none" />
+                <div className="w-20 h-20 bg-red-500/10 border-2 border-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
+                    <AlertTriangle size={36} className="text-red-500" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">Confirm Delete</h3>
-                <p className="text-white/40 text-sm mb-8">{message || 'This will permanently remove the item and all associated data.'}</p>
-                <div className="space-y-3">
+                <h3 className="text-2xl font-black text-white mb-2 relative z-10">Confirm Delete</h3>
+                <p className="text-white/40 text-sm mb-8 leading-relaxed relative z-10">{message || 'This will permanently remove the item and all associated data.'}</p>
+                <div className="space-y-3 relative z-10">
                     <button
                         onClick={onConfirm}
                         disabled={processing}
-                        className="w-full py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl font-black tracking-widest text-xs transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                        className="w-full py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black tracking-widest uppercase text-xs transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                     >
-                        {processing ? <Loader2 size={16} className="animate-spin" /> : <><Trash2 size={16} /> YES, DELETE</>}
+                        {processing ? <Loader2 size={18} className="animate-spin" /> : <><Trash2 size={18} className="text-red-500" /> YES, DELETE</>}
                     </button>
                     <button
                         onClick={onCancel}
-                        className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/60 rounded-2xl font-bold text-xs tracking-widest transition-all"
+                        className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs tracking-widest transition-all"
                     >
                         CANCEL
                     </button>
@@ -290,20 +295,21 @@ function BanReasonModal({ onConfirm, onCancel, processing }) {
     const [reason, setReason] = useState('');
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={onCancel} />
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="relative bg-[#1a1a1a] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full shadow-2xl max-h-[90vh] overflow-y-auto">
-                <div className="w-14 h-14 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-5">
-                    <Ban size={28} className="text-red-500" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={onCancel} />
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="relative bg-[#111] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full shadow-[0_0_50px_rgba(239,68,68,0.15)] overflow-hidden max-h-[90vh] overflow-y-auto">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150px] h-[50px] bg-red-500/30 blur-[40px] rounded-full pointer-events-none" />
+                <div className="w-16 h-16 bg-red-500/10 border-2 border-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
+                    <Ban size={30} className="text-red-500" />
                 </div>
-                <h3 className="text-lg font-bold text-white mb-2 text-center">Ban User</h3>
-                <p className="text-white/40 text-xs mb-4 text-center">Select a reason or type a custom one. The user will be notified via email.</p>
+                <h3 className="text-xl font-black text-white mb-2 text-center relative z-10">Ban User</h3>
+                <p className="text-white/40 text-xs mb-6 text-center relative z-10">Select a reason or type a custom one. The user will be notified via email.</p>
                 {/* Premade reason chips */}
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-2 mb-6 relative z-10">
                     {BAN_PREMADE_REASONS.map((r) => (
                         <button key={r} onClick={() => setReason(r)} type="button"
-                            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${reason === r
-                                    ? 'bg-red-500/20 border-red-500/40 text-red-300'
-                                    : 'bg-white/5 border-white/10 text-white/40 hover:border-red-500/30 hover:text-white/60'
+                            className={`px-3 py-2 rounded-xl text-[10px] font-black tracking-wide border transition-all ${reason === r
+                                    ? 'bg-red-500/20 border-red-500/50 text-red-300 shadow-[inset_0_0_15px_rgba(239,68,68,0.2)]'
+                                    : 'bg-white/[0.03] border-white/10 text-white/40 hover:border-red-500/30 hover:text-white/80'
                                 }`}>
                             {r}
                         </button>
@@ -313,14 +319,14 @@ function BanReasonModal({ onConfirm, onCancel, processing }) {
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     placeholder="Or type a custom reason..."
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-sm text-white placeholder:text-white/20 outline-none focus:border-red-500/50 resize-none h-20 mb-4"
+                    className="w-full bg-white/[0.02] border border-white/10 rounded-2xl p-4 text-sm text-white placeholder:text-white/20 outline-none focus:border-red-500/50 focus:bg-white/[0.04] transition-all resize-none h-24 mb-6 relative z-10 shadow-[inset_0_0_15px_rgba(255,255,255,0.02)]"
                 />
-                <div className="space-y-3">
+                <div className="space-y-3 relative z-10">
                     <button onClick={() => onConfirm(reason || 'Violated community guidelines')} disabled={processing}
-                        className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                        {processing ? <Loader2 size={14} className="animate-spin" /> : <><Ban size={14} /> BAN USER</>}
+                        className="w-full py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
+                        {processing ? <Loader2 size={16} className="animate-spin" /> : <><Ban size={16} className="text-red-500" /> BAN USER</>}
                     </button>
-                    <button onClick={onCancel} className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl font-bold text-xs tracking-widest">CANCEL</button>
+                    <button onClick={onCancel} className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">CANCEL</button>
                 </div>
             </motion.div>
         </div>
@@ -808,30 +814,38 @@ export default function AdminPage() {
                 <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide">
                     <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max">
                         <button onClick={() => setAdminSection('posts')}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'posts' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
-                            <Package size={16} /> Posts
+                            className={`relative flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-colors ${adminSection === 'posts' ? 'text-white' : 'text-white/30 hover:text-white/50'}`}>
+                            {adminSection === 'posts' && <motion.div layoutId="adminTab" className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_15px_rgba(249,115,22,0.4)] rounded-[0.9rem]" />}
+                            <span className="relative z-10 flex items-center gap-2"><Package size={16} /> Posts</span>
                         </button>
                         <button onClick={() => setAdminSection('users')}
-                            className={`flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'users' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
-                            <Users size={16} /> Users
+                            className={`relative flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-colors ${adminSection === 'users' ? 'text-white' : 'text-white/30 hover:text-white/50'}`}>
+                            {adminSection === 'users' && <motion.div layoutId="adminTab" className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_15px_rgba(249,115,22,0.4)] rounded-[0.9rem]" />}
+                            <span className="relative z-10 flex items-center gap-2"><Users size={16} /> Users</span>
                         </button>
                         <button onClick={() => { setAdminSection('reports'); fetchReports(); }}
-                            className={`relative flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'reports' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
-                            <Flag size={16} /> Reports
-                            {reports.filter(r => r.status === 'pending').length > 0 && (
-                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] font-black text-white flex items-center justify-center">
-                                    {reports.filter(r => r.status === 'pending').length}
-                                </span>
-                            )}
+                            className={`relative flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-colors ${adminSection === 'reports' ? 'text-white' : 'text-white/30 hover:text-white/50'}`}>
+                            {adminSection === 'reports' && <motion.div layoutId="adminTab" className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_15px_rgba(249,115,22,0.4)] rounded-[0.9rem]" />}
+                            <span className="relative z-10 flex items-center gap-2">
+                                <Flag size={16} /> Reports
+                                {reports.filter(r => r.status === 'pending').length > 0 && (
+                                    <span className="ml-1 px-1.5 py-0.5 bg-red-500 rounded-md text-[9px] font-black text-white shadow-[0_0_10px_rgba(239,68,68,0.5)]">
+                                        {reports.filter(r => r.status === 'pending').length}
+                                    </span>
+                                )}
+                            </span>
                         </button>
                         <button onClick={() => { setAdminSection('ai-logs'); fetchAiLogs(); }}
-                            className={`relative flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-all ${adminSection === 'ai-logs' ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
-                            <ShieldAlert size={16} /> AI Logs
-                            {aiLogs.filter(l => l.flagged && !l.admin_reviewed).length > 0 && (
-                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full text-[9px] font-black text-white flex items-center justify-center">
-                                    {aiLogs.filter(l => l.flagged && !l.admin_reviewed).length}
-                                </span>
-                            )}
+                            className={`relative flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-colors ${adminSection === 'ai-logs' ? 'text-white' : 'text-white/30 hover:text-white/50'}`}>
+                            {adminSection === 'ai-logs' && <motion.div layoutId="adminTab" className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_15px_rgba(249,115,22,0.4)] rounded-[0.9rem]" />}
+                            <span className="relative z-10 flex items-center gap-2">
+                                <ShieldAlert size={16} /> AI Logs
+                                {aiLogs.filter(l => l.flagged && !l.admin_reviewed).length > 0 && (
+                                    <span className="ml-1 px-1.5 py-0.5 bg-red-500 rounded-md text-[9px] font-black text-white shadow-[0_0_10px_rgba(239,68,68,0.5)]">
+                                        {aiLogs.filter(l => l.flagged && !l.admin_reviewed).length}
+                                    </span>
+                                )}
+                            </span>
                         </button>
                     </div>
                 </div>
@@ -843,15 +857,6 @@ export default function AdminPage() {
                 {/* ─── REPORTS SECTION ─── */}
                 <div className={adminSection === 'reports' ? 'block' : 'hidden'}>
                     <div className="space-y-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h2 className="text-lg font-black text-white">User Reports</h2>
-                                <p className="text-xs text-white/30 mt-0.5">Review reported users and take action</p>
-                            </div>
-                            <button onClick={fetchReports} className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-white/40 hover:text-orange-400">
-                                <RefreshCw size={16} className={reportsLoading ? 'animate-spin' : ''} />
-                            </button>
-                        </div>
 
                         {/* Reports Stats */}
                         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
@@ -863,9 +868,15 @@ export default function AdminPage() {
                                 { label: 'Total Reports', count: reports.length, icon: Flag, color: 'text-orange-400', tab: 'all' }
                             ].map(s => (
                                 <button key={s.tab} onClick={() => { setReportFilter(s.tab); setSelectedReports(new Set()); }}
-                                    className={`p-5 rounded-2xl border transition-all text-left ${reportFilter === s.tab ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_30px_rgba(249,115,22,0.15)]' : 'bg-white/[0.03] border-white/10 hover:border-white/20'}`}>
-                                    <div className="flex items-center justify-between mb-3"><s.icon size={20} className={s.color} /><span className="text-3xl font-black text-white">{s.count}</span></div>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{s.label}</p>
+                                    className={`p-5 rounded-[1.5rem] border transition-all duration-300 text-left backdrop-blur-md relative overflow-hidden group ${reportFilter === s.tab ? 'bg-orange-500/15 border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'}`}>
+                                    <div className={`absolute top-0 right-0 w-24 h-24 blur-[40px] rounded-full pointer-events-none opacity-20 transition-opacity duration-300 ${reportFilter === s.tab ? 'opacity-40' : 'group-hover:opacity-30'} ${s.color === 'text-yellow-400' ? 'bg-yellow-500' : s.color === 'text-green-400' ? 'bg-green-500' : s.color === 'text-red-500' || s.color === 'text-red-400' ? 'bg-red-500' : 'bg-orange-500'}`} />
+                                    <div className="flex items-center justify-between mb-3 relative z-10">
+                                        <div className={`p-2 rounded-xl bg-white/5 border border-white/5 ${reportFilter === s.tab ? 'scale-110 shadow-lg' : ''} transition-transform`}>
+                                            <s.icon size={20} className={s.color} />
+                                        </div>
+                                        <span className="text-3xl font-black text-white">{s.count}</span>
+                                    </div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 relative z-10">{s.label}</p>
                                 </button>
                             ))}
                         </div>
@@ -937,7 +948,7 @@ export default function AdminPage() {
                                                 layout
                                                 initial={{ opacity: 0, y: 10 }}
                                                 animate={{ opacity: 1, y: 0 }}
-                                                className={`text-left bg-white/[0.04] border rounded-2xl p-4 hover:border-orange-500/30 transition-all group cursor-pointer ${selectedReports.has(report.id) ? 'border-orange-500/60 ring-2 ring-orange-500/30' :
+                                                className={`text-left bg-white/[0.02] backdrop-blur-md border rounded-2xl p-4 hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] transition-all duration-300 group cursor-pointer ${selectedReports.has(report.id) ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' :
                                                         report.status === 'pending' ? 'border-red-500/20' :
                                                             report.status === 'valid' || report.status === 'valid_ban' ? 'border-green-500/20' : 'border-white/10'
                                                     }`}
@@ -989,14 +1000,15 @@ export default function AdminPage() {
                             <motion.div
                                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                                 onClick={() => setSelectedReport(null)}
-                                className="absolute inset-0 bg-black/85 backdrop-blur-sm"
+                                className="absolute inset-0 bg-black/90 backdrop-blur-xl"
                             />
                             <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }}
-                                className="relative w-full max-w-lg bg-[#121212] border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
+                                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                                className="relative w-full max-w-lg bg-[#111]/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] max-h-[90vh] overflow-y-auto"
                             >
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-[50px] rounded-full pointer-events-none" />
                                 <div className="p-6 space-y-5">
                                     {/* Modal header */}
                                     <div className="flex items-start justify-between">
@@ -1061,11 +1073,11 @@ export default function AdminPage() {
 
                                     {/* Chat context with profiles */}
                                     {selectedReport.chatMessages?.length > 0 && (
-                                        <div>
-                                            <p className="text-[9px] font-black uppercase tracking-widest text-orange-400/60 mb-3 flex items-center gap-2">
-                                                <MessageSquare size={12} /> Chat Context ({selectedReport.chatMessages.length} messages)
+                                        <div className="relative z-10">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-orange-400/80 mb-3 flex items-center gap-2">
+                                                <MessageSquare size={14} /> Chat Context ({selectedReport.chatMessages.length} messages)
                                             </p>
-                                            <div className="bg-black/30 border border-white/5 rounded-2xl p-4 max-h-60 overflow-y-auto space-y-3">
+                                            <div className="bg-black/40 border border-white/5 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] rounded-3xl p-5 max-h-80 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                                                 {selectedReport.chatMessages.map(msg => {
                                                     const isReported = msg.sender_id === selectedReport.reported_user?.id;
                                                     const senderName = isReported
@@ -1073,19 +1085,19 @@ export default function AdminPage() {
                                                         : selectedReport.reporter?.full_name;
                                                     return (
                                                         <div key={msg.id} className={`flex ${isReported ? 'justify-end' : 'justify-start'}`}>
-                                                            <div className="max-w-[80%]">
-                                                                <p className={`text-[9px] font-bold mb-0.5 ${isReported ? 'text-right text-red-400/60' : 'text-white/30'}`}>
+                                                            <div className="max-w-[85%]">
+                                                                <p className={`text-[10px] font-black uppercase tracking-wider mb-1 ${isReported ? 'text-right text-red-400/80' : 'text-white/40'}`}>
                                                                     {senderName || 'Unknown'} {isReported && '⚠️'}
                                                                 </p>
-                                                                <div className={`px-3 py-2 rounded-2xl text-xs ${isReported
-                                                                        ? 'bg-red-500/20 text-red-200 border border-red-500/10'
-                                                                        : 'bg-white/10 text-white/60'
+                                                                <div className={`px-4 py-3 rounded-[1.5rem] text-sm ${isReported
+                                                                        ? 'bg-red-500/20 text-red-100 border border-red-500/30 shadow-[inset_0_0_20px_rgba(239,68,68,0.1)] rounded-tr-[4px]'
+                                                                        : 'bg-white/[0.04] text-white/90 border border-white/10 backdrop-blur-md rounded-tl-[4px] shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]'
                                                                     }`}>
                                                                     {msg.image_url ? (
-                                                                        <img src={msg.image_url} alt="Shared" className="max-w-[160px] rounded-xl" />
+                                                                        <img src={msg.image_url} alt="Shared" className="max-w-[200px] rounded-xl border border-white/10 shadow-lg" />
                                                                     ) : msg.content}
                                                                 </div>
-                                                                <p className="text-[8px] text-white/15 mt-0.5 px-1">
+                                                                <p className={`text-[9px] font-bold text-white/20 mt-1.5 px-2 ${isReported ? 'text-right' : 'text-left'}`}>
                                                                     {new Date(msg.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                                                                 </p>
                                                             </div>
@@ -1110,25 +1122,25 @@ export default function AdminPage() {
                                             <button
                                                 onClick={() => { handleReportAction(selectedReport.id, 'dismissed', selectedReport.reported_user?.id); setSelectedReport(null); }}
                                                 disabled={reportProcessing === selectedReport.id}
-                                                className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/50 border border-white/10 rounded-2xl font-black text-xs tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                                className="w-full py-4 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                                             >
-                                                {reportProcessing === selectedReport.id ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} />}
+                                                {reportProcessing === selectedReport.id ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} className="text-orange-500" />}
                                                 Dismiss Report
                                             </button>
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => { handleReportAction(selectedReport.id, 'valid', selectedReport.reported_user?.id, false); setSelectedReport(null); }}
                                                     disabled={reportProcessing === selectedReport.id}
-                                                    className="flex-1 py-3 bg-gray-500/10 hover:bg-gray-500/20 text-gray-400 border border-gray-500/30 rounded-2xl font-black text-xs tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                                    className="flex-1 py-4 bg-white/[0.03] hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                                                 >
                                                     <Flag size={14} /> Invalid
                                                 </button>
                                                 <button
                                                     onClick={() => setReportBanReasonTarget(selectedReport)}
                                                     disabled={reportProcessing === selectedReport.id || selectedReport.reported_user?.is_banned}
-                                                    className="flex-1 py-3 bg-red-600/80 hover:bg-red-600 text-white border border-red-500/40 rounded-2xl font-black text-xs tracking-widest transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                                    className="flex-1 py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                                                 >
-                                                    <Ban size={14} /> {selectedReport.reported_user?.is_banned ? 'Banned' : 'Valid + Ban'}
+                                                    <Ban size={14} className="text-red-500" /> {selectedReport.reported_user?.is_banned ? 'Banned' : 'Valid + Ban'}
                                                 </button>
                                             </div>
                                         </div>
@@ -1137,7 +1149,7 @@ export default function AdminPage() {
                                     {/* Close button for non-pending */}
                                     {selectedReport.status !== 'pending' && (
                                         <button onClick={() => setSelectedReport(null)}
-                                            className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-2xl font-bold text-xs tracking-widest transition-all">
+                                            className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">
                                             CLOSE
                                         </button>
                                     )}
@@ -1152,21 +1164,22 @@ export default function AdminPage() {
                     {batchReportDeleteConfirm && (
                         <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setBatchReportDeleteConfirm(false)} />
-                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-                                className="relative bg-[#1a1a1a] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-2xl shadow-red-900/20">
-                                <div className="w-14 h-14 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-5">
-                                    <Trash2 size={28} className="text-red-500" />
+                                className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setBatchReportDeleteConfirm(false)} />
+                            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                                className="relative bg-[#111] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(239,68,68,0.15)] overflow-hidden">
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150px] h-[50px] bg-red-500/30 blur-[40px] rounded-full pointer-events-none" />
+                                <div className="w-20 h-20 bg-red-500/10 border-2 border-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
+                                    <Trash2 size={36} className="text-red-500" />
                                 </div>
-                                <h3 className="text-lg font-bold text-white mb-2">Delete {selectedReports.size} Report{selectedReports.size > 1 ? 's' : ''}?</h3>
-                                <p className="text-white/40 text-xs mb-6">This action is permanent and cannot be undone.</p>
-                                <div className="space-y-3">
+                                <h3 className="text-2xl font-black text-white mb-2 relative z-10">Delete {selectedReports.size} Report{selectedReports.size > 1 ? 's' : ''}?</h3>
+                                <p className="text-white/40 text-sm mb-6 leading-relaxed relative z-10">This action is permanent and cannot be undone.</p>
+                                <div className="space-y-3 relative z-10">
                                     <button onClick={handleBatchDeleteReports} disabled={processing}
-                                        className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                                        {processing ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} DELETE PERMANENTLY
+                                        className="w-full py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
+                                        {processing ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} className="text-red-500" />} DELETE PERMANENTLY
                                     </button>
                                     <button onClick={() => setBatchReportDeleteConfirm(false)}
-                                        className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl font-bold text-xs tracking-widest">CANCEL</button>
+                                        className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">CANCEL</button>
                                 </div>
                             </motion.div>
                         </div>
@@ -1191,15 +1204,6 @@ export default function AdminPage() {
                 {/* ─── AI LOGS SECTION ─── */}
                 <div className={adminSection === 'ai-logs' ? 'block' : 'hidden'}>
                     <div className="space-y-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h2 className="text-lg font-black text-white">AI Moderation Logs</h2>
-                                <p className="text-xs text-white/30 mt-0.5">Review content flagged by AI — confirm threats or dismiss false positives</p>
-                            </div>
-                            <button onClick={fetchAiLogs} className="p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all text-white/40 hover:text-orange-400">
-                                <RefreshCw size={16} className={aiLogsLoading ? 'animate-spin' : ''} />
-                            </button>
-                        </div>
 
                         {/* AI Stats */}
                         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
@@ -1211,9 +1215,15 @@ export default function AdminPage() {
                                 { label: 'Total Logs', count: aiLogs.length, icon: Shield, color: 'text-orange-400', tab: 'all' },
                             ].map(s => (
                                 <button key={s.tab} onClick={() => { setAiLogFilter(s.tab); setSelectedAiLogs(new Set()); }}
-                                    className={`p-5 rounded-2xl border transition-all text-left ${aiLogFilter === s.tab ? 'bg-orange-500/10 border-orange-500/40 shadow-[0_0_30px_rgba(249,115,22,0.15)]' : 'bg-white/[0.03] border-white/10 hover:border-white/20'}`}>
-                                    <div className="flex items-center justify-between mb-3"><s.icon size={20} className={s.color} /><span className="text-3xl font-black text-white">{s.count}</span></div>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">{s.label}</p>
+                                    className={`p-5 rounded-[1.5rem] border transition-all duration-300 text-left backdrop-blur-md relative overflow-hidden group ${aiLogFilter === s.tab ? 'bg-orange-500/15 border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'}`}>
+                                    <div className={`absolute top-0 right-0 w-24 h-24 blur-[40px] rounded-full pointer-events-none opacity-20 transition-opacity duration-300 ${aiLogFilter === s.tab ? 'opacity-40' : 'group-hover:opacity-30'} ${s.color === 'text-yellow-400' ? 'bg-yellow-500' : s.color === 'text-green-400' ? 'bg-green-500' : s.color === 'text-red-500' || s.color === 'text-red-400' ? 'bg-red-500' : 'bg-orange-500'}`} />
+                                    <div className="flex items-center justify-between mb-3 relative z-10">
+                                        <div className={`p-2 rounded-xl bg-white/5 border border-white/5 ${aiLogFilter === s.tab ? 'scale-110 shadow-lg' : ''} transition-transform`}>
+                                            <s.icon size={20} className={s.color} />
+                                        </div>
+                                        <span className="text-3xl font-black text-white">{s.count}</span>
+                                    </div>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 relative z-10">{s.label}</p>
                                 </button>
                             ))}
                         </div>
@@ -1287,20 +1297,20 @@ export default function AdminPage() {
                                                 {/* Show Confirm only when viewing flagged/unreviewed/all logs */}
                                                 {(aiLogFilter === 'flagged' || aiLogFilter === 'unreviewed' || aiLogFilter === 'all') && (
                                                     <button onClick={() => handleBatchAiLogReview('confirmed')} disabled={processing}
-                                                        className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-black tracking-widest transition-all disabled:opacity-50">
-                                                        <CheckCircle size={14} /> Confirm {selectedAiLogs.size}
+                                                        className="flex items-center gap-2 px-4 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-xl text-xs font-black tracking-widest transition-all disabled:opacity-50">
+                                                        <CheckCircle size={14} className="text-red-500" /> Confirm {selectedAiLogs.size}
                                                     </button>
                                                 )}
                                                 {/* Show Dismiss only when viewing flagged/unreviewed/all logs */}
                                                 {(aiLogFilter === 'flagged' || aiLogFilter === 'unreviewed' || aiLogFilter === 'all') && (
                                                     <button onClick={() => handleBatchAiLogReview('dismissed')} disabled={processing}
-                                                        className="flex items-center gap-2 px-4 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/30 rounded-xl text-xs font-black tracking-widest transition-all disabled:opacity-50">
-                                                        <XCircle size={14} /> Dismiss {selectedAiLogs.size}
+                                                        className="flex items-center gap-2 px-4 py-2 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-xl text-xs font-black tracking-widest transition-all disabled:opacity-50">
+                                                        <XCircle size={14} className="text-orange-500" /> Dismiss {selectedAiLogs.size}
                                                     </button>
                                                 )}
                                                 <button onClick={() => setBatchAiLogDeleteConfirm(true)}
-                                                    className="flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-black tracking-widest transition-all">
-                                                    <Trash2 size={14} /> Delete {selectedAiLogs.size}
+                                                    className="flex items-center gap-2 px-4 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-xl text-xs font-black tracking-widest transition-all">
+                                                    <Trash2 size={14} className="text-red-500" /> Delete {selectedAiLogs.size}
                                                 </button>
                                             </div>
                                         )}
@@ -1309,7 +1319,7 @@ export default function AdminPage() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                         {filteredAiLogs.map(log => (
                                             <motion.div key={log.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                                                className={`bg-white/[0.04] border rounded-2xl p-4 transition-all ${selectedAiLogs.has(log.id) ? 'border-orange-500/60 ring-2 ring-orange-500/30' :
+                                                className={`bg-white/[0.02] backdrop-blur-md border rounded-2xl p-4 transition-all duration-300 hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] cursor-pointer ${selectedAiLogs.has(log.id) ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' :
                                                         !log.admin_reviewed && log.flagged ? 'border-orange-500/30' :
                                                             log.admin_decision === 'confirmed' ? 'border-red-500/20' :
                                                                 'border-white/10'
@@ -1359,13 +1369,13 @@ export default function AdminPage() {
                                                     <div className="flex gap-2 pt-3 mt-3 border-t border-white/5">
                                                         <button onClick={() => handleAiLogReview(log.id, 'confirmed')}
                                                             title="Confirm — the AI was right, content is harmful"
-                                                            className="flex-1 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center justify-center gap-1 active:scale-95">
-                                                            <CheckCircle size={12} /> Confirm
+                                                            className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center justify-center gap-1 active:scale-95">
+                                                            <CheckCircle size={12} className="text-red-500" /> Confirm
                                                         </button>
                                                         <button onClick={() => handleAiLogReview(log.id, 'dismissed')}
                                                             title="Dismiss — false positive, content is actually fine"
-                                                            className="flex-1 py-2 bg-white/5 hover:bg-white/10 text-white/40 border border-white/10 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center justify-center gap-1 active:scale-95">
-                                                            <XCircle size={12} /> Dismiss
+                                                            className="flex-1 py-2 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center justify-center gap-1 active:scale-95">
+                                                            <XCircle size={12} className="text-orange-500" /> Dismiss
                                                         </button>
                                                     </div>
                                                 )}
@@ -1383,21 +1393,22 @@ export default function AdminPage() {
                     {batchAiLogDeleteConfirm && (
                         <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                className="absolute inset-0 bg-black/90 backdrop-blur-sm" onClick={() => setBatchAiLogDeleteConfirm(false)} />
-                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-                                className="relative bg-[#1a1a1a] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-2xl shadow-red-900/20">
-                                <div className="w-14 h-14 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-5">
-                                    <Trash2 size={28} className="text-red-500" />
+                                className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setBatchAiLogDeleteConfirm(false)} />
+                            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                                className="relative bg-[#111] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(239,68,68,0.15)] overflow-hidden">
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150px] h-[50px] bg-red-500/30 blur-[40px] rounded-full pointer-events-none" />
+                                <div className="w-20 h-20 bg-red-500/10 border-2 border-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
+                                    <Trash2 size={36} className="text-red-500" />
                                 </div>
-                                <h3 className="text-lg font-bold text-white mb-2">Delete {selectedAiLogs.size} AI Log{selectedAiLogs.size > 1 ? 's' : ''}?</h3>
-                                <p className="text-white/40 text-xs mb-6">This action is permanent and cannot be undone.</p>
-                                <div className="space-y-3">
+                                <h3 className="text-2xl font-black text-white mb-2 relative z-10">Delete {selectedAiLogs.size} AI Log{selectedAiLogs.size > 1 ? 's' : ''}?</h3>
+                                <p className="text-white/40 text-sm mb-6 leading-relaxed relative z-10">This action is permanent and cannot be undone.</p>
+                                <div className="space-y-3 relative z-10">
                                     <button onClick={handleBatchDeleteAiLogs} disabled={processing}
-                                        className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs tracking-widest transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                                        {processing ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} DELETE PERMANENTLY
+                                        className="w-full py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
+                                        {processing ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} className="text-red-500" />} DELETE PERMANENTLY
                                     </button>
                                     <button onClick={() => setBatchAiLogDeleteConfirm(false)}
-                                        className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-xl font-bold text-xs tracking-widest">CANCEL</button>
+                                        className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">CANCEL</button>
                                 </div>
                             </motion.div>
                         </div>
@@ -1411,13 +1422,13 @@ export default function AdminPage() {
                             <motion.div
                                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                                 onClick={() => setSelectedAiLog(null)}
-                                className="absolute inset-0 bg-black/85 backdrop-blur-sm"
+                                className="absolute inset-0 bg-black/90 backdrop-blur-xl"
                             />
                             <motion.div
-                                initial={{ scale: 0.9, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                exit={{ scale: 0.9, opacity: 0 }}
-                                className="relative w-full max-w-lg bg-[#121212] border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
+                                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                                className="relative w-full max-w-lg bg-[#111] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] max-h-[90vh] overflow-y-auto"
                             >
                                 <div className="p-6 space-y-5">
                                     {/* Modal header */}
@@ -1567,13 +1578,13 @@ export default function AdminPage() {
                                         <div className="flex gap-2 pt-2 border-t border-white/5">
                                             <button
                                                 onClick={() => { handleAiLogReview(selectedAiLog.id, 'confirmed'); setSelectedAiLog(null); }}
-                                                className="flex-1 py-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-2xl font-black text-xs tracking-widest transition-all flex items-center justify-center gap-2 active:scale-95">
-                                                <CheckCircle size={14} /> Confirm Flag
+                                                className="flex-1 py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black text-xs tracking-widest uppercase transition-all flex items-center justify-center gap-2 active:scale-95">
+                                                <CheckCircle size={14} className="text-red-500" /> Confirm Flag
                                             </button>
                                             <button
                                                 onClick={() => { handleAiLogReview(selectedAiLog.id, 'dismissed'); setSelectedAiLog(null); }}
-                                                className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-white/50 border border-white/10 rounded-2xl font-black text-xs tracking-widest transition-all flex items-center justify-center gap-2 active:scale-95">
-                                                <XCircle size={14} /> Dismiss
+                                                className="flex-1 py-4 bg-white/[0.03] hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-black text-xs tracking-widest uppercase transition-all flex items-center justify-center gap-2 active:scale-95">
+                                                <XCircle size={14} className="text-white" /> Dismiss
                                             </button>
                                         </div>
                                     )}
@@ -1581,7 +1592,7 @@ export default function AdminPage() {
                                     {/* Close for reviewed logs */}
                                     {(selectedAiLog.admin_reviewed || !selectedAiLog.flagged) && (
                                         <button onClick={() => setSelectedAiLog(null)}
-                                            className="w-full py-3 bg-white/5 hover:bg-white/10 text-white/60 rounded-2xl font-bold text-xs tracking-widest transition-all">
+                                            className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">
                                             CLOSE
                                         </button>
                                     )}

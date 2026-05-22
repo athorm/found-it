@@ -238,93 +238,115 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen pb-20 font-sans">
       {/* Header */}
-      <div className="sticky top-0 z-20 backdrop-blur-md bg-black/40 border-b border-orange-500/20 px-6 pt-4 pb-6 flex items-center justify-between">
+      <div className="sticky top-0 z-20 backdrop-blur-xl bg-black/40 border-b border-white/5 px-6 pt-4 pb-6 flex items-center justify-between">
         <button onClick={() => router.push('/Home')} className="p-2 hover:bg-white/5 rounded-full transition text-orange-400">
           <ArrowLeft size={24} />
         </button>
-        <h1 className="text-3xl font-extrabold tracking-tight text-orange-400">Profile</h1>
-        <img src="/logo2.svg" alt="Logo" className="w-8 h-8 mix-blend-screen drop-shadow-[0_0_8px_rgba(249,115,22,0.4)] object-contain" />
+        <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-600">Profile</h1>
+        <div className="w-10 h-10 flex items-center justify-center rounded-full bg-orange-500/10 border border-orange-500/20 shadow-[0_0_15px_rgba(249,115,22,0.15)]">
+          <img src="/logo2.svg" alt="Logo" className="w-6 h-6 mix-blend-screen drop-shadow-[0_0_8px_rgba(249,115,22,0.6)] object-contain" />
+        </div>
       </div>
 
-      <main className="px-6 mt-10 max-w-lg mx-auto space-y-8">
+      <main className="px-6 mt-8 max-w-lg mx-auto space-y-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-3xl bg-black/40 border border-orange-500/30 p-8 flex flex-col items-center shadow-2xl shadow-orange-500/10">
+          className="rounded-[2.5rem] bg-orange-500/[0.03] backdrop-blur-xl border border-orange-500/20 p-8 flex flex-col items-center shadow-[0_0_40px_rgba(249,115,22,0.05)] relative overflow-hidden">
+          
+          {/* Subtle background glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[200px] h-[100px] bg-orange-500/20 blur-[60px] rounded-full pointer-events-none" />
 
-          <div className="relative mb-4 group">
-            <div className="w-32 h-32 rounded-full bg-black border-2 border-orange-500/50 flex items-center justify-center overflow-hidden relative shadow-inner">
-              {profile.avatar_url ? (
-                <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <User size={64} className="text-orange-300" />
-              )}
+          <div className="relative mb-6 group">
+            <div className="w-36 h-36 rounded-full bg-[#111] p-1 border border-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]">
+              <div className="w-full h-full rounded-full overflow-hidden relative">
+                {profile.avatar_url ? (
+                  <img src={profile.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-orange-500/10">
+                    <User size={64} className="text-orange-400/50" />
+                  </div>
+                )}
+              </div>
             </div>
-            <label className="absolute bottom-0 right-0 bg-orange-500 p-2.5 rounded-full border-4 border-black cursor-pointer hover:bg-orange-600 transition-colors z-10 shadow-lg">
-              <Camera size={18} className="text-white" />
+            
+            <label className="absolute bottom-1 right-1 bg-white/10 backdrop-blur-md p-3 rounded-full border border-white/20 cursor-pointer hover:bg-orange-500 hover:border-orange-400 transition-all z-10 shadow-xl group-hover:scale-110 active:scale-95">
+              {uploading ? <Loader2 size={20} className="text-white animate-spin" /> : <Camera size={20} className="text-white" />}
               <input type="file" className="hidden" accept="image/*" onChange={handleUpload} disabled={uploading} />
             </label>
           </div>
 
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-bold text-white tracking-tight">{profile.full_name}</h2>
-            <div className="inline-block text-orange-300 text-[10px] uppercase tracking-widest font-bold bg-orange-500/10 px-4 py-1.5 rounded-full border border-orange-500/20">
-              Verified LSPU Account
+          <div className="text-center space-y-3 z-10">
+            <h2 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-white to-white/70 tracking-tight">{profile.full_name}</h2>
+            
+            <div className="inline-flex items-center gap-1.5 text-orange-400 text-[10px] uppercase tracking-widest font-black bg-orange-500/10 px-4 py-1.5 rounded-full border border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.1)]">
+              <Shield size={12} className="text-orange-500" /> Verified LSPU Account
             </div>
-            <div className="pt-2">
-              <p className="text-orange-300 font-mono text-sm tracking-[0.2em] uppercase font-semibold">
+            
+            <div className="pt-4 space-y-1">
+              <p className="text-orange-400 font-mono text-[15px] tracking-[0.3em] font-bold">
                 {profile.student_number}
               </p>
-              <p className="text-orange-300/60 text-xs font-medium tracking-wide">
+              <p className="text-white/40 text-sm font-medium tracking-wide">
                 {profile.email}
               </p>
               {isAdmin && (
-                <div className="mt-2 inline-flex items-center gap-1.5 text-orange-400 text-[10px] uppercase tracking-widest font-black bg-orange-500/15 px-3 py-1 rounded-full border border-orange-500/30">
-                  <Shield size={12} /> Admin
+                <div className="mt-3 inline-flex items-center gap-1.5 text-yellow-400 text-[10px] uppercase tracking-widest font-black bg-yellow-500/10 px-3 py-1 rounded-full border border-yellow-500/30">
+                  <Shield size={12} /> System Admin
                 </div>
               )}
             </div>
           </div>
         </motion.div>
 
-        {/* Menu Sections */}
-        <div className="rounded-3xl bg-black/40 border border-orange-500/30 overflow-hidden">
+        {/* Menu Sections - Account Settings */}
+        <div className="rounded-3xl bg-white/[0.02] backdrop-blur-md border border-white/5 overflow-hidden shadow-xl">
           {isAdmin && (
             <button
               onClick={() => router.push('/admin')}
-              className="w-full flex items-center justify-between px-6 py-5 border-b border-orange-500/20 hover:bg-orange-500/5 transition-all group text-orange-300"
+              className="w-full flex items-center justify-between px-6 py-5 border-b border-white/5 hover:bg-white/[0.05] transition-all group text-white/90"
             >
               <div className="flex items-center gap-4">
-                <Shield size={20} className="opacity-40" />
-                <span className="font-medium text-lg">Admin Dashboard</span>
+                <div className="p-2.5 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/20 group-hover:scale-110 transition-transform">
+                  <Shield size={20} />
+                </div>
+                <span className="font-bold text-base tracking-wide">Admin Dashboard</span>
               </div>
-              <ChevronRight size={20} className="opacity-20" />
+              <ChevronRight size={20} className="text-white/20 group-hover:text-orange-400 transition-colors" />
             </button>
           )}
           <button
             onClick={() => setShowPasswordModal(true)}
-            className="w-full flex items-center justify-between px-6 py-5 border-b border-orange-500/20 hover:bg-orange-500/5 transition-all group text-orange-300"
+            className="w-full flex items-center justify-between px-6 py-5 hover:bg-white/[0.05] transition-all group text-white/90"
           >
             <div className="flex items-center gap-4">
-              <Lock size={20} className="opacity-40" />
-              <span className="font-medium text-lg">Change Password</span>
+              <div className="p-2.5 rounded-xl bg-orange-500/10 text-orange-400 border border-orange-500/20 group-hover:scale-110 transition-transform">
+                <Lock size={20} />
+              </div>
+              <span className="font-bold text-base tracking-wide">Change Password</span>
             </div>
-            <ChevronRight size={20} className="opacity-20" />
+            <ChevronRight size={20} className="text-white/20 group-hover:text-orange-400 transition-colors" />
+          </button>
+        </div>
+
+        {/* Menu Sections - Danger Zone */}
+        <div className="rounded-3xl bg-red-500/[0.02] backdrop-blur-md border border-red-500/10 overflow-hidden shadow-xl">
+          <button onClick={handleLogout} className="w-full flex items-center justify-between px-6 py-5 border-b border-red-500/10 hover:bg-red-500/10 transition-all group text-white/90">
+            <div className="flex items-center gap-4">
+              <div className="p-2.5 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 group-hover:scale-110 transition-transform">
+                <LogOut size={20} />
+              </div>
+              <span className="font-bold text-base tracking-wide text-red-100">Log Out</span>
+            </div>
+            <ChevronRight size={20} className="text-red-400/30 group-hover:text-red-400 transition-colors" />
           </button>
 
-
-          <button onClick={handleLogout} className="w-full flex items-center justify-between px-6 py-5 border-b border-orange-500/20 hover:bg-orange-500/5 transition-all group text-orange-300">
+          <button onClick={() => setShowDeleteModal(true)} className="w-full flex items-center justify-between px-6 py-5 hover:bg-red-500/10 transition-all group text-white/90">
             <div className="flex items-center gap-4">
-              <LogOut size={20} className="group-hover:translate-x-1 transition-transform" />
-              <span className="font-semibold text-lg">Log Out</span>
+              <div className="p-2.5 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20 group-hover:scale-110 transition-transform">
+                <Trash2 size={20} />
+              </div>
+              <span className="font-bold text-base tracking-wide text-red-100">Delete Account</span>
             </div>
-            <ChevronRight size={20} className="opacity-20" />
-          </button>
-
-          <button onClick={() => setShowDeleteModal(true)} className="w-full flex items-center justify-between px-6 py-5 hover:bg-red-500/5 transition-all group text-red-400/80">
-            <div className="flex items-center gap-4">
-              <Trash2 size={20} />
-              <span className="font-semibold text-lg">Delete Account</span>
-            </div>
-            <ChevronRight size={20} className="opacity-20" />
+            <ChevronRight size={20} className="text-red-400/30 group-hover:text-red-400 transition-colors" />
           </button>
         </div>
       </main>
@@ -334,25 +356,33 @@ export default function ProfilePage() {
       {/* Modals */}
       <AnimatePresence>
         {showPasswordModal && (
-          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center backdrop-blur-sm p-8">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-black/60 border border-orange-500/30 p-8 rounded-[2.5rem] w-full max-w-xs">
-              <h3 className="text-xl font-bold mb-1">Change Password</h3>
-              <p className="text-orange-300/50 text-xs mb-6">Must be at least 6 characters.</p>
-              <div className="space-y-3">
+          <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center backdrop-blur-xl p-6">
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="bg-[#111] border border-orange-500/30 p-8 rounded-[2.5rem] w-full max-w-sm shadow-[0_0_50px_rgba(249,115,22,0.1)] relative">
+              <button onClick={() => { setShowPasswordModal(false); setPasswordMsg(''); setNewPassword(''); setConfirmPassword(''); setShowNewPw(false); setShowConfirmPw(false); }} className="absolute top-6 right-6 p-2 bg-white/5 rounded-full text-white/40 hover:text-white transition-colors">
+                <X size={18} />
+              </button>
+              
+              <div className="w-16 h-16 rounded-full bg-orange-500/10 border-2 border-orange-500/30 flex items-center justify-center mb-4">
+                <Lock size={28} className="text-orange-400" />
+              </div>
+              <h3 className="text-2xl font-black mb-1">Change Password</h3>
+              <p className="text-white/40 text-sm mb-8">Must be at least 6 characters.</p>
+              
+              <div className="space-y-4">
                 <div className="relative">
                   <input
                     type={showNewPw ? 'text' : 'password'}
                     placeholder="New Password"
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
-                    className="w-full bg-white/5 border border-orange-500/20 p-4 pr-12 rounded-2xl text-white outline-none placeholder:text-white/30 focus:border-orange-500/50"
+                    className="w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl text-white outline-none placeholder:text-white/30 focus:border-orange-500/50 focus:bg-white/10 transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowNewPw(p => !p)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-orange-400 transition-colors"
                   >
-                    {showNewPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showNewPw ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
                 <div className="relative">
@@ -361,22 +391,21 @@ export default function ProfilePage() {
                     placeholder="Confirm Password"
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
-                    className="w-full bg-white/5 border border-orange-500/20 p-4 pr-12 rounded-2xl text-white outline-none placeholder:text-white/30 focus:border-orange-500/50"
+                    className="w-full bg-white/5 border border-white/10 p-4 pr-12 rounded-2xl text-white outline-none placeholder:text-white/30 focus:border-orange-500/50 focus:bg-white/10 transition-all"
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPw(p => !p)}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-orange-400 transition-colors"
                   >
-                    {showConfirmPw ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showConfirmPw ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
-                {passwordMsg && <p className="text-xs text-center text-orange-300/80 px-2">{passwordMsg}</p>}
-                <button onClick={handleChangePassword} disabled={changingPassword} className="w-full py-4 bg-orange-500 hover:bg-orange-600 rounded-2xl font-bold disabled:opacity-50 transition-all">
+                
+                {passwordMsg && <p className={`text-xs text-center font-bold tracking-wide px-2 ${passwordMsg.includes('✅') ? 'text-emerald-400' : 'text-orange-400'}`}>{passwordMsg}</p>}
+                
+                <button onClick={handleChangePassword} disabled={changingPassword} className="w-full py-4 mt-2 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_15px_rgba(249,115,22,0.3)] hover:shadow-[0_4px_25px_rgba(249,115,22,0.5)] rounded-2xl font-black tracking-widest uppercase text-sm disabled:opacity-50 transition-all active:scale-95">
                   {changingPassword ? <Loader2 className="animate-spin mx-auto" size={20} /> : 'Update Password'}
-                </button>
-                <button onClick={() => { setShowPasswordModal(false); setPasswordMsg(''); setNewPassword(''); setConfirmPassword(''); setShowNewPw(false); setShowConfirmPw(false); }} className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl text-white/50">
-                  Cancel
                 </button>
               </div>
             </motion.div>
@@ -384,14 +413,18 @@ export default function ProfilePage() {
         )}
 
         {showDeleteModal && (
-          <div className="fixed inset-0 bg-black/80 z-100 flex items-center justify-center backdrop-blur-sm p-8">
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-black/60 border border-orange-500/30 p-8 rounded-[2.5rem] w-full max-w-xs text-center">
-              <Trash2 size={48} className="text-red-500 mx-auto mb-4" />
-              <h3 className="text-xl font-bold mb-2">Delete Account?</h3>
-              <p className="text-sm text-orange-300/60 mb-8">This action is permanent.</p>
+          <div className="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center backdrop-blur-xl p-6">
+            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="bg-[#111] border border-red-500/30 p-8 rounded-[2.5rem] w-full max-w-xs text-center shadow-[0_0_50px_rgba(239,68,68,0.1)]">
+              <div className="w-20 h-20 rounded-full bg-red-500/10 border-2 border-red-500/20 flex items-center justify-center mx-auto mb-6">
+                <Trash2 size={40} className="text-red-500" />
+              </div>
+              <h3 className="text-2xl font-black mb-2">Delete Account?</h3>
+              <p className="text-sm text-white/40 mb-8 leading-relaxed">This action is permanent and cannot be undone.</p>
               <div className="flex flex-col gap-3">
-                <button onClick={handleDeleteAccount} className="w-full py-4 bg-red-600 hover:bg-red-700 rounded-2xl font-bold">Yes, Delete</button>
-                <button onClick={() => setShowDeleteModal(false)} className="w-full py-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl">Cancel</button>
+                <button onClick={handleDeleteAccount} disabled={loading} className="w-full py-4 bg-red-600 hover:bg-red-700 rounded-2xl font-black tracking-widest uppercase text-sm shadow-[0_4px_15px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center">
+                  {loading ? <Loader2 size={20} className="animate-spin" /> : "Yes, Delete"}
+                </button>
+                <button onClick={() => setShowDeleteModal(false)} className="w-full py-4 bg-white/5 border border-white/10 hover:bg-white/10 rounded-2xl font-bold transition-all">Cancel</button>
               </div>
             </motion.div>
           </div>
