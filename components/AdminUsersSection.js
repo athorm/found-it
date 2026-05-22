@@ -423,9 +423,10 @@ export default function AdminUsersSection({ refreshTrigger }) {
     const statusColors = { pending: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30', approved: 'bg-green-500/15 text-green-400 border-green-500/30', rejected: 'bg-red-500/15 text-red-400 border-red-500/30' };
 
     return (
-        <div className="space-y-8">
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+            <div className="shrink-0 space-y-6 pb-4">
             {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 overflow-hidden rounded-[1.5rem]">
                 {[{ label: 'Pending', count: stats.pending, icon: Clock, color: 'text-yellow-400', tab: 'pending' },
                 { label: 'Verified', count: stats.approved, icon: CheckCircle, color: 'text-green-400', tab: 'approved' },
                 { label: 'Rejected', count: stats.rejected, icon: XCircle, color: 'text-red-400', tab: 'rejected' },
@@ -467,9 +468,11 @@ export default function AdminUsersSection({ refreshTrigger }) {
                 </div>
             </div>
 
-            {/* Select all */}
+            </div>
+
+            {/* Select all — pinned above scroll */}
             {filtered.length > 0 && (
-                <div className="flex items-center gap-3">
+                <div className="shrink-0 flex items-center gap-3 pb-3">
                     <button onClick={toggleSelectAll}
                         className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedUsers.size === filtered.length && filtered.length > 0 ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20 hover:border-orange-500/60'}`}>
                         {selectedUsers.size === filtered.length && filtered.length > 0 && <CheckCircle size={14} className="text-white" />}
@@ -480,7 +483,7 @@ export default function AdminUsersSection({ refreshTrigger }) {
                 </div>
             )}
 
-            {/* Users Grid */}
+            <div className="flex-1 admin-scroll overflow-y-auto min-h-0 p-6 rounded-[1.5rem] bg-white/[0.01] border border-white/5 shadow-[inset_0_0_24px_rgba(0,0,0,0.8)]">
             <div className="relative min-h-[400px]">
                 <AnimatePresence mode="wait">
                     {loading ? (
@@ -493,16 +496,16 @@ export default function AdminUsersSection({ refreshTrigger }) {
                             {filtered.map(u => (
                                 <motion.div key={u.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
                                     onClick={() => toggleSelect(u.id)}
-                                    className={`bg-white/[0.02] backdrop-blur-md border rounded-3xl p-5 flex flex-col h-full hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] transition-all duration-300 cursor-pointer ${selectedUsers.has(u.id) ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'border-white/5'}`}>
-                                    <div className="space-y-4 mb-4">
+                                    className={`bg-white/[0.02] backdrop-blur-md border rounded-[1.5rem] p-4 flex flex-col h-full hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] transition-all duration-300 cursor-pointer ${selectedUsers.has(u.id) ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'border-white/5'}`}>
+                                    <div className="space-y-3 mb-3">
                                         {/* User header */}
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-2">
                                             <button onClick={(e) => { e.stopPropagation(); toggleSelect(u.id); }}
                                                 className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${selectedUsers.has(u.id) ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20'}`}>
                                                 {selectedUsers.has(u.id) && <CheckCircle size={12} className="text-white" />}
                                             </button>
-                                            <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center overflow-hidden shrink-0">
-                                                {u.avatar_url ? <img src={u.avatar_url} className="w-full h-full object-cover" alt="" /> : <User size={20} className="text-orange-500" />}
+                                            <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center overflow-hidden shrink-0">
+                                                {u.avatar_url ? <img src={u.avatar_url} className="w-full h-full object-cover" alt="" /> : <User size={16} className="text-orange-500" />}
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <p className="text-sm font-bold text-white truncate">{u.full_name || 'Unknown'}</p>
@@ -547,41 +550,41 @@ export default function AdminUsersSection({ refreshTrigger }) {
                                         <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                                             {u.verification_status === 'pending' && (<>
                                                 <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
-                                                    className="flex-1 py-2.5 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                    <CheckCircle size={12} className="text-green-500" /> APPROVE
+                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    <CheckCircle size={10} className="text-green-500" /> APPROVE
                                                 </button>
                                                 <button onClick={() => setRejectTarget(u.id)} disabled={processing}
-                                                    className="flex-1 py-2.5 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                    <XCircle size={12} className="text-red-500" /> REJECT
+                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    <XCircle size={10} className="text-red-500" /> REJECT
                                                 </button>
                                             </>)}
                                             {u.verification_status === 'rejected' && (
                                                 <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
-                                                    className="flex-1 py-2.5 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                    <CheckCircle size={12} className="text-green-500" /> APPROVE
+                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    <CheckCircle size={10} className="text-green-500" /> APPROVE
                                                 </button>
                                             )}
                                             {u.verification_status === 'approved' && !u.is_banned && (
                                                 <button onClick={() => setRejectTarget(u.id)} disabled={processing}
-                                                    className="flex-1 py-2.5 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                    <XCircle size={12} className="text-red-500" /> REVOKE
+                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    <XCircle size={10} className="text-red-500" /> REVOKE
                                                 </button>
                                             )}
                                             {/* Ban / Unban toggle */}
                                             {u.is_banned ? (
                                                 <button onClick={() => setUnbanTarget(u.id)} disabled={processing}
-                                                    className="flex-1 py-2.5 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                    <ShieldCheck size={12} className="text-orange-500" /> UNBAN
+                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-xl font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    <ShieldCheck size={10} className="text-orange-500" /> UNBAN
                                                 </button>
                                             ) : u.verification_status === 'approved' && (
                                                 <button onClick={() => setBanTarget(u.id)} disabled={processing}
-                                                    className="p-2.5 bg-white/[0.03] hover:bg-red-500/10 text-white/50 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl transition-all active:scale-95 disabled:opacity-50" title="Ban user">
-                                                    <Ban size={12} className="text-red-500" />
+                                                    className="p-2 bg-white/[0.03] hover:bg-red-500/10 text-white/50 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl transition-all active:scale-95 disabled:opacity-50" title="Ban user">
+                                                    <Ban size={10} className="text-red-500" />
                                                 </button>
                                             )}
                                             <button onClick={() => setDeleteTarget(u.id)} disabled={processing}
-                                                className="p-2.5 bg-white/[0.03] hover:bg-red-500/10 text-white/50 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl transition-all active:scale-95 disabled:opacity-50" title="Delete account">
-                                                <Trash2 size={12} className="text-red-500" />
+                                                className="p-2 bg-white/[0.03] hover:bg-red-500/10 text-white/50 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl transition-all active:scale-95 disabled:opacity-50" title="Delete account">
+                                                <Trash2 size={10} className="text-red-500" />
                                             </button>
                                         </div>
                                     </div>
@@ -595,6 +598,7 @@ export default function AdminUsersSection({ refreshTrigger }) {
                         </motion.div>
                     )}
                 </AnimatePresence>
+            </div>
             </div>
 
             {/* Toast */}
