@@ -654,9 +654,9 @@ export default function ChatPage() {
           </div>
         </motion.div>
       ) : (
-        <div className="flex flex-col h-screen overflow-hidden">
+        <div className="flex flex-col h-[100dvh] overflow-hidden">
           {/* HEADER */}
-          <div className="flex items-center p-4 border-b border-white/5 bg-black/40 backdrop-blur-xl z-10 sticky top-0">
+          <div className="flex items-center p-4 border-b border-white/5 bg-black/40 backdrop-blur-xl z-10 shrink-0">
             <button onClick={backToList} className="p-2 mr-1 hover:bg-white/5 rounded-full transition-colors"><ArrowLeft size={22} className="text-orange-400" /></button>
             <div className="flex-1 min-w-0 pr-2">
               <h2 className="font-bold text-[15px] leading-tight text-white/90 truncate">{selectedConversation?.otherUser?.full_name}</h2>
@@ -682,7 +682,7 @@ export default function ChatPage() {
           </div>
 
           {/* RESOLUTION BAR */}
-          <div className="w-full px-4 pt-4 pb-2 bg-transparent z-0">
+          <div className="w-full px-4 pt-4 pb-2 bg-transparent z-0 shrink-0">
             {selectedConversation?.isResolved ? (
               <div className="flex items-center justify-center gap-2 py-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.05)]">
                 <CheckCircle2 size={14} />
