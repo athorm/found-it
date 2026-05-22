@@ -426,7 +426,13 @@ export default function AdminPage() {
     };
 
     const handleReportAction = async (reportId, status, reportedUserId, banUser = false) => {
-        setReportProcessing(reportId);
+        const prevReports = reports;
+
+        // Optimistic update
+        setReports(prev => prev.map(r => r.id === reportId ? { ...r, status } : r));
+        setReportProcessing(null);
+        showToast(status === 'valid' ? (banUser ? 'Report validated & user banned' : 'Report marked as valid') : 'Report dismissed');
+
         try {
             const { data: { session } } = await supabase.auth.getSession();
             const res = await fetch('/api/admin/reports', {
@@ -443,18 +449,21 @@ export default function AdminPage() {
                 }),
             });
             if (!res.ok) throw new Error('Failed to update report');
-            showToast(status === 'valid' ? (banUser ? 'Report validated & user banned' : 'Report marked as invalid') : 'Report dismissed');
-            fetchReports();
         } catch (err) {
+            setReports(prevReports);
             showToast(err.message, 'error');
-        } finally {
-            setReportProcessing(null);
         }
     };
 
     const handleDeleteReport = async (reportId) => {
         if (!confirm('Are you sure you want to permanently delete this report? This cannot be undone.')) return;
-        setReportProcessing(reportId);
+        const prevReports = reports;
+
+        // Optimistic removal
+        setReports(prev => prev.filter(r => r.id !== reportId));
+        showToast('Report deleted permanently');
+        setSelectedReport(null);
+
         try {
             const { data: { session } } = await supabase.auth.getSession();
             const res = await fetch(`/api/admin/reports?id=${reportId}`, {
@@ -464,20 +473,25 @@ export default function AdminPage() {
                 },
             });
             if (!res.ok) throw new Error('Failed to delete report');
-            showToast('Report deleted permanently');
-            setSelectedReport(null);
-            fetchReports();
         } catch (err) {
+            setReports(prevReports);
             showToast(err.message, 'error');
-        } finally {
-            setReportProcessing(null);
         }
     };
 
     const handleBatchDeleteReports = async () => {
         if (selectedReports.size === 0) return;
+        const prevReports = reports;
+        const count = selectedReports.size;
+        const ids = [...selectedReports];
+
+        // Optimistic removal
+        setReports(prev => prev.filter(r => !selectedReports.has(r.id)));
+        showToast(`${count} report(s) deleted permanently`);
+        setSelectedReports(new Set());
+        setBatchReportDeleteConfirm(false);
+
         try {
-            setProcessing(true);
             const { data: { session } } = await supabase.auth.getSession();
             const res = await fetch('/api/admin/reports', {
                 method: 'DELETE',
@@ -485,18 +499,12 @@ export default function AdminPage() {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${session.access_token}`,
                 },
-                body: JSON.stringify({ ids: [...selectedReports] }),
+                body: JSON.stringify({ ids }),
             });
             if (!res.ok) throw new Error('Failed to delete reports');
-            const json = await res.json();
-            showToast(`${json.deleted} report(s) deleted permanently`);
-            setSelectedReports(new Set());
-            setBatchReportDeleteConfirm(false);
-            fetchReports();
         } catch (err) {
+            setReports(prevReports);
             showToast(err.message, 'error');
-        } finally {
-            setProcessing(false);
         }
     };
 
@@ -515,6 +523,12 @@ export default function AdminPage() {
     };
 
     const handleAiLogReview = async (logId, decision) => {
+        const prevLogs = aiLogs;
+
+        // Optimistic update
+        setAiLogs(prev => prev.map(l => l.id === logId ? { ...l, admin_reviewed: true, admin_decision: decision } : l));
+        showToast(`AI log marked as ${decision}`);
+
         try {
             const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/ai-logs', {
@@ -523,43 +537,53 @@ export default function AdminPage() {
                 body: JSON.stringify({ logId, decision }),
             });
             if (!res.ok) throw new Error('Failed to update AI log');
-            showToast(`AI log marked as ${decision}`);
-            fetchAiLogs();
         } catch (err) {
+            setAiLogs(prevLogs);
             showToast(err.message, 'error');
         }
     };
 
     const handleBatchDeleteAiLogs = async () => {
         if (selectedAiLogs.size === 0) return;
+        const prevLogs = aiLogs;
+        const count = selectedAiLogs.size;
+        const ids = [...selectedAiLogs];
+
+        // Optimistic removal
+        setAiLogs(prev => prev.filter(l => !selectedAiLogs.has(l.id)));
+        showToast(`${count} AI log(s) deleted`);
+        setSelectedAiLogs(new Set());
+        setBatchAiLogDeleteConfirm(false);
+
         try {
-            setProcessing(true);
             const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/ai-logs', {
                 method: 'DELETE',
                 headers: { ...headers, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ids: [...selectedAiLogs] }),
+                body: JSON.stringify({ ids }),
             });
             if (!res.ok) throw new Error('Failed to delete AI logs');
-            const json = await res.json();
-            showToast(`${json.deleted} AI log(s) deleted`);
-            setSelectedAiLogs(new Set());
-            setBatchAiLogDeleteConfirm(false);
-            fetchAiLogs();
         } catch (err) {
+            setAiLogs(prevLogs);
             showToast(err.message, 'error');
-        } finally {
-            setProcessing(false);
         }
     };
 
     const handleBatchAiLogReview = async (decision) => {
         if (selectedAiLogs.size === 0) return;
+        const prevLogs = aiLogs;
+        const count = selectedAiLogs.size;
+        const ids = [...selectedAiLogs];
+
+        // Optimistic batch update
+        setAiLogs(prev => prev.map(l => selectedAiLogs.has(l.id) ? { ...l, admin_reviewed: true, admin_decision: decision } : l));
+        showToast(`${count} log(s) marked as ${decision}`);
+        setSelectedAiLogs(new Set());
+
         try {
-            setProcessing(true);
             const headers = await getAuthHeaders();
             const results = await Promise.all(
-                [...selectedAiLogs].map(logId =>
+                ids.map(logId =>
                     fetch('/api/admin/ai-logs', {
                         method: 'PATCH',
                         headers: { ...headers, 'Content-Type': 'application/json' },
@@ -568,14 +592,13 @@ export default function AdminPage() {
                 )
             );
             const failCount = results.filter(r => !r.ok).length;
-            if (failCount > 0) showToast(`${failCount} log(s) failed to update`, 'error');
-            else showToast(`${selectedAiLogs.size} log(s) marked as ${decision}`);
-            setSelectedAiLogs(new Set());
-            fetchAiLogs();
+            if (failCount > 0) {
+                setAiLogs(prevLogs);
+                showToast(`${failCount} log(s) failed to update`, 'error');
+            }
         } catch (err) {
+            setAiLogs(prevLogs);
             showToast(err.message, 'error');
-        } finally {
-            setProcessing(false);
         }
     };
 
@@ -642,49 +665,84 @@ export default function AdminPage() {
         }
     }, [guardLoading, isAdmin, fetchItems, fetchStats]);
 
-    /* ───── Moderation actions ───── */
+    /* ───── Moderation actions (optimistic UI) ───── */
     const handleModerate = async (itemId, action) => {
+        const newStatus = action === 'approve' ? 'approved' : 'rejected';
+        // Snapshot for rollback
+        const prevItems = items;
+        const prevStats = { ...stats };
+
+        // Optimistic update — instant UI change
+        // On specific tabs, remove the card (it no longer belongs); on 'all' tab, update badge in-place
+        if (activeTab !== 'all') {
+            setItems(prev => prev.filter(i => i.id !== itemId));
+        } else {
+            setItems(prev => prev.map(i => i.id === itemId ? { ...i, moderation_status: newStatus } : i));
+        }
+        setStats(prev => {
+            const oldItem = items.find(i => i.id === itemId);
+            if (!oldItem) return prev;
+            const oldStatus = oldItem.moderation_status;
+            return {
+                ...prev,
+                [oldStatus]: Math.max(0, prev[oldStatus] - 1),
+                [newStatus]: prev[newStatus] + 1,
+            };
+        });
+        showToast(`Item ${action === 'approve' ? 'approved' : 'rejected'} successfully`);
+
+        // Background API call
         try {
-            setProcessing(true);
             const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/items', {
                 method: 'PATCH',
                 headers: { ...headers, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ itemId, action }),
             });
-            const json = await res.json();
-            if (!res.ok) throw new Error(json.error);
-
-            showToast(`Item ${action === 'approve' ? 'approved' : 'rejected'} successfully`);
-            fetchItems();
-            fetchStats();
+            if (!res.ok) {
+                const json = await res.json();
+                throw new Error(json.error);
+            }
         } catch (err) {
+            // Rollback on failure
+            setItems(prevItems);
+            setStats(prevStats);
             showToast(err.message, 'error');
-        } finally {
-            setProcessing(false);
         }
     };
 
     const handleDelete = async (itemId) => {
+        const prevItems = items;
+        const prevStats = { ...stats };
+        const deletedItem = items.find(i => i.id === itemId);
+
+        // Optimistic removal
+        setItems(prev => prev.filter(i => i.id !== itemId));
+        if (deletedItem) {
+            setStats(prev => ({
+                ...prev,
+                [deletedItem.moderation_status]: Math.max(0, prev[deletedItem.moderation_status] - 1),
+                total: Math.max(0, prev.total - 1),
+            }));
+        }
+        showToast('Item deleted permanently');
+        setDeleteTarget(null);
+
         try {
-            setProcessing(true);
             const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/items', {
                 method: 'DELETE',
                 headers: { ...headers, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ itemId }),
             });
-            const json = await res.json();
-            if (!res.ok) throw new Error(json.error);
-
-            showToast('Item deleted permanently');
-            setDeleteTarget(null);
-            fetchItems();
-            fetchStats();
+            if (!res.ok) {
+                const json = await res.json();
+                throw new Error(json.error);
+            }
         } catch (err) {
+            setItems(prevItems);
+            setStats(prevStats);
             showToast(err.message, 'error');
-        } finally {
-            setProcessing(false);
         }
     };
 
@@ -700,38 +758,90 @@ export default function AdminPage() {
     };
     const handleBatchModerate = async (action) => {
         if (selectedItems.size === 0) return;
+        const newStatus = action === 'approve' ? 'approved' : 'rejected';
+        const prevItems = items;
+        const prevStats = { ...stats };
+        const ids = [...selectedItems];
+
+        // Optimistic batch update
+        const statDelta = {};
+        items.forEach(i => {
+            if (selectedItems.has(i.id)) {
+                statDelta[i.moderation_status] = (statDelta[i.moderation_status] || 0) - 1;
+                statDelta[newStatus] = (statDelta[newStatus] || 0) + 1;
+            }
+        });
+        // On specific tabs, remove cards (they no longer belong); on 'all' tab, update badge in-place
+        if (activeTab !== 'all') {
+            setItems(prev => prev.filter(i => !selectedItems.has(i.id)));
+        } else {
+            setItems(prev => prev.map(i => selectedItems.has(i.id) ? { ...i, moderation_status: newStatus } : i));
+        }
+        setStats(prev => {
+            const next = { ...prev };
+            Object.entries(statDelta).forEach(([k, v]) => { next[k] = Math.max(0, (next[k] || 0) + v); });
+            return next;
+        });
+        showToast(`${ids.length} item(s) ${action === 'approve' ? 'approved' : 'rejected'}`);
+        setSelectedItems(new Set());
+
         try {
-            setProcessing(true);
             const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/items', {
                 method: 'PATCH',
                 headers: { ...headers, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ itemIds: [...selectedItems], action }),
+                body: JSON.stringify({ itemIds: ids, action }),
             });
-            const json = await res.json();
-            if (!res.ok) throw new Error(json.error);
-            showToast(json.message);
-            setSelectedItems(new Set());
-            fetchItems(); fetchStats();
-        } catch (err) { showToast(err.message, 'error'); } finally { setProcessing(false); }
+            if (!res.ok) {
+                const json = await res.json();
+                throw new Error(json.error);
+            }
+        } catch (err) {
+            setItems(prevItems);
+            setStats(prevStats);
+            showToast(err.message, 'error');
+        }
     };
     const handleBatchDelete = async () => {
         if (selectedItems.size === 0) return;
+        const prevItems = items;
+        const prevStats = { ...stats };
+        const ids = [...selectedItems];
+
+        // Optimistic batch delete
+        const statDelta = { total: 0 };
+        items.forEach(i => {
+            if (selectedItems.has(i.id)) {
+                statDelta[i.moderation_status] = (statDelta[i.moderation_status] || 0) - 1;
+                statDelta.total--;
+            }
+        });
+        setItems(prev => prev.filter(i => !selectedItems.has(i.id)));
+        setStats(prev => {
+            const next = { ...prev };
+            Object.entries(statDelta).forEach(([k, v]) => { next[k] = Math.max(0, (next[k] || 0) + v); });
+            return next;
+        });
+        showToast(`${ids.length} item(s) deleted permanently`);
+        setSelectedItems(new Set());
+        setBatchDeleteConfirm(false);
+
         try {
-            setProcessing(true);
             const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/items', {
                 method: 'DELETE',
                 headers: { ...headers, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ itemIds: [...selectedItems] }),
+                body: JSON.stringify({ itemIds: ids }),
             });
-            const json = await res.json();
-            if (!res.ok) throw new Error(json.error);
-            showToast(json.message);
-            setSelectedItems(new Set());
-            setBatchDeleteConfirm(false);
-            fetchItems(); fetchStats();
-        } catch (err) { showToast(err.message, 'error'); } finally { setProcessing(false); }
+            if (!res.ok) {
+                const json = await res.json();
+                throw new Error(json.error);
+            }
+        } catch (err) {
+            setItems(prevItems);
+            setStats(prevStats);
+            showToast(err.message, 'error');
+        }
     };
 
     const hasActiveFilters = categoryFilter !== 'All' || itemTypeFilter !== 'All' || statusFilter !== 'All' || locationFilter !== 'All' || dateFrom || dateTo;

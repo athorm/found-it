@@ -218,19 +218,36 @@ export default function AdminUsersSection({ refreshTrigger }) {
     useEffect(() => { fetchUsers(); fetchStats(); }, [fetchUsers, fetchStats, refreshTrigger]);
 
     const handleDeleteUser = async (userId) => {
+        const prevUsers = users;
+        const prevStats = { ...stats };
+        const deletedUser = users.find(u => u.id === userId);
+
+        // Optimistic removal
+        setUsers(prev => prev.filter(u => u.id !== userId));
+        if (deletedUser) {
+            setStats(prev => {
+                const next = { ...prev, total: Math.max(0, prev.total - 1) };
+                if (deletedUser.is_banned) next.banned = Math.max(0, prev.banned - 1);
+                const vs = deletedUser.verification_status;
+                if (vs && next[vs] !== undefined) next[vs] = Math.max(0, next[vs] - 1);
+                return next;
+            });
+        }
+        showToast('User account deleted permanently');
+        setDeleteTarget(null);
+
         try {
-            setProcessing(true);
             const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/users/delete', {
                 method: 'DELETE', headers: { ...headers, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId }),
             });
-            const json = await res.json();
-            if (!res.ok) throw new Error(json.error);
-            showToast('User account deleted permanently');
-            setDeleteTarget(null);
-            fetchUsers(); fetchStats();
-        } catch (err) { showToast(err.message, 'error'); } finally { setProcessing(false); }
+            if (!res.ok) { const json = await res.json(); throw new Error(json.error); }
+        } catch (err) {
+            setUsers(prevUsers);
+            setStats(prevStats);
+            showToast(err.message, 'error');
+        }
     };
 
     // Batch helpers
@@ -238,56 +255,147 @@ export default function AdminUsersSection({ refreshTrigger }) {
     const toggleSelectAll = () => { selectedUsers.size === filtered.length ? setSelectedUsers(new Set()) : setSelectedUsers(new Set(filtered.map(u => u.id))); };
     const handleBatchModerate = async (action) => {
         if (selectedUsers.size === 0) return;
+        const newStatus = action === 'approve' ? 'approved' : 'rejected';
+        const prevUsers = users;
+        const prevStats = { ...stats };
+        const ids = [...selectedUsers];
+
+        // Optimistic: remove from non-'all' tabs, update in-place on 'all'
+        if (activeTab !== 'all') {
+            setUsers(prev => prev.filter(u => !selectedUsers.has(u.id)));
+        } else {
+            setUsers(prev => prev.map(u => selectedUsers.has(u.id) ? { ...u, verification_status: newStatus } : u));
+        }
+        // Update stats
+        const statDelta = {};
+        users.forEach(u => {
+            if (selectedUsers.has(u.id)) {
+                statDelta[u.verification_status] = (statDelta[u.verification_status] || 0) - 1;
+                statDelta[newStatus] = (statDelta[newStatus] || 0) + 1;
+            }
+        });
+        setStats(prev => {
+            const next = { ...prev };
+            Object.entries(statDelta).forEach(([k, v]) => { if (next[k] !== undefined) next[k] = Math.max(0, next[k] + v); });
+            return next;
+        });
+        showToast(`${ids.length} user(s) ${action === 'approve' ? 'approved' : 'rejected'}`);
+        setSelectedUsers(new Set());
+
         try {
-            setProcessing(true);
             const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/users', {
                 method: 'PATCH', headers: { ...headers, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userIds: [...selectedUsers], action }),
+                body: JSON.stringify({ userIds: ids, action }),
             });
-            const json = await res.json();
-            if (!res.ok) throw new Error(json.error);
-            showToast(json.message);
-            setSelectedUsers(new Set());
-            fetchUsers(); fetchStats();
-        } catch (err) { showToast(err.message, 'error'); } finally { setProcessing(false); }
+            if (!res.ok) { const json = await res.json(); throw new Error(json.error); }
+        } catch (err) {
+            setUsers(prevUsers);
+            setStats(prevStats);
+            showToast(err.message, 'error');
+        }
     };
     const handleBatchDelete = async () => {
         if (selectedUsers.size === 0) return;
+        const prevUsers = users;
+        const prevStats = { ...stats };
+        const ids = [...selectedUsers];
+
+        // Optimistic batch delete
+        const statDelta = { total: 0 };
+        users.forEach(u => {
+            if (selectedUsers.has(u.id)) {
+                const vs = u.verification_status;
+                if (vs) statDelta[vs] = (statDelta[vs] || 0) - 1;
+                if (u.is_banned) statDelta.banned = (statDelta.banned || 0) - 1;
+                statDelta.total--;
+            }
+        });
+        setUsers(prev => prev.filter(u => !selectedUsers.has(u.id)));
+        setStats(prev => {
+            const next = { ...prev };
+            Object.entries(statDelta).forEach(([k, v]) => { if (next[k] !== undefined) next[k] = Math.max(0, next[k] + v); });
+            return next;
+        });
+        showToast(`${ids.length} account(s) deleted permanently`);
+        setSelectedUsers(new Set());
+        setBatchDeleteConfirm(false);
+
         try {
-            setProcessing(true);
             const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/users/delete', {
                 method: 'DELETE', headers: { ...headers, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ userIds: [...selectedUsers] }),
+                body: JSON.stringify({ userIds: ids }),
             });
-            const json = await res.json();
-            if (!res.ok) throw new Error(json.error);
-            showToast(json.message);
-            setSelectedUsers(new Set()); setBatchDeleteConfirm(false);
-            fetchUsers(); fetchStats();
-        } catch (err) { showToast(err.message, 'error'); } finally { setProcessing(false); }
+            if (!res.ok) { const json = await res.json(); throw new Error(json.error); }
+        } catch (err) {
+            setUsers(prevUsers);
+            setStats(prevStats);
+            showToast(err.message, 'error');
+        }
     };
 
     const handleModerate = async (userId, action, reason) => {
+        const newStatus = action === 'approve' ? 'approved' : 'rejected';
+        const prevUsers = users;
+        const prevStats = { ...stats };
+
+        // Optimistic: remove from specific tabs, update on 'all'
+        if (activeTab !== 'all') {
+            setUsers(prev => prev.filter(u => u.id !== userId));
+        } else {
+            setUsers(prev => prev.map(u => u.id === userId ? { ...u, verification_status: newStatus, verification_rejection_reason: action === 'reject' ? reason : u.verification_rejection_reason } : u));
+        }
+        setStats(prev => {
+            const oldUser = users.find(u => u.id === userId);
+            if (!oldUser) return prev;
+            const oldStatus = oldUser.verification_status;
+            return {
+                ...prev,
+                [oldStatus]: Math.max(0, prev[oldStatus] - 1),
+                [newStatus]: prev[newStatus] + 1,
+            };
+        });
+        showToast(`User ${action === 'approve' ? 'approved' : 'rejected'} successfully`);
+        setRejectTarget(null);
+
         try {
-            setProcessing(true);
             const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/users', {
                 method: 'PATCH', headers: { ...headers, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, action, reason }),
             });
-            const json = await res.json();
-            if (!res.ok) throw new Error(json.error);
-            showToast(`User ${action === 'approve' ? 'approved' : 'rejected'}${json.emailSent ? ' — email sent' : ''}`);
-            setRejectTarget(null);
-            fetchUsers(); fetchStats();
-        } catch (err) { showToast(err.message, 'error'); } finally { setProcessing(false); }
+            if (!res.ok) { const json = await res.json(); throw new Error(json.error); }
+        } catch (err) {
+            setUsers(prevUsers);
+            setStats(prevStats);
+            showToast(err.message, 'error');
+        }
     };
 
     const handleBanToggle = async (userId, currentlyBanned, customReason = '') => {
+        const prevUsers = users;
+        const prevStats = { ...stats };
+
+        // Optimistic: toggle ban status, remove from tab if it no longer matches
+        if (activeTab === 'banned' && currentlyBanned) {
+            // Unbanning on banned tab — remove card
+            setUsers(prev => prev.filter(u => u.id !== userId));
+        } else if (activeTab !== 'all' && activeTab !== 'banned' && !currentlyBanned) {
+            // Banning on a non-all/non-banned tab — remove card
+            setUsers(prev => prev.filter(u => u.id !== userId));
+        } else {
+            setUsers(prev => prev.map(u => u.id === userId ? { ...u, is_banned: !currentlyBanned } : u));
+        }
+        setStats(prev => ({
+            ...prev,
+            banned: currentlyBanned ? Math.max(0, prev.banned - 1) : prev.banned + 1,
+        }));
+        showToast(`User ${currentlyBanned ? 'unbanned' : 'banned'} successfully`);
+        setBanTarget(null);
+        setUnbanTarget(null);
+
         try {
-            setProcessing(true);
             const headers = await getAuthHeaders();
             const res = await fetch('/api/admin/ban-user', {
                 method: 'POST',
@@ -298,13 +406,12 @@ export default function AdminUsersSection({ refreshTrigger }) {
                     reason: currentlyBanned ? (customReason || 'Unbanned by admin') : (customReason || 'Banned by admin from Users panel'),
                 }),
             });
-            const json = await res.json();
-            if (!res.ok) throw new Error(json.error);
-            showToast(`User ${currentlyBanned ? 'unbanned' : 'banned'} successfully${json.emailSent ? ' — email sent' : ''}`);
-            setBanTarget(null);
-            setUnbanTarget(null);
-            fetchUsers(); fetchStats();
-        } catch (err) { showToast(err.message, 'error'); } finally { setProcessing(false); }
+            if (!res.ok) { const json = await res.json(); throw new Error(json.error); }
+        } catch (err) {
+            setUsers(prevUsers);
+            setStats(prevStats);
+            showToast(err.message, 'error');
+        }
     };
 
     const filtered = users.filter(u => {
