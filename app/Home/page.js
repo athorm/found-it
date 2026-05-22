@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Info, X, MapPin, Package } from "lucide-react";
+import { Search, Info, X, MapPin, Package, Camera, MessageCircle, CheckCircle, Clock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import NavBar from "@/components/NavBar";
 import ItemPostModal from "@/components/ItemPostModal";
@@ -67,31 +67,72 @@ function getSubtitle() {
   return pool[dayOfYear % pool.length];
 }
 
+// ─── Time Ago Helper ───
+function getTimeAgo(dateString) {
+  const now = new Date();
+  const then = new Date(dateString);
+  const diffMs = now - then;
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHrs = Math.floor(diffMins / 60);
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  const diffDays = Math.floor(diffHrs / 24);
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return `${Math.floor(diffDays / 7)}w ago`;
+}
+
 // Item categories and emojis now imported from @/lib/constants
 
-// Info modal content
+// Info modal content — using Lucide icon names for professional SVG rendering
 const INFO_SECTIONS = [
   {
-    icon: "🔍",
+    iconComponent: Search,
     title: "Search & Browse",
     body: "Browse Found or Lost items posted by LSPU students. Filter by location or status to narrow your search."
   },
   {
-    icon: "📸",
+    iconComponent: Camera,
     title: "Post an Item",
     body: "Found something? Tap the + button, snap or upload a photo, fill in the details, and post it instantly."
   },
   {
-    icon: "💬",
+    iconComponent: MessageCircle,
     title: "Message the Poster",
     body: "See an item that's yours? Open the item card and tap MESSAGE POSTER to start a private conversation."
   },
   {
-    icon: "✅",
+    iconComponent: CheckCircle,
     title: "Item Retrieved",
     body: "Once you've coordinated with the poster and retrieved the item, press 'Mark as Resolved' inside the chat to confirm the handover. Both users must confirm before the item is marked as retrieved."
   }
 ];
+
+// ─── Animation Variants ───
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.07, delayChildren: 0.15 }
+  }
+};
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1, y: 0,
+    transition: { type: "spring", stiffness: 300, damping: 24 }
+  }
+};
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 24, scale: 0.95 },
+  visible: {
+    opacity: 1, y: 0, scale: 1,
+    transition: { type: "spring", stiffness: 260, damping: 22 }
+  }
+};
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -207,89 +248,85 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-full pb-40 font-sans selection:bg-orange-500/30 flex flex-col items-center pt-12">
+    <div className="min-h-full pb-40 font-sans selection:bg-orange-500/30 flex flex-col items-center pt-12 relative overflow-hidden">
+
+      {/* ─── Ambient Glow Orb ─── */}
+      <div className="absolute top-[-80px] left-1/2 -translate-x-1/2 w-[600px] h-[500px] bg-[radial-gradient(ellipse_at_center,rgba(249,115,22,0.10)_0%,rgba(251,146,60,0.04)_40%,transparent_70%)] pointer-events-none animate-pulse [animation-duration:5s]" />
+      <div className="absolute top-[60px] left-1/2 -translate-x-1/2 w-[300px] h-[300px] bg-[radial-gradient(circle,rgba(249,115,22,0.08)_0%,transparent_60%)] pointer-events-none blur-2xl" />
 
       {/* (i) Info button — top right */}
       <button
         onClick={() => setShowInfoModal(true)}
-        className="absolute top-6 right-6 p-3 bg-white/5 border border-white/10 rounded-2xl text-orange-400/70 hover:text-orange-400 hover:bg-white/10 transition-all backdrop-blur-md"
+        className="absolute top-6 right-6 p-3 min-h-[44px] min-w-[44px] flex items-center justify-center bg-white/5 border border-white/10 rounded-2xl text-orange-400/70 hover:text-orange-400 hover:bg-white/10 transition-all duration-200 backdrop-blur-md cursor-pointer z-10"
         aria-label="About FoundIt"
       >
         <Info size={20} />
       </button>
 
-      <div className="w-full max-w-md md:max-w-5xl px-6 text-center">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="flex justify-center mb-6"
-        >
-          <img src="/logo2.svg" alt="FoundIt Logo" className="w-24 h-24 mix-blend-screen drop-shadow-[0_0_24px_rgba(249,115,22,0.5)] object-contain" />
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="w-full max-w-md md:max-w-5xl px-6 text-center relative z-[1]"
+      >
+        {/* ─── Logo ─── */}
+        <motion.div variants={fadeUp} className="flex justify-center mb-6">
+          <img src="/logo2.svg" alt="FoundIt Logo" className="w-24 h-24 mix-blend-screen drop-shadow-[0_0_30px_rgba(249,115,22,0.5)] object-contain" />
         </motion.div>
 
-        {/* User Greeting */}
+        {/* ─── User Greeting ─── */}
         {userName ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <p className="text-white/40 text-sm font-medium mb-1">{getGreeting()}</p>
-            <h1 className="text-4xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-orange-400 via-orange-500 to-orange-600 drop-shadow-2xl">
+          <motion.div variants={fadeUp}>
+            <p className="text-white/60 text-xs font-semibold tracking-[0.2em] uppercase mb-1.5">{getGreeting()}</p>
+            <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-linear-to-r from-amber-300 via-orange-400 to-orange-600 drop-shadow-2xl">
               {userName}! 👋
             </h1>
           </motion.div>
         ) : (
           <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-6xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-orange-400 via-orange-500 to-orange-600 drop-shadow-2xl"
+            variants={fadeUp}
+            className="text-6xl font-black tracking-tight text-transparent bg-clip-text bg-linear-to-r from-amber-300 via-orange-400 to-orange-600 drop-shadow-2xl"
           >
             FoundIt
           </motion.h1>
         )}
-        <motion.p className="text-orange-300/70 mt-4 text-lg font-medium">{getSubtitle()}</motion.p>
+        <motion.p variants={fadeUp} className="text-white/60 mt-4 text-sm font-medium">{getSubtitle()}</motion.p>
 
-        {/* Search bar: navigates to /items?search= on Enter or button click */}
-        <div className="relative group my-8 max-w-sm mx-auto">
+        {/* ─── Search Bar ─── */}
+        <motion.div variants={fadeUp} className="relative group my-8 max-w-sm mx-auto">
           <input
             type="text"
             placeholder="Search items..."
-            className="w-full bg-white/[0.05] backdrop-blur-2xl border border-white/10 rounded-[2rem] py-5 pl-6 pr-16 outline-none focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 text-white text-left placeholder:text-white/20 transition-all duration-300 shadow-2xl"
+            className="w-full bg-white/[0.05] backdrop-blur-2xl border border-white/10 rounded-[2rem] py-5 pl-6 pr-16 outline-none focus:border-orange-500/40 focus:ring-4 focus:ring-orange-500/10 focus:shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] text-white text-left placeholder:text-white/20 transition-all duration-300 shadow-2xl"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
           />
           <button
             onClick={handleSearch}
-            className="absolute right-3 top-1/2 -translate-y-1/2 bg-orange-500 hover:bg-orange-600 text-white rounded-[1.2rem] p-3 transition-all active:scale-90 shadow-lg shadow-orange-500/30"
+            className="absolute right-3 top-1/2 -translate-y-1/2 bg-orange-500 hover:bg-orange-600 text-white rounded-[1.2rem] p-3 min-h-[44px] min-w-[44px] flex items-center justify-center transition-all duration-200 active:scale-90 shadow-lg shadow-orange-500/30 cursor-pointer"
             aria-label="Search"
           >
             <Search size={18} strokeWidth={3} />
           </button>
-        </div>
+        </motion.div>
 
-        {/* Quick Category Chips */}
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="w-full max-w-sm md:max-w-5xl mx-auto"
-        >
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 mb-3 text-center">Quick Search</p>
+        {/* ─── Quick Category Chips ─── */}
+        <motion.div variants={fadeUp} className="w-full max-w-sm md:max-w-5xl mx-auto">
+          <p className="text-[11px] font-black uppercase tracking-[0.25em] text-white/50 mb-3 text-center">Quick Search</p>
           {/* Mobile: horizontal drag scroll */}
           <div className="md:hidden relative -mx-6 px-6 overflow-hidden" ref={categoryScrollRef}>
             <motion.div 
               drag="x"
               dragConstraints={categoryConstraints}
-              className="flex gap-2 pb-2 cursor-grab active:cursor-grabbing w-max"
+              className="flex gap-3 pb-2 cursor-grab active:cursor-grabbing w-max"
             >
               {ITEM_CATEGORIES.map((cat) => (
                 <motion.button
                   key={cat.value}
                   whileTap={{ scale: 0.92 }}
                   onClick={() => handleCategoryClick(cat.value)}
-                  className="shrink-0 flex items-center gap-1.5 px-3.5 py-2 bg-white/[0.05] hover:bg-orange-500/15 border border-white/10 hover:border-orange-500/30 rounded-2xl text-[11px] font-bold text-white/50 hover:text-orange-300 transition-all whitespace-nowrap"
+                  className="shrink-0 flex items-center gap-1.5 px-4 py-3 min-h-[44px] bg-white/[0.05] hover:bg-orange-500/15 border border-white/10 hover:border-orange-500/30 rounded-2xl text-[11px] font-bold text-white/50 hover:text-orange-300 transition-all duration-200 whitespace-nowrap cursor-pointer"
                 >
                   <span className="text-sm">{cat.emoji}</span>
                   {cat.label}
@@ -298,14 +335,14 @@ export default function HomePage() {
             </motion.div>
           </div>
           {/* Desktop: wrapping grid */}
-          <div className="hidden md:flex flex-wrap justify-center gap-2 pb-2">
+          <div className="hidden md:flex flex-wrap justify-center gap-3 pb-2">
             {ITEM_CATEGORIES.map((cat) => (
               <motion.button
                 key={cat.value}
                 whileTap={{ scale: 0.92 }}
                 whileHover={{ y: -2 }}
                 onClick={() => handleCategoryClick(cat.value)}
-                className="flex items-center gap-1.5 px-4 py-2.5 bg-white/[0.05] hover:bg-orange-500/15 border border-white/10 hover:border-orange-500/30 rounded-2xl text-xs font-bold text-white/50 hover:text-orange-300 transition-all whitespace-nowrap"
+                className="flex items-center gap-1.5 px-4 py-3 min-h-[44px] bg-white/[0.05] hover:bg-orange-500/15 border border-white/10 hover:border-orange-500/30 rounded-2xl text-xs font-bold text-white/50 hover:text-orange-300 transition-all duration-200 whitespace-nowrap cursor-pointer"
               >
                 <span className="text-sm">{cat.emoji}</span>
                 {cat.label}
@@ -316,58 +353,63 @@ export default function HomePage() {
 
         {/* ─── Recently Reported Feed ─── */}
         {recentItems.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="w-full mt-8"
-          >
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white/20 mb-3 text-center">
+          <motion.div variants={fadeUp} className="w-full mt-10">
+            <p className="text-[11px] font-black uppercase tracking-[0.25em] text-white/50 mb-4 text-center">
               Recently Reported
             </p>
           </motion.div>
         )}
+
         {/* Horizontal scroll on mobile, grid on desktop */}
         {recentItems.length > 0 && (
           <>
             {/* Mobile: drag scroll */}
             <div className="md:hidden overflow-hidden mt-1 -mx-6 px-6" ref={recentScrollRef}>
               <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
                 drag="x"
                 dragConstraints={recentConstraints}
                 className="flex gap-4 pb-4 cursor-grab active:cursor-grabbing w-max"
               >
-                {recentItems.map((item, index) => {
+                {recentItems.map((item) => {
                   const emoji = CATEGORY_EMOJI[item.item_category] || "📦";
-                  const isActive = item.status === "Active";
-                  const tagLabel = item.category === "Lost" ? "Lost" : (isActive ? "Found" : "Claimed");
-                  const tagColor = item.category === "Lost"
-                    ? "bg-red-500/20 text-red-400 border-red-500/30"
-                    : isActive
-                      ? "bg-green-500/20 text-green-400 border-green-500/30"
-                      : "bg-orange-500/20 text-orange-400 border-orange-500/30";
+                  const isResolved = item.status === "Resolved";
+                  const tagLabel = isResolved ? 'Claimed' : 'Unclaimed';
+                  const tagColor = isResolved
+                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                    : "bg-orange-500/10 text-orange-500 border-orange-500/20";
+                  const dotColor = isResolved ? "bg-emerald-400" : "bg-orange-500";
                   return (
                     <motion.button
                       key={item.id}
-                      initial={{ opacity: 0, y: 16 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.07 }}
+                      variants={cardVariants}
                       onClick={() => router.push(`/items/${item.id}`)}
-                      className="shrink-0 w-36 bg-white/[0.05] backdrop-blur-xl border border-white/10 rounded-3xl p-4 text-left hover:border-orange-500/40 hover:bg-white/[0.08] transition-all duration-200 cursor-pointer"
+                      className="shrink-0 w-44 bg-white/[0.05] backdrop-blur-xl border border-white/10 rounded-3xl p-4 text-left hover:border-orange-500/40 hover:bg-white/[0.08] transition-all duration-200 cursor-pointer relative overflow-hidden group flex flex-col justify-center"
                     >
                       <div className="w-full flex justify-center mb-3">
                         <div className="bg-orange-500/10 rounded-2xl p-3"><span className="text-3xl">{emoji}</span></div>
                       </div>
-                      <div className="mb-1 w-full max-w-[calc(100%-8px)]">
+                      <div className="mb-2 w-full max-w-[calc(100%-8px)]">
                         <MarqueeTitle text={item.title} className="font-bold text-sm text-white" />
+                        <span className="flex items-center gap-1 text-[8px] text-white/50 font-bold tracking-wider mt-1.5">
+                          <Clock size={10} className="opacity-60" />
+                          {getTimeAgo(item.created_at)}
+                        </span>
                       </div>
-                      <div className="flex items-center gap-1 mt-1 mb-2">
-                        <MapPin size={10} className="text-orange-500/50 shrink-0" />
-                        <p className="text-[10px] text-white/40 truncate">{item.location_tag}</p>
+                      <div className="flex items-center justify-between w-full mt-1">
+                        <div className="flex items-center gap-1 min-w-0 pr-2">
+                          <MapPin size={10} className="text-orange-500/50 shrink-0" />
+                          <p className="text-[10px] text-white/60 truncate">{item.location_tag}</p>
+                        </div>
+                        <div className="shrink-0">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[7px] font-black uppercase tracking-widest ${tagColor}`}>
+                            <span className={`w-1 h-1 rounded-full shadow-[0_0_5px_currentColor] ${dotColor}`} />
+                            {tagLabel}
+                          </span>
+                        </div>
                       </div>
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em] border ${tagColor}`}>
-                        {tagLabel}
-                      </span>
                     </motion.button>
                   );
                 })}
@@ -375,49 +417,61 @@ export default function HomePage() {
             </div>
 
             {/* Desktop: responsive grid */}
-            <div className="hidden md:grid grid-cols-3 lg:grid-cols-6 gap-4 mt-1 w-full">
-              {recentItems.map((item, index) => {
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="hidden md:grid grid-cols-3 lg:grid-cols-6 gap-4 mt-1 w-full"
+            >
+              {recentItems.map((item) => {
                 const emoji = CATEGORY_EMOJI[item.item_category] || "📦";
-                const isActive = item.status === "Active";
-                const tagLabel = item.category === "Lost" ? "Lost" : (isActive ? "Found" : "Claimed");
-                const tagColor = item.category === "Lost"
-                  ? "bg-red-500/20 text-red-400 border-red-500/30"
-                  : isActive
-                    ? "bg-green-500/20 text-green-400 border-green-500/30"
-                    : "bg-orange-500/20 text-orange-400 border-orange-500/30";
+                const isResolved = item.status === "Resolved";
+                const tagLabel = isResolved ? 'Claimed' : 'Unclaimed';
+                const tagColor = isResolved
+                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                  : "bg-orange-500/10 text-orange-500 border-orange-500/20";
+                const dotColor = isResolved ? "bg-emerald-400" : "bg-orange-500";
                 return (
                   <motion.button
                     key={item.id}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.07 }}
-                    whileHover={{ y: -4 }}
+                    variants={cardVariants}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => router.push(`/items/${item.id}`)}
-                    className="bg-white/[0.05] backdrop-blur-xl border border-white/10 rounded-3xl p-4 text-left hover:border-orange-500/40 hover:bg-white/[0.08] transition-all duration-200 cursor-pointer"
+                    className="bg-white/[0.05] backdrop-blur-xl border border-white/10 rounded-3xl p-4 text-left hover:border-orange-500/40 hover:bg-white/[0.08] transition-all duration-200 cursor-pointer relative overflow-hidden group flex flex-col justify-center"
                   >
                     <div className="w-full flex justify-center mb-3">
                       <div className="bg-orange-500/10 rounded-2xl p-3"><span className="text-3xl">{emoji}</span></div>
                     </div>
-                    <div className="mb-1 w-full">
+                    <div className="mb-2 w-full max-w-[calc(100%-8px)]">
                       <MarqueeTitle text={item.title} className="font-bold text-sm text-white" />
+                      <span className="flex items-center gap-1 text-[8px] text-white/50 font-bold tracking-wider mt-1.5">
+                        <Clock size={10} className="opacity-60" />
+                        {getTimeAgo(item.created_at)}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1 mt-1 mb-2">
-                      <MapPin size={10} className="text-orange-500/50 shrink-0" />
-                      <p className="text-[10px] text-white/40 truncate">{item.location_tag}</p>
+                    <div className="flex items-center justify-between w-full mt-1">
+                      <div className="flex items-center gap-1 min-w-0 pr-2">
+                        <MapPin size={10} className="text-orange-500/50 shrink-0" />
+                        <p className="text-[10px] text-white/60 truncate">{item.location_tag}</p>
+                      </div>
+                      <div className="shrink-0">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded border text-[7px] font-black uppercase tracking-widest ${tagColor}`}>
+                          <span className={`w-1 h-1 rounded-full shadow-[0_0_5px_currentColor] ${dotColor}`} />
+                          {tagLabel}
+                        </span>
+                      </div>
                     </div>
-                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em] border ${tagColor}`}>
-                      {tagLabel}
-                    </span>
                   </motion.button>
                 );
               })}
-            </div>
+            </motion.div>
           </>
         )}
 
-      </div>
+      </motion.div>
 
-      {/* Info Modal */}
+      {/* ─── Info Modal ─── */}
       <AnimatePresence>
         {showInfoModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
@@ -430,39 +484,52 @@ export default function HomePage() {
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-sm max-h-[85vh] flex flex-col bg-[#111] border border-orange-500/20 rounded-[2.5rem] p-6 shadow-2xl shadow-orange-900/20"
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="relative w-full max-w-sm max-h-[85vh] flex flex-col bg-[#111] border border-orange-500/20 rounded-[2.5rem] shadow-2xl shadow-orange-900/20 overflow-hidden"
             >
-              <button
-                onClick={() => setShowInfoModal(false)}
-                className="absolute top-5 right-5 p-2 bg-white/5 rounded-full text-white/40 hover:text-white transition-colors z-10"
-              >
-                <X size={18} />
-              </button>
+              {/* Gradient header accent */}
+              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-amber-400 via-orange-500 to-orange-600" />
 
-              <div className="text-center mb-6 shrink-0 flex flex-col items-center">
-                <img src="/logo2.svg" alt="FoundIt Logo" className="w-16 h-16 mix-blend-screen drop-shadow-[0_0_24px_rgba(249,115,22,0.6)] object-contain mb-4" />
-                <h2 className="text-xl font-black text-white tracking-wide">About FoundIt</h2>
-                <p className="text-orange-300/60 text-[10px] mt-1.5 font-black uppercase tracking-widest">LSPU Lost & Found System</p>
+              <div className="p-6 pb-0">
+                <button
+                  onClick={() => setShowInfoModal(false)}
+                  className="absolute top-5 right-5 p-2 bg-white/5 rounded-full text-white/40 hover:text-white transition-colors duration-200 z-10 cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+
+                <div className="text-center mb-6 shrink-0 flex flex-col items-center">
+                  <img src="/logo2.svg" alt="FoundIt Logo" className="w-16 h-16 mix-blend-screen drop-shadow-[0_0_24px_rgba(249,115,22,0.6)] object-contain mb-4" />
+                  <h2 className="text-xl font-black text-white tracking-wide">About FoundIt</h2>
+                  <p className="text-orange-300/60 text-[10px] mt-1.5 font-black uppercase tracking-widest">LSPU Lost & Found System</p>
+                </div>
               </div>
 
-              <div className="space-y-3 overflow-y-auto pr-1 flex-1 min-h-0 relative">
-                {INFO_SECTIONS.map((s) => (
-                  <div key={s.title} className="flex gap-3 items-start p-3.5 bg-white/[0.04] rounded-2xl border border-white/5">
-                    <span className="text-xl shrink-0 mt-0.5">{s.icon}</span>
-                    <div>
-                      <p className="font-black text-xs text-white mb-0.5">{s.title}</p>
-                      <p className="text-white/50 text-[11px] leading-relaxed">{s.body}</p>
+              <div className="space-y-3 overflow-y-auto px-6 pb-2 flex-1 min-h-0 relative">
+                {INFO_SECTIONS.map((s) => {
+                  const IconComp = s.iconComponent;
+                  return (
+                    <div key={s.title} className="flex gap-3 items-start p-3.5 bg-white/[0.04] rounded-2xl border border-white/5 hover:border-white/10 transition-colors duration-200">
+                      <div className="shrink-0 mt-0.5 p-2 bg-orange-500/10 rounded-xl">
+                        <IconComp size={16} className="text-orange-400" />
+                      </div>
+                      <div>
+                        <p className="font-black text-xs text-white mb-0.5">{s.title}</p>
+                        <p className="text-white/50 text-[11px] leading-relaxed">{s.body}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
-              <button
-                onClick={() => setShowInfoModal(false)}
-                className="mt-6 shrink-0 w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black tracking-widest text-sm transition-all active:scale-95"
-              >
-                GOT IT
-              </button>
+              <div className="p-6 pt-4 shrink-0">
+                <button
+                  onClick={() => setShowInfoModal(false)}
+                  className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black tracking-widest text-sm transition-all duration-200 active:scale-95 cursor-pointer"
+                >
+                  GOT IT
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
