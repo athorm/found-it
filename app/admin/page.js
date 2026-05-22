@@ -43,26 +43,26 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className={`bg-white/[0.02] backdrop-blur-md border rounded-3xl overflow-hidden hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] transition-all duration-300 group flex flex-col h-full ${selected ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'border-white/5'}`}
+            className={`bg-white/[0.02] backdrop-blur-md border rounded-[1.5rem] overflow-hidden hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] transition-all duration-300 group flex flex-col h-full ${selected ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'border-white/5'}`}
         >
             {/* Image + Status Badge + Checkbox */}
-            <div className="relative aspect-video w-full cursor-pointer overflow-hidden" onClick={() => onPreview(item)}>
+            <div className="relative h-28 w-full cursor-pointer overflow-hidden" onClick={() => onPreview(item)}>
                 {/* Selection checkbox */}
                 <button onClick={(e) => { e.stopPropagation(); onToggleSelect(item.id); }}
-                    className={`absolute top-4 left-4 z-10 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selected ? 'bg-orange-500 border-orange-400' : 'bg-black/40 border-white/30 backdrop-blur-md hover:border-orange-500/60'}`}>
-                    {selected && <CheckCircle size={14} className="text-white" />}
+                    className={`absolute top-3 left-3 z-10 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${selected ? 'bg-orange-500 border-orange-400' : 'bg-black/40 border-white/30 backdrop-blur-md hover:border-orange-500/60'}`}>
+                    {selected && <CheckCircle size={12} className="text-white" />}
                 </button>
                 <img src={item.image_url} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
 
                 {/* Hover overlay */}
                 <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Eye size={24} className="text-white" />
+                    <Eye size={20} className="text-white" />
                 </div>
             </div>
 
             {/* Details */}
-            <div className="p-5 space-y-4 flex-1 flex flex-col">
+            <div className="p-4 space-y-3 flex-1 flex flex-col">
                 <div>
                     <div className="overflow-hidden mb-2">
                         <motion.div
@@ -86,8 +86,8 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                             )}
                         </motion.div>
                     </div>
-                    <h3 className="font-bold text-white text-lg tracking-tight line-clamp-1">{item.title}</h3>
-                    <p className="text-white/40 text-xs mt-1 line-clamp-2">{item.description || 'No description'}</p>
+                    <h3 className="font-bold text-white text-sm tracking-tight line-clamp-1">{item.title}</h3>
+                    <p className="text-white/40 text-[10px] mt-0.5 line-clamp-1">{item.description || 'No description'}</p>
                 </div>
 
                 {/* Item type + Location */}
@@ -102,44 +102,39 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                 </div>
 
                 {/* ─── FOOTER SECTION ─── */}
-                <div className="mt-auto space-y-4 pt-4 border-t border-white/5">
+                <div className="mt-auto space-y-3 pt-3 border-t border-white/5">
                     {/* Poster info */}
-                    <div className="flex items-center gap-3 p-3 bg-white/3 rounded-xl border border-white/5">
-                        <div className="w-9 h-9 rounded-full bg-orange-500/20 flex items-center justify-center overflow-hidden shrink-0">
+                    <div className="flex items-center gap-2 p-2 bg-white/[0.03] rounded-lg border border-white/5">
+                        <div className="w-7 h-7 rounded-full bg-orange-500/20 flex items-center justify-center overflow-hidden shrink-0">
                             {poster?.avatar_url ? (
                                 <img src={poster.avatar_url} className="w-full h-full object-cover" alt="" />
                             ) : (
-                                <User size={16} className="text-orange-500" />
+                                <User size={12} className="text-orange-500" />
                             )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-white truncate">{poster?.full_name || 'Unknown'}</p>
-                            <p className="text-[10px] text-white/30 font-mono">{poster?.student_number || 'N/A'}</p>
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                            <p className="text-[11px] leading-tight font-bold text-white truncate">{poster?.full_name || 'Unknown'}</p>
+                            <p className="text-[9px] leading-tight text-white/30 font-mono">{poster?.student_number || 'N/A'}</p>
                         </div>
                     </div>
 
-                    {/* Timestamp */}
-                    <p className="text-[10px] text-white/20 font-bold tracking-widest uppercase">
-                        {new Date(item.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </p>
-
                     {/* Action buttons */}
-                    <div className="flex gap-2 mt-2">
+                    <div className="flex gap-2">
                         {isPending && (
                             <>
                                 <button
                                     onClick={() => onApprove(item.id)}
                                     disabled={processing}
-                                    className="flex-1 py-2.5 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-lg font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                                 >
-                                    <CheckCircle size={12} className="text-green-500" /> APPROVE
+                                    <CheckCircle size={10} className="text-green-500" /> APPROVE
                                 </button>
                                 <button
                                     onClick={() => onReject(item.id)}
                                     disabled={processing}
-                                    className="flex-1 py-2.5 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-lg font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                                 >
-                                    <XCircle size={12} className="text-red-500" /> REJECT
+                                    <XCircle size={10} className="text-red-500" /> REJECT
                                 </button>
                             </>
                         )}
@@ -147,27 +142,27 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                             <button
                                 onClick={() => onApprove(item.id)}
                                 disabled={processing}
-                                className="flex-1 py-2.5 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-lg font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                             >
-                                <CheckCircle size={12} className="text-green-500" /> RE-APPROVE
+                                <CheckCircle size={10} className="text-green-500" /> RE-APPROVE
                             </button>
                         )}
                         {isApproved && (
                             <button
                                 onClick={() => onReject(item.id)}
                                 disabled={processing}
-                                className="flex-1 py-2.5 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-lg font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                             >
-                                <XCircle size={12} className="text-red-500" /> REVOKE
+                                <XCircle size={10} className="text-red-500" /> REVOKE
                             </button>
                         )}
                         <button
                             onClick={() => onDelete(item.id)}
                             disabled={processing}
-                            className="p-2.5 bg-white/[0.03] hover:bg-red-500/10 text-white/50 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl transition-all active:scale-95 disabled:opacity-50"
+                            className="p-2 bg-white/[0.03] hover:bg-red-500/10 text-white/50 hover:text-white border border-white/10 hover:border-red-500/50 rounded-lg transition-all active:scale-95 disabled:opacity-50"
                             title="Delete permanently"
                         >
-                            <Trash2 size={16} className="text-red-500" />
+                            <Trash2 size={12} className="text-red-500" />
                         </button>
                     </div>
                 </div>
@@ -919,23 +914,67 @@ export default function AdminPage() {
                 </div>
             </header>
 
-            <main className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-                {/* ─── SECTION SWITCHER ─── */}
-                <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide">
+            <div className="w-full max-w-[100rem] mx-auto flex flex-col md:flex-row items-start relative">
+                {/* ─── DESKTOP SIDEBAR ─── */}
+                <aside className="hidden md:block sticky top-[80px] w-64 shrink-0 p-6 md:pr-0 h-[calc(100vh-80px)] overflow-y-auto scrollbar-hide z-40">
+                    <div className="flex flex-col gap-2 bg-white/[0.02] p-3 rounded-[2rem] border border-white/5 backdrop-blur-md">
+                        <button onClick={() => setAdminSection('posts')}
+                            className={`relative flex items-center gap-3 px-5 py-4 rounded-[1.2rem] text-xs font-black tracking-widest transition-colors w-full text-left ${adminSection === 'posts' ? 'text-white' : 'text-white/30 hover:text-white/50 hover:bg-white/[0.02]'}`}>
+                            {adminSection === 'posts' && <motion.div layoutId="adminSidebar" className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_15px_rgba(249,115,22,0.4)] rounded-[1.2rem]" />}
+                            <Package size={18} className="relative z-10 shrink-0" />
+                            <span className="relative z-10">Posts</span>
+                        </button>
+                        <button onClick={() => setAdminSection('users')}
+                            className={`relative flex items-center gap-3 px-5 py-4 rounded-[1.2rem] text-xs font-black tracking-widest transition-colors w-full text-left ${adminSection === 'users' ? 'text-white' : 'text-white/30 hover:text-white/50 hover:bg-white/[0.02]'}`}>
+                            {adminSection === 'users' && <motion.div layoutId="adminSidebar" className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_15px_rgba(249,115,22,0.4)] rounded-[1.2rem]" />}
+                            <Users size={18} className="relative z-10 shrink-0" />
+                            <span className="relative z-10">Users</span>
+                        </button>
+                        <button onClick={() => { setAdminSection('reports'); fetchReports(); }}
+                            className={`relative flex items-center gap-3 px-5 py-4 rounded-[1.2rem] text-xs font-black tracking-widest transition-colors w-full text-left ${adminSection === 'reports' ? 'text-white' : 'text-white/30 hover:text-white/50 hover:bg-white/[0.02]'}`}>
+                            {adminSection === 'reports' && <motion.div layoutId="adminSidebar" className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_15px_rgba(249,115,22,0.4)] rounded-[1.2rem]" />}
+                            <Flag size={18} className="relative z-10 shrink-0" />
+                            <span className="relative z-10 flex items-center justify-between flex-1">
+                                Reports
+                                {reports.filter(r => r.status === 'pending').length > 0 && (
+                                    <span className="px-2 py-0.5 bg-red-500 rounded-md text-[9px] font-black text-white shadow-[0_0_10px_rgba(239,68,68,0.5)] ml-2">
+                                        {reports.filter(r => r.status === 'pending').length}
+                                    </span>
+                                )}
+                            </span>
+                        </button>
+                        <button onClick={() => { setAdminSection('ai-logs'); fetchAiLogs(); }}
+                            className={`relative flex items-center gap-3 px-5 py-4 rounded-[1.2rem] text-xs font-black tracking-widest transition-colors w-full text-left ${adminSection === 'ai-logs' ? 'text-white' : 'text-white/30 hover:text-white/50 hover:bg-white/[0.02]'}`}>
+                            {adminSection === 'ai-logs' && <motion.div layoutId="adminSidebar" className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_15px_rgba(249,115,22,0.4)] rounded-[1.2rem]" />}
+                            <ShieldAlert size={18} className="relative z-10 shrink-0" />
+                            <span className="relative z-10 flex items-center justify-between flex-1">
+                                AI Logs
+                                {aiLogs.filter(l => l.flagged && !l.admin_reviewed).length > 0 && (
+                                    <span className="px-2 py-0.5 bg-red-500 rounded-md text-[9px] font-black text-white shadow-[0_0_10px_rgba(239,68,68,0.5)] ml-2">
+                                        {aiLogs.filter(l => l.flagged && !l.admin_reviewed).length}
+                                    </span>
+                                )}
+                            </span>
+                        </button>
+                    </div>
+                </aside>
+
+                {/* ─── MOBILE SWITCHER (FALLBACK) ─── */}
+                <div className="md:hidden w-full overflow-x-auto px-6 py-4 border-b border-white/5 scrollbar-hide">
                     <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max">
                         <button onClick={() => setAdminSection('posts')}
                             className={`relative flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-colors ${adminSection === 'posts' ? 'text-white' : 'text-white/30 hover:text-white/50'}`}>
-                            {adminSection === 'posts' && <motion.div layoutId="adminTab" className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_15px_rgba(249,115,22,0.4)] rounded-[0.9rem]" />}
+                            {adminSection === 'posts' && <motion.div layoutId="adminMobileTab" className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_15px_rgba(249,115,22,0.4)] rounded-[0.9rem]" />}
                             <span className="relative z-10 flex items-center gap-2"><Package size={16} /> Posts</span>
                         </button>
                         <button onClick={() => setAdminSection('users')}
                             className={`relative flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-colors ${adminSection === 'users' ? 'text-white' : 'text-white/30 hover:text-white/50'}`}>
-                            {adminSection === 'users' && <motion.div layoutId="adminTab" className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_15px_rgba(249,115,22,0.4)] rounded-[0.9rem]" />}
+                            {adminSection === 'users' && <motion.div layoutId="adminMobileTab" className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_15px_rgba(249,115,22,0.4)] rounded-[0.9rem]" />}
                             <span className="relative z-10 flex items-center gap-2"><Users size={16} /> Users</span>
                         </button>
                         <button onClick={() => { setAdminSection('reports'); fetchReports(); }}
                             className={`relative flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-colors ${adminSection === 'reports' ? 'text-white' : 'text-white/30 hover:text-white/50'}`}>
-                            {adminSection === 'reports' && <motion.div layoutId="adminTab" className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_15px_rgba(249,115,22,0.4)] rounded-[0.9rem]" />}
+                            {adminSection === 'reports' && <motion.div layoutId="adminMobileTab" className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_15px_rgba(249,115,22,0.4)] rounded-[0.9rem]" />}
                             <span className="relative z-10 flex items-center gap-2">
                                 <Flag size={16} /> Reports
                                 {reports.filter(r => r.status === 'pending').length > 0 && (
@@ -947,7 +986,7 @@ export default function AdminPage() {
                         </button>
                         <button onClick={() => { setAdminSection('ai-logs'); fetchAiLogs(); }}
                             className={`relative flex items-center gap-2 px-6 py-3 rounded-[0.9rem] text-xs font-black tracking-widest transition-colors ${adminSection === 'ai-logs' ? 'text-white' : 'text-white/30 hover:text-white/50'}`}>
-                            {adminSection === 'ai-logs' && <motion.div layoutId="adminTab" className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_15px_rgba(249,115,22,0.4)] rounded-[0.9rem]" />}
+                            {adminSection === 'ai-logs' && <motion.div layoutId="adminMobileTab" className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-600 shadow-[0_4px_15px_rgba(249,115,22,0.4)] rounded-[0.9rem]" />}
                             <span className="relative z-10 flex items-center gap-2">
                                 <ShieldAlert size={16} /> AI Logs
                                 {aiLogs.filter(l => l.flagged && !l.admin_reviewed).length > 0 && (
@@ -960,16 +999,18 @@ export default function AdminPage() {
                     </div>
                 </div>
 
-                <div className={adminSection === 'users' ? 'block' : 'hidden'}>
-                    <AdminUsersSection refreshTrigger={userRefreshTrigger} />
-                </div>
+                {/* ─── MAIN CONTENT ─── */}
+                <main className="flex-1 w-full min-w-0 p-6 md:py-8 md:pr-8 md:pl-4 lg:py-8 lg:pr-10 lg:pl-4 h-[calc(100vh-80px)] overflow-hidden flex flex-col">
+                    <div className={`${adminSection === 'users' ? 'flex' : 'hidden'} flex-1 min-h-0 flex-col overflow-hidden`}>
+                        <AdminUsersSection refreshTrigger={userRefreshTrigger} />
+                    </div>
 
                 {/* ─── REPORTS SECTION ─── */}
-                <div className={adminSection === 'reports' ? 'block' : 'hidden'}>
-                    <div className="space-y-6">
+                <div className={`${adminSection === 'reports' ? 'flex' : 'hidden'} flex-1 min-h-0 flex-col overflow-hidden`}>
+                    <div className="shrink-0 space-y-6 pb-4">
 
                         {/* Reports Stats */}
-                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 overflow-hidden rounded-[1.5rem]">
                             {[
                                 { label: 'For Review', count: reports.filter(r => r.status === 'pending').length, icon: Clock, color: 'text-yellow-400', tab: 'pending' },
                                 { label: 'Dismissed', count: reports.filter(r => r.status === 'dismissed').length, icon: XCircle, color: 'text-white/40', tab: 'dismissed' },
@@ -1013,29 +1054,27 @@ export default function AdminPage() {
                                 ))}
                             </div>
                         </div>
+                    </div>
 
-                        {reportsLoading ? (
-                            <div className="flex items-center justify-center py-16">
-                                <Loader2 className="animate-spin text-orange-400" size={28} />
-                            </div>
-                        ) : (() => {
+                        {(() => {
                             const filteredReports = reportFilter === 'all' ? reports : reports.filter(r => r.status === reportFilter);
-
-                            // Select helpers
                             const toggleReportSelect = (id, e) => { e.stopPropagation(); setSelectedReports(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }); };
                             const toggleReportSelectAll = () => { selectedReports.size === filteredReports.length ? setSelectedReports(new Set()) : setSelectedReports(new Set(filteredReports.map(r => r.id))); };
 
-                            return filteredReports.length === 0 ? (
+                            return reportsLoading ? (
+                            <div className="flex items-center justify-center py-16">
+                                <Loader2 className="animate-spin text-orange-400" size={28} />
+                            </div>
+                            ) : filteredReports.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-16 text-white/20 border border-white/5 rounded-3xl">
                                     <Flag size={32} className="mb-3 opacity-30" />
                                     <p className="text-sm font-black uppercase tracking-widest">
                                         {reportFilter === 'all' ? 'No reports yet' : `No ${reportFilter === 'valid_ban' ? 'valid + ban' : reportFilter} reports`}
                                     </p>
                                 </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {/* Select all + batch actions bar */}
-                                    <div className="flex items-center gap-3 flex-wrap">
+                            ) : (<>
+                                {/* Select all + batch actions bar — pinned above scroll */}
+                                <div className="shrink-0 flex items-center gap-3 flex-wrap pb-3">
                                         <button onClick={toggleReportSelectAll}
                                             className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedReports.size === filteredReports.length && filteredReports.length > 0 ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20 hover:border-orange-500/60'}`}>
                                             {selectedReports.size === filteredReports.length && filteredReports.length > 0 && <CheckCircle size={14} className="text-white" />}
@@ -1049,8 +1088,9 @@ export default function AdminPage() {
                                                 <Trash2 size={14} /> Delete {selectedReports.size}
                                             </button>
                                         )}
-                                    </div>
+                                </div>
 
+                                <div className="flex-1 admin-scroll overflow-y-auto min-h-0 p-6 rounded-[1.5rem] bg-white/[0.01] border border-white/5 shadow-[inset_0_0_24px_rgba(0,0,0,0.8)]">
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                         {filteredReports.map(report => (
                                             <motion.div
@@ -1098,9 +1138,8 @@ export default function AdminPage() {
                                         ))}
                                     </div>
                                 </div>
-                            );
+                            </>);
                         })()}
-                    </div>
                 </div>
 
                 {/* ─── REPORT DETAIL MODAL ─── */}
@@ -1312,11 +1351,11 @@ export default function AdminPage() {
                 </AnimatePresence>
 
                 {/* ─── AI LOGS SECTION ─── */}
-                <div className={adminSection === 'ai-logs' ? 'block' : 'hidden'}>
-                    <div className="space-y-6">
+                <div className={`${adminSection === 'ai-logs' ? 'flex' : 'hidden'} flex-1 min-h-0 flex-col overflow-hidden`}>
+                    <div className="shrink-0 space-y-6 pb-4">
 
                         {/* AI Stats */}
-                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 overflow-hidden rounded-[1.5rem]">
                             {[
                                 { label: 'Flagged', count: aiLogs.filter(l => l.flagged).length, icon: ShieldAlert, color: 'text-orange-400', tab: 'flagged' },
                                 { label: 'Unreviewed', count: aiLogs.filter(l => l.flagged && !l.admin_reviewed).length, icon: Clock, color: 'text-yellow-400', tab: 'unreviewed' },
@@ -1360,20 +1399,16 @@ export default function AdminPage() {
                                 ))}
                             </div>
                         </div>
+                    </div>
 
-                        {aiLogsLoading ? (
-                            <div className="flex items-center justify-center py-16">
-                                <Loader2 className="animate-spin text-orange-400" size={28} />
-                            </div>
-                        ) : (() => {
-                            // Apply filter
+                        {(() => {
                             const filteredAiLogs = aiLogs.filter(l => {
                                 switch (aiLogFilter) {
                                     case 'flagged': return l.flagged;
                                     case 'unreviewed': return l.flagged && !l.admin_reviewed;
                                     case 'confirmed': return l.admin_decision === 'confirmed';
                                     case 'dismissed': return l.admin_decision === 'dismissed';
-                                    default: return true; // 'all'
+                                    default: return true;
                                 }
                             }).sort((a, b) => {
                                 if (a.admin_reviewed !== b.admin_reviewed) return a.admin_reviewed ? 1 : -1;
@@ -1383,7 +1418,11 @@ export default function AdminPage() {
                             const toggleAiLogSelect = (id, e) => { e.stopPropagation(); setSelectedAiLogs(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; }); };
                             const toggleAiLogSelectAll = () => { selectedAiLogs.size === filteredAiLogs.length ? setSelectedAiLogs(new Set()) : setSelectedAiLogs(new Set(filteredAiLogs.map(l => l.id))); };
 
-                            return filteredAiLogs.length === 0 ? (
+                            return aiLogsLoading ? (
+                            <div className="flex items-center justify-center py-16">
+                                <Loader2 className="animate-spin text-orange-400" size={28} />
+                            </div>
+                            ) : filteredAiLogs.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-16 text-white/20 border border-white/5 rounded-3xl">
                                     <ShieldAlert size={32} className="mb-3 opacity-30" />
                                     <p className="text-sm font-black uppercase tracking-widest">
@@ -1391,10 +1430,9 @@ export default function AdminPage() {
                                     </p>
                                     <p className="text-xs text-white/15 mt-1">Logs appear when AI scans text or images</p>
                                 </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {/* Select all + batch actions */}
-                                    <div className="flex items-center gap-3 flex-wrap">
+                            ) : (<>
+                                {/* Select all + batch actions — pinned above scroll */}
+                                <div className="shrink-0 flex items-center gap-3 flex-wrap pb-3">
                                         <button onClick={toggleAiLogSelectAll}
                                             className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedAiLogs.size === filteredAiLogs.length && filteredAiLogs.length > 0 ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20 hover:border-orange-500/60'}`}>
                                             {selectedAiLogs.size === filteredAiLogs.length && filteredAiLogs.length > 0 && <CheckCircle size={14} className="text-white" />}
@@ -1424,18 +1462,19 @@ export default function AdminPage() {
                                                 </button>
                                             </div>
                                         )}
-                                    </div>
+                                </div>
 
+                                <div className="flex-1 admin-scroll overflow-y-auto min-h-0 p-6 rounded-[1.5rem] bg-white/[0.01] border border-white/5 shadow-[inset_0_0_24px_rgba(0,0,0,0.8)]">
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                         {filteredAiLogs.map(log => (
                                             <motion.div key={log.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                                                className={`bg-white/[0.02] backdrop-blur-md border rounded-2xl p-4 transition-all duration-300 hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] cursor-pointer ${selectedAiLogs.has(log.id) ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' :
+                                                className={`flex flex-col h-full bg-white/[0.02] backdrop-blur-md border rounded-2xl p-4 transition-all duration-300 hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] cursor-pointer ${selectedAiLogs.has(log.id) ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' :
                                                         !log.admin_reviewed && log.flagged ? 'border-orange-500/30' :
                                                             log.admin_decision === 'confirmed' ? 'border-red-500/20' :
                                                                 'border-white/10'
                                                     }`}>
                                                 {/* Compact header — mirrors Report card: checkbox | user info | status */}
-                                                <div className="flex items-center gap-3 mb-3">
+                                                <div className="flex items-center gap-3 mb-3 shrink-0">
                                                     <button onClick={(e) => toggleAiLogSelect(log.id, e)}
                                                         className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${selectedAiLogs.has(log.id) ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20'}`}>
                                                         {selectedAiLogs.has(log.id) && <CheckCircle size={12} className="text-white" />}
@@ -1454,20 +1493,22 @@ export default function AdminPage() {
                                                     </span>
                                                 </div>
                                                 {/* Body — clickable to open detail */}
-                                                <div className="space-y-2 cursor-pointer" onClick={() => setSelectedAiLog(log)}>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${
-                                                            log.flagged
-                                                                ? 'bg-orange-500/15 text-orange-400 border-orange-500/30'
-                                                                : 'bg-white/5 text-white/30 border-white/10'
-                                                        }`}>
-                                                            {log.flagged ? '⚠ Flagged' : 'Clean'}
-                                                        </span>
-                                                        <span className="text-[9px] text-purple-400/60 ml-auto flex items-center gap-1"><Eye size={10} /> View Context</span>
+                                                <div className="flex-1 flex flex-col justify-between cursor-pointer space-y-3" onClick={() => setSelectedAiLog(log)}>
+                                                    <div className="space-y-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${
+                                                                log.flagged
+                                                                    ? 'bg-orange-500/15 text-orange-400 border-orange-500/30'
+                                                                    : 'bg-white/5 text-white/30 border-white/10'
+                                                            }`}>
+                                                                {log.flagged ? '⚠ Flagged' : 'Clean'}
+                                                            </span>
+                                                            <span className="text-[9px] text-purple-400/60 ml-auto flex items-center gap-1"><Eye size={10} /> View Context</span>
+                                                        </div>
+                                                        {log.input_content && <p className="text-[11px] text-white/50 line-clamp-2 italic">"{log.input_content}"</p>}
+                                                        <p className="text-[11px] text-white/40 line-clamp-2">Action: {log.action_taken}</p>
                                                     </div>
-                                                    {log.input_content && <p className="text-[11px] text-white/50 line-clamp-2 italic">"{log.input_content}"</p>}
-                                                    <p className="text-[11px] text-white/40 line-clamp-2">Action: {log.action_taken}</p>
-                                                    <div className="flex items-center justify-between text-[9px] text-white/20">
+                                                    <div className="flex items-center justify-between text-[9px] text-white/20 pt-1">
                                                         <span>{new Date(log.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                                                         {log.user?.student_number && (
                                                             <span className="text-orange-400/40">{log.user.student_number}</span>
@@ -1476,7 +1517,7 @@ export default function AdminPage() {
                                                 </div>
                                                 {/* Admin actions — only for flagged + unreviewed */}
                                                 {log.flagged && !log.admin_reviewed && (
-                                                    <div className="flex gap-2 pt-3 mt-3 border-t border-white/5">
+                                                    <div className="flex gap-2 pt-3 mt-3 border-t border-white/5 shrink-0">
                                                         <button onClick={() => handleAiLogReview(log.id, 'confirmed')}
                                                             title="Confirm — the AI was right, content is harmful"
                                                             className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center justify-center gap-1 active:scale-95">
@@ -1493,9 +1534,8 @@ export default function AdminPage() {
                                         ))}
                                     </div>
                                 </div>
-                            );
+                            </>);
                         })()}
-                    </div>
                 </div>
 
                 {/* ─── BATCH AI LOG DELETE CONFIRMATION ─── */}
@@ -1712,9 +1752,10 @@ export default function AdminPage() {
                     )}
                 </AnimatePresence>
 
-                <div className={`${adminSection === 'posts' ? 'block' : 'hidden'} space-y-8`}>
-                    {/* ─── STAT CARDS ─── */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className={`${adminSection === 'posts' ? 'flex' : 'hidden'} flex-1 min-h-0 flex-col overflow-hidden`}>
+                    <div className="shrink-0 space-y-6 pb-4">
+                        {/* ─── STAT CARDS ─── */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 overflow-hidden rounded-[1.5rem]">
                         <StatCard label="Pending Review" count={stats.pending} icon={Clock} color="text-yellow-400" active={activeTab === 'pending'} onClick={() => setActiveTab('pending')} />
                         <StatCard label="Approved" count={stats.approved} icon={CheckCircle} color="text-green-400" active={activeTab === 'approved'} onClick={() => setActiveTab('approved')} />
                         <StatCard label="Rejected" count={stats.rejected} icon={XCircle} color="text-red-400" active={activeTab === 'rejected'} onClick={() => setActiveTab('rejected')} />
@@ -1919,10 +1960,11 @@ export default function AdminPage() {
                             </motion.div>
                         )}
                     </AnimatePresence>
+                    </div>
 
                     {/* ─── SELECT ALL / COUNT ─── */}
                     {filteredItems.length > 0 && (
-                        <div className="flex items-center gap-3">
+                        <div className="shrink-0 flex items-center gap-3 pb-3">
                             <button onClick={toggleSelectAll}
                                 className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedItems.size === filteredItems.length && filteredItems.length > 0 ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20 hover:border-orange-500/60'}`}>
                                 {selectedItems.size === filteredItems.length && filteredItems.length > 0 && <CheckCircle size={14} className="text-white" />}
@@ -1933,6 +1975,7 @@ export default function AdminPage() {
                         </div>
                     )}
 
+                    <div className="flex-1 admin-scroll overflow-y-auto min-h-0 p-6 rounded-[1.5rem] bg-white/[0.01] border border-white/5 shadow-[inset_0_0_24px_rgba(0,0,0,0.8)]">
                     {/* ─── ITEMS GRID ─── */}
                     <div className="relative min-h-[400px]">
                         <AnimatePresence mode="wait">
@@ -1981,8 +2024,10 @@ export default function AdminPage() {
                             )}
                         </AnimatePresence>
                     </div>
+                    </div>
                 </div>
-            </main>
+                </main>
+            </div>
 
             {/* ─── TOAST ─── */}
             <AnimatePresence>
