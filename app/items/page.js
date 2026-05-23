@@ -666,35 +666,57 @@ export default function ItemsPage() {
                               {ITEM_CATEGORIES.find(c => c.value === item.item_category)?.emoji} {item.item_category}
                             </span>
                           )}
-                        </div>
 
-                        <div className={`flex-1 min-w-0 flex flex-col justify-center ${viewMode === "list" ? "py-1 pr-2" : "p-5"}`}>
-                          <div className="flex items-start justify-between mb-1 w-full">
-                            <div className="flex-1 min-w-0 mr-2 mt-0.5">
-                                <MarqueeTitle text={item.title} className="font-bold text-sm tracking-tight text-white/90" />
-                                <span className="flex items-center gap-1 text-[8px] text-white/50 font-bold tracking-wider mt-1.5">
-                                  <Clock size={10} className="opacity-60" />
-                                  {getTimeAgo(item.created_at)}
-                                </span>
-                            </div>
-                            
-                            {/* Status Tag */}
-                            <div className="shrink-0">
+                          {/* Status badge on image (grid only) */}
+                          {viewMode === "grid" && (
+                            <div className="absolute bottom-3 left-3">
                                 {(() => {
                                   const isResolved = item.status === 'Resolved';
                                   const tagLabel = isResolved ? 'Claimed' : 'Unclaimed';
                                   const tagColor = isResolved 
-                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                                    : 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+                                    ? 'bg-black/60 text-emerald-400 border-white/10 backdrop-blur-md' 
+                                    : 'bg-black/60 text-orange-400 border-white/10 backdrop-blur-md';
                                   const dotColor = isResolved ? 'bg-emerald-400' : 'bg-orange-500';
                                   return (
-                                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-[7px] font-black uppercase tracking-widest ${tagColor}`}>
+                                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border text-[7px] font-black uppercase tracking-widest ${tagColor}`}>
                                       <span className={`w-1 h-1 rounded-full shadow-[0_0_5px_currentColor] ${dotColor}`} />
                                       {tagLabel}
                                     </span>
                                   );
                                 })()}
                             </div>
+                          )}
+                        </div>
+
+                        <div className={`flex-1 min-w-0 flex flex-col justify-center ${viewMode === "list" ? "py-1 pr-2" : "p-5"}`}>
+                          <div className="flex items-start justify-between mb-1 w-full">
+                            <div className="flex-1 min-w-0 mr-2 mt-0.5">
+                                <MarqueeTitle text={item.title} className="font-bold text-sm tracking-tight text-white/90" />
+                                <span className="flex items-center gap-1 text-[8px] text-white/50 font-bold tracking-wider mt-1.5 whitespace-nowrap">
+                                  <Clock size={10} className="opacity-60 shrink-0" />
+                                  <span>{getTimeAgo(item.created_at)}</span>
+                                </span>
+                            </div>
+                            
+                            {/* Status Tag (List view only) */}
+                            {viewMode === "list" && (
+                              <div className="shrink-0">
+                                  {(() => {
+                                    const isResolved = item.status === 'Resolved';
+                                    const tagLabel = isResolved ? 'Claimed' : 'Unclaimed';
+                                    const tagColor = isResolved 
+                                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                                      : 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+                                    const dotColor = isResolved ? 'bg-emerald-400' : 'bg-orange-500';
+                                    return (
+                                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-[7px] font-black uppercase tracking-widest ${tagColor}`}>
+                                        <span className={`w-1 h-1 rounded-full shadow-[0_0_5px_currentColor] ${dotColor}`} />
+                                        {tagLabel}
+                                      </span>
+                                    );
+                                  })()}
+                              </div>
+                            )}
                           </div>
 
                           {/* Moderation badge — only shown for the user's own pending/rejected posts */}

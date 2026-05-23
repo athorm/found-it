@@ -393,10 +393,10 @@ export default function HomePage() {
                       </div>
                       <div className="mb-2 w-full max-w-[calc(100%-8px)]">
                         <MarqueeTitle text={item.title} className="font-bold text-sm text-white" />
-                        <span className="flex items-center gap-1 text-[8px] text-white/50 font-bold tracking-wider mt-1.5">
-                          <Clock size={10} className="opacity-60" />
-                          {getTimeAgo(item.created_at)}
-                        </span>
+                          <span className="flex items-center gap-1 text-[8px] text-white/50 font-bold tracking-wider mt-1.5 whitespace-nowrap">
+                            <Clock size={10} className="opacity-60 shrink-0" />
+                            <span>{getTimeAgo(item.created_at)}</span>
+                          </span>
                       </div>
                       <div className="flex items-center justify-between w-full mt-1">
                         <div className="flex items-center gap-1 min-w-0 pr-2">
@@ -445,10 +445,10 @@ export default function HomePage() {
                     </div>
                     <div className="mb-2 w-full max-w-[calc(100%-8px)]">
                       <MarqueeTitle text={item.title} className="font-bold text-sm text-white" />
-                      <span className="flex items-center gap-1 text-[8px] text-white/50 font-bold tracking-wider mt-1.5">
-                        <Clock size={10} className="opacity-60" />
-                        {getTimeAgo(item.created_at)}
-                      </span>
+                        <span className="flex items-center gap-1 text-[8px] text-white/50 font-bold tracking-wider mt-1.5 whitespace-nowrap">
+                          <Clock size={10} className="opacity-60 shrink-0" />
+                          <span>{getTimeAgo(item.created_at)}</span>
+                        </span>
                     </div>
                     <div className="flex items-center justify-between w-full mt-1">
                       <div className="flex items-center gap-1 min-w-0 pr-2">
