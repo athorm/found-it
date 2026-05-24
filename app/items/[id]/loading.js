@@ -4,20 +4,20 @@ export default function ItemDetailLoading() {
       {/* Header skeleton */}
       <header className="sticky top-0 z-50 bg-black/40 backdrop-blur-xl border-b border-orange-500/20 p-5">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="w-10 h-10 bg-white/5 rounded-xl animate-pulse" />
-          <div className="h-6 w-28 bg-white/10 rounded animate-pulse" />
+          <div className="w-10 h-10 bg-white/5 rounded-xl animate-shimmer" />
+          <div className="h-6 w-28 bg-white/10 rounded animate-shimmer" />
           <div className="w-10" />
         </div>
       </header>
 
       <main className="max-w-2xl mx-auto px-6 pt-6 pb-6 space-y-6">
         {/* Image skeleton */}
-        <div className="rounded-[2.5rem] overflow-hidden border border-orange-500/10 animate-pulse">
+        <div className="rounded-[2.5rem] overflow-hidden border border-orange-500/10 animate-shimmer">
           <div className="w-full h-96 bg-white/[0.04]" />
         </div>
 
         {/* Info card skeleton */}
-        <div className="rounded-[2.5rem] bg-black/40 border border-orange-500/10 p-8 animate-pulse">
+        <div className="rounded-[2.5rem] bg-black/40 border border-orange-500/10 p-8 animate-shimmer">
           <div className="space-y-5">
             {/* Title + status */}
             <div className="flex items-start justify-between gap-4">
@@ -57,7 +57,7 @@ export default function ItemDetailLoading() {
         </div>
 
         {/* Poster card skeleton */}
-        <div className="flex items-center gap-4 p-5 bg-black/40 rounded-[2rem] border border-orange-500/10 animate-pulse">
+        <div className="flex items-center gap-4 p-5 bg-black/40 rounded-[2rem] border border-orange-500/10 animate-shimmer">
           <div className="w-14 h-14 rounded-full bg-orange-500/10" />
           <div className="space-y-2">
             <div className="h-2 w-16 bg-orange-500/10 rounded" />
@@ -66,7 +66,7 @@ export default function ItemDetailLoading() {
         </div>
 
         {/* Button skeleton */}
-        <div className="w-full h-14 bg-white/[0.04] border border-white/5 rounded-2xl animate-pulse" />
+        <div className="w-full h-14 bg-white/[0.04] border border-white/5 rounded-2xl animate-shimmer" />
       </main>
     </div>
   );

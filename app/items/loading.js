@@ -7,11 +7,11 @@ export default function ItemsLoading({ viewMode = "grid" }) {
         <div className="py-3 px-5">
           <div className="max-w-6xl mx-auto flex items-center justify-center">
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 bg-white/5 rounded-xl animate-pulse" />
-              <div className="h-4 w-20 bg-white/5 rounded animate-pulse hidden sm:block" />
+              <div className="w-9 h-9 bg-white/5 rounded-xl animate-shimmer" />
+              <div className="h-4 w-20 bg-white/5 rounded animate-shimmer hidden sm:block" />
             </div>
             <div className="ml-auto">
-              <div className="w-10 h-10 bg-white/5 rounded-xl animate-pulse" />
+              <div className="w-10 h-10 bg-white/5 rounded-xl animate-shimmer" />
             </div>
           </div>
         </div>
@@ -21,18 +21,18 @@ export default function ItemsLoading({ viewMode = "grid" }) {
           {/* Tab switcher skeleton */}
           <div className="flex bg-white/5 p-1.5 rounded-[1.5rem] border border-white/10">
             <div className="flex-1 py-2.5 flex justify-center">
-              <div className="h-3 w-10 bg-white/10 rounded animate-pulse" />
+              <div className="h-3 w-10 bg-white/10 rounded animate-shimmer" />
             </div>
             <div className="flex-1 py-2.5 flex justify-center">
-              <div className="h-3 w-12 bg-white/5 rounded animate-pulse" />
+              <div className="h-3 w-12 bg-white/5 rounded animate-shimmer" />
             </div>
           </div>
 
           {/* Search + buttons skeleton */}
           <div className="flex gap-3">
-            <div className="flex-1 h-[52px] bg-white/[0.04] border border-white/10 rounded-2xl animate-pulse" />
-            <div className="w-[52px] h-[52px] bg-white/5 border border-white/10 rounded-2xl animate-pulse" />
-            <div className="w-[52px] h-[52px] bg-white/5 border border-white/10 rounded-2xl animate-pulse" />
+            <div className="flex-1 h-[52px] bg-white/[0.04] border border-white/10 rounded-2xl animate-shimmer" />
+            <div className="w-[52px] h-[52px] bg-white/5 border border-white/10 rounded-2xl animate-shimmer" />
+            <div className="w-[52px] h-[52px] bg-white/5 border border-white/10 rounded-2xl animate-shimmer" />
           </div>
         </div>
       </header>
@@ -46,7 +46,7 @@ export default function ItemsLoading({ viewMode = "grid" }) {
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div
                   key={i}
-                  className="flex p-3 gap-5 items-center bg-white/[0.04] border border-white/10 rounded-[2.2rem] animate-pulse"
+                  className="flex p-3 gap-5 items-center bg-white/[0.04] border border-white/10 rounded-[2.2rem] animate-shimmer"
                 >
                   <div className="w-24 h-24 rounded-[1.5rem] bg-white/[0.04] shrink-0" />
                   <div className="flex-1 space-y-3">
@@ -63,7 +63,7 @@ export default function ItemsLoading({ viewMode = "grid" }) {
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <div
                   key={i}
-                  className="bg-white/[0.04] border border-white/10 rounded-[2.2rem] overflow-hidden animate-pulse flex flex-col"
+                  className="bg-white/[0.04] border border-white/10 rounded-[2.2rem] overflow-hidden animate-shimmer flex flex-col"
                 >
                   {/* Image placeholder */}
                   <div className="aspect-square w-full bg-white/[0.04]" />

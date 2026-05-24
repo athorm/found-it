@@ -10,6 +10,7 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { supabase } from "@/lib/supabase";
 import { ITEM_CATEGORIES, CATEGORY_EMOJI } from "@/lib/constants";
 import HomeLoading from "./loading";
+import { usePageCache } from "@/hooks/usePageCache";
 
 // ─── Dynamic Greeting Engine ───
 // Returns a context-aware greeting based on the current hour and day of week.
@@ -128,15 +129,55 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showPostModal, setShowPostModal] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
-  const [userName, setUserName] = useState("");
-  const [recentItems, setRecentItems] = useState([]);
-  const [isLoadingItems, setIsLoadingItems] = useState(true);
   
   // Refs for drag constraints calculation
   const categoryScrollRef = useRef(null);
   const [categoryConstraints, setCategoryConstraints] = useState({ left: 0, right: 0 });
   const recentScrollRef = useRef(null);
   const [recentConstraints, setRecentConstraints] = useState({ left: 0, right: 0 });
+
+  const router = useRouter();
+  const { user, authLoading } = useAuthGuard();
+
+  // ─── Cached: Recent Items (TTL 60s) ───
+  const { data: recentItems, loading: isLoadingItems } = usePageCache(
+    'home-recent-items',
+    async () => {
+      const { data } = await supabase
+        .from("items")
+        .select("id, title, category, location_tag, item_category, status, created_at")
+        .eq("moderation_status", "approved")
+        .order("created_at", { ascending: false })
+        .limit(6);
+      return data || [];
+    },
+    { ttl: 60000 }
+  );
+
+  // ─── Cached: User Profile Name (TTL 5min) ───
+  const { data: userName } = usePageCache(
+    user ? `home-profile-${user.id}` : null,
+    async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (data?.full_name) {
+        const name = data.full_name;
+        let firstName;
+        if (name.includes(',')) {
+          firstName = name.split(',')[1]?.trim().split(' ')[0];
+        }
+        if (!firstName) {
+          firstName = name.split(' ')[0].replace(/,/g, '');
+        }
+        return firstName;
+      }
+      return "";
+    },
+    { ttl: 300000, enabled: !!user }
+  );
 
   // Updated constraints calculation with resize listener and stability delay
   useEffect(() => {
@@ -166,51 +207,6 @@ export default function HomePage() {
       timers.forEach(clearTimeout);
     };
   }, [recentItems]); // Re-run when items change, resize handles the rest
-  const router = useRouter();
-  const { user, authLoading } = useAuthGuard();
-
-  // Fetch user's name for greeting
-  useEffect(() => {
-    const fetchName = async () => {
-      if (!user) return;
-      const { data } = await supabase
-        .from("profiles")
-        .select("full_name")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (data?.full_name) {
-        // Handle "LastName, FirstName" or "FirstName LastName" formats
-        const name = data.full_name;
-        let firstName;
-        if (name.includes(',')) {
-          // "Tolentino, Juan" → "Juan"
-          firstName = name.split(',')[1]?.trim().split(' ')[0];
-        }
-        if (!firstName) {
-          // "Juan Tolentino" → "Juan"  or just "Juan" → "Juan"
-          firstName = name.split(' ')[0].replace(/,/g, '');
-        }
-        setUserName(firstName);
-      }
-    };
-    fetchName();
-  }, [user]);
-
-  // Fetch recently reported items (approved only)
-  useEffect(() => {
-    const fetchRecent = async () => {
-      setIsLoadingItems(true);
-      const { data } = await supabase
-        .from("items")
-        .select("id, title, category, location_tag, item_category, status, created_at")
-        .eq("moderation_status", "approved")
-        .order("created_at", { ascending: false })
-        .limit(6);
-      if (data) setRecentItems(data);
-      setIsLoadingItems(false);
-    };
-    fetchRecent();
-  }, []);
 
   const handleFileSelected = (file) => {
     const previewUrl = URL.createObjectURL(file);
@@ -343,7 +339,7 @@ export default function HomePage() {
         </motion.div>
 
         {/* ─── Recently Reported Feed ─── */}
-        {(isLoadingItems || recentItems.length > 0) && (
+        {(isLoadingItems || (recentItems && recentItems.length > 0)) && (
           <motion.div variants={fadeUp} className="w-full mt-10">
             <p className="text-[11px] font-black uppercase tracking-[0.25em] text-white/50 mb-4 text-center">
               Recently Reported
@@ -368,7 +364,7 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-        ) : recentItems.length > 0 && (
+        ) : (recentItems && recentItems.length > 0) && (
           <>
             {/* Mobile: drag scroll */}
             <div className="md:hidden overflow-hidden mt-1 -mx-6 px-6" ref={recentScrollRef}>
@@ -380,7 +376,7 @@ export default function HomePage() {
                 dragConstraints={recentConstraints}
                 className="flex gap-4 pb-4 cursor-grab active:cursor-grabbing w-max"
               >
-                {recentItems.map((item) => {
+                {recentItems?.map((item) => {
                   const emoji = CATEGORY_EMOJI[item.item_category] || "📦";
                   const isResolved = item.status === "Resolved";
                   const tagLabel = isResolved ? 'Claimed' : 'Unclaimed';
@@ -430,7 +426,7 @@ export default function HomePage() {
               animate="visible"
               className="hidden md:grid grid-cols-3 lg:grid-cols-6 gap-4 mt-1 w-full"
             >
-              {recentItems.map((item) => {
+              {recentItems?.map((item) => {
                 const emoji = CATEGORY_EMOJI[item.item_category] || "📦";
                 const isResolved = item.status === "Resolved";
                 const tagLabel = isResolved ? 'Claimed' : 'Unclaimed';

@@ -239,8 +239,62 @@ function PostItemContent() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-transparent flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen text-white p-6">
+        {/* Header skeleton */}
+        <header className="flex items-center gap-4 mb-4">
+          <div className="w-10 h-10 bg-white/5 rounded-full animate-shimmer" />
+          <div className="h-6 w-32 bg-white/5 rounded-lg animate-shimmer" />
+        </header>
+
+        {/* Admin review banner skeleton */}
+        <div className="flex items-center gap-3 p-3 mb-6 bg-white/[0.03] border border-white/10 rounded-2xl animate-shimmer">
+          <div className="w-4 h-4 bg-white/5 rounded shrink-0" />
+          <div className="h-3 w-3/4 bg-white/5 rounded" />
+        </div>
+
+        {/* Image area skeleton */}
+        <div className="relative w-full h-56 rounded-[2.5rem] overflow-hidden border border-white/10 mb-8 bg-white/[0.03] animate-shimmer">
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+            <div className="w-12 h-12 bg-white/5 rounded-full" />
+            <div className="h-3 w-24 bg-white/5 rounded-full" />
+          </div>
+        </div>
+
+        {/* Form skeleton */}
+        <div className="space-y-6 max-w-md mx-auto pb-10">
+          {/* Title input */}
+          <div className="space-y-1">
+            <div className="h-2.5 w-16 bg-white/5 rounded ml-1 animate-shimmer" />
+            <div className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl animate-shimmer" />
+          </div>
+
+          {/* Category + Item Type grid */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <div className="h-2.5 w-16 bg-white/5 rounded ml-1 animate-shimmer" />
+              <div className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl animate-shimmer" />
+            </div>
+            <div className="space-y-1">
+              <div className="h-2.5 w-16 bg-white/5 rounded ml-1 animate-shimmer" />
+              <div className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl animate-shimmer" />
+            </div>
+          </div>
+
+          {/* General Area select */}
+          <div className="space-y-1">
+            <div className="h-2.5 w-20 bg-white/5 rounded ml-1 animate-shimmer" />
+            <div className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl animate-shimmer" />
+          </div>
+
+          {/* Description textarea */}
+          <div className="space-y-1">
+            <div className="h-2.5 w-24 bg-white/5 rounded ml-1 animate-shimmer" />
+            <div className="w-full h-28 bg-white/[0.03] border border-white/10 rounded-2xl animate-shimmer" />
+          </div>
+
+          {/* Submit button */}
+          <div className="w-full h-[60px] rounded-[2rem] bg-white/[0.04] border border-white/10 animate-shimmer" />
+        </div>
       </div>
     );
   }
@@ -420,9 +474,55 @@ function PostItemContent() {
   );
 }
 
+function PostSkeleton() {
+  return (
+    <div className="min-h-screen text-white p-6">
+      <header className="flex items-center gap-4 mb-4">
+        <div className="w-10 h-10 bg-white/5 rounded-full animate-shimmer" />
+        <div className="h-6 w-32 bg-white/5 rounded-lg animate-shimmer" />
+      </header>
+      <div className="flex items-center gap-3 p-3 mb-6 bg-white/[0.03] border border-white/10 rounded-2xl animate-shimmer">
+        <div className="w-4 h-4 bg-white/5 rounded shrink-0" />
+        <div className="h-3 w-3/4 bg-white/5 rounded" />
+      </div>
+      <div className="relative w-full h-56 rounded-[2.5rem] overflow-hidden border border-white/10 mb-8 bg-white/[0.03] animate-shimmer">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+          <div className="w-12 h-12 bg-white/5 rounded-full" />
+          <div className="h-3 w-24 bg-white/5 rounded-full" />
+        </div>
+      </div>
+      <div className="space-y-6 max-w-md mx-auto pb-10">
+        <div className="space-y-1">
+          <div className="h-2.5 w-16 bg-white/5 rounded ml-1 animate-shimmer" />
+          <div className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl animate-shimmer" />
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <div className="h-2.5 w-16 bg-white/5 rounded ml-1 animate-shimmer" />
+            <div className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl animate-shimmer" />
+          </div>
+          <div className="space-y-1">
+            <div className="h-2.5 w-16 bg-white/5 rounded ml-1 animate-shimmer" />
+            <div className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl animate-shimmer" />
+          </div>
+        </div>
+        <div className="space-y-1">
+          <div className="h-2.5 w-20 bg-white/5 rounded ml-1 animate-shimmer" />
+          <div className="w-full h-14 bg-white/[0.03] border border-white/10 rounded-2xl animate-shimmer" />
+        </div>
+        <div className="space-y-1">
+          <div className="h-2.5 w-24 bg-white/5 rounded ml-1 animate-shimmer" />
+          <div className="w-full h-28 bg-white/[0.03] border border-white/10 rounded-2xl animate-shimmer" />
+        </div>
+        <div className="w-full h-[60px] rounded-[2rem] bg-white/[0.04] border border-white/10 animate-shimmer" />
+      </div>
+    </div>
+  );
+}
+
 export default function PostItem() {
   return (
-    <Suspense fallback={<div className="bg-transparent min-h-screen" />}>
+    <Suspense fallback={<PostSkeleton />}>
       <PostItemContent />
     </Suspense>
   );
