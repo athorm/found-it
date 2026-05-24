@@ -118,3 +118,28 @@ body {
   max-height: 240px;
   overflow-y: auto;
 }
+
+/* ─── Global Focus Ring (WCAG 2.4.7 — keyboard users) ─── */
+/* Uses the brand orange so focus indicators match the design system. */
+:focus-visible {
+  outline: 2px solid rgba(249, 115, 22, 0.7);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+
+/* ─── Reduced Motion (WCAG 2.3.3 — vestibular disorders) ─── */
+/* Disables animations for users who have enabled this OS-level preference. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-marquee-scroll,
+  .animate-pulse {
+    animation: none !important;
+  }
+}

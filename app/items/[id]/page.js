@@ -4,8 +4,10 @@ import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, MapPin, Clock, User, MessageCircle, Lock } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "react-hot-toast";
 import NavBar from "@/components/NavBar";
 import ItemPostModal from "@/components/ItemPostModal";
+import ItemDetailLoading from "./loading";
 
 
 export default function ItemDetailPage() {
@@ -61,12 +63,7 @@ export default function ItemDetailPage() {
     };
 
     if (loading) {
-        return (
-            <div className="min-h-screen flex flex-col items-center justify-center text-white bg-transparent">
-                <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4" />
-                <p className="font-medium opacity-50">Loading item...</p>
-            </div>
-        );
+        return <ItemDetailLoading />;
     }
 
     if (!item) {
@@ -98,7 +95,7 @@ export default function ItemDetailPage() {
 
         if (error) {
             console.error("Error updating status:", error);
-            alert("Failed to update status.");
+            toast.error("Failed to update status.");
         } else {
             setItem({ ...item, status: newStatus });
         }
@@ -106,12 +103,12 @@ export default function ItemDetailPage() {
 
     const handleContactOwner = async () => {
         if (!user) {
-            alert('Please log in to message the poster.');
+            toast.error('Please log in to message the poster.');
             return;
         }
 
         if (user.id === item.user_id) {
-            alert('This is your own item.');
+            toast.error('This is your own item.');
             return;
         }
 
@@ -164,7 +161,7 @@ export default function ItemDetailPage() {
 
         } catch (error) {
             console.error("Detailed Chat Error:", error.message || error);
-            alert(`Could not start conversation: ${error.message || 'Unknown error'}`);
+            toast.error(`Could not start conversation: ${error.message || 'Unknown error'}`);
         }
     };
 
@@ -207,9 +204,9 @@ export default function ItemDetailPage() {
 
                 {/* Item Info */}
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.1, duration: 0.3 }}
                     className="rounded-[2.5rem] bg-black/40 border border-orange-500/30 p-8"
                 >
                     <div className="space-y-4">
@@ -253,8 +250,8 @@ export default function ItemDetailPage() {
                 </motion.div>
                 {/* Poster Info Card */}
                 <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     className="flex items-center gap-4 p-5 bg-black/40 rounded-[2rem] border border-orange-500/20"
                 >
                     <div className="w-14 h-14 rounded-full bg-orange-500/20 flex items-center justify-center overflow-hidden border border-orange-500/30">

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { motion, AnimatePresence } from "framer-motion";
 import { Bell, CheckCheck, Package, X, XCircle, CheckCircle, Trash2, CheckSquare } from "lucide-react";
+import { getTimeAgo } from "@/utils/timeAgo";
 
 const NOTIFICATION_ICONS = {
   item_approved: <CheckCircle size={16} className="text-green-400" />,
@@ -125,19 +126,7 @@ export default function NotificationDropdown({ isOpen, onClose, userId }) {
     onClose();
   };
 
-  const formatTime = (dateStr) => {
-    const now = new Date();
-    const date = new Date(dateStr);
-    const diffMs = now - date;
-    const diffMin = Math.floor(diffMs / 60000);
-    const diffHr = Math.floor(diffMin / 60);
-    const diffDay = Math.floor(diffHr / 24);
-    if (diffMin < 1) return "Just now";
-    if (diffMin < 60) return `${diffMin}m ago`;
-    if (diffHr < 24) return `${diffHr}h ago`;
-    if (diffDay < 7) return `${diffDay}d ago`;
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-  };
+  // formatTime replaced by shared getTimeAgo utility
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
@@ -318,7 +307,7 @@ export default function NotificationDropdown({ isOpen, onClose, userId }) {
                               {notification.body}
                             </p>
                             <p className="text-[9px] text-white/20 mt-1 font-bold">
-                              {formatTime(notification.created_at)}
+                              {getTimeAgo(notification.created_at)}
                             </p>
                           </div>
                         </motion.div>

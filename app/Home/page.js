@@ -9,6 +9,7 @@ import MarqueeTitle from "@/components/MarqueeTitle";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { supabase } from "@/lib/supabase";
 import { ITEM_CATEGORIES, CATEGORY_EMOJI } from "@/lib/constants";
+import HomeLoading from "./loading";
 
 // ─── Dynamic Greeting Engine ───
 // Returns a context-aware greeting based on the current hour and day of week.
@@ -67,21 +68,8 @@ function getSubtitle() {
   return pool[dayOfYear % pool.length];
 }
 
-// ─── Time Ago Helper ───
-function getTimeAgo(dateString) {
-  const now = new Date();
-  const then = new Date(dateString);
-  const diffMs = now - then;
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHrs = Math.floor(diffMins / 60);
-  if (diffHrs < 24) return `${diffHrs}h ago`;
-  const diffDays = Math.floor(diffHrs / 24);
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return `${Math.floor(diffDays / 7)}w ago`;
-}
+// Time Ago Helper — shared utility (DRY)
+import { getTimeAgo } from "@/utils/timeAgo";
 
 // Item categories and emojis now imported from @/lib/constants
 
@@ -110,27 +98,29 @@ const INFO_SECTIONS = [
 ];
 
 // ─── Animation Variants ───
+// Skeleton-friendly: no y-movement, just a soft fade so content
+// appears exactly where the skeleton placeholders were.
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.07, delayChildren: 0.15 }
+    transition: { staggerChildren: 0.04, delayChildren: 0.05 }
   }
 };
 
 const fadeUp = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0 },
   visible: {
-    opacity: 1, y: 0,
-    transition: { type: "spring", stiffness: 300, damping: 24 }
+    opacity: 1,
+    transition: { duration: 0.3, ease: "easeOut" }
   }
 };
 
 const cardVariants = {
-  hidden: { opacity: 0, y: 24, scale: 0.95 },
+  hidden: { opacity: 0 },
   visible: {
-    opacity: 1, y: 0, scale: 1,
-    transition: { type: "spring", stiffness: 260, damping: 22 }
+    opacity: 1,
+    transition: { duration: 0.3, ease: "easeOut" }
   }
 };
 
@@ -140,6 +130,7 @@ export default function HomePage() {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [userName, setUserName] = useState("");
   const [recentItems, setRecentItems] = useState([]);
+  const [isLoadingItems, setIsLoadingItems] = useState(true);
   
   // Refs for drag constraints calculation
   const categoryScrollRef = useRef(null);
@@ -208,6 +199,7 @@ export default function HomePage() {
   // Fetch recently reported items (approved only)
   useEffect(() => {
     const fetchRecent = async () => {
+      setIsLoadingItems(true);
       const { data } = await supabase
         .from("items")
         .select("id, title, category, location_tag, item_category, status, created_at")
@@ -215,6 +207,7 @@ export default function HomePage() {
         .order("created_at", { ascending: false })
         .limit(6);
       if (data) setRecentItems(data);
+      setIsLoadingItems(false);
     };
     fetchRecent();
   }, []);
@@ -240,11 +233,7 @@ export default function HomePage() {
   };
 
   if (authLoading) {
-    return (
-      <div className="min-h-[100dvh] flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <HomeLoading />;
   }
 
   return (
@@ -276,10 +265,12 @@ export default function HomePage() {
 
         {/* ─── User Greeting ─── */}
         {userName ? (
-          <motion.div variants={fadeUp}>
-            <p className="text-white/60 text-xs font-semibold tracking-[0.2em] uppercase mb-1.5">{getGreeting()}</p>
-            <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-linear-to-r from-amber-300 via-orange-400 to-orange-600 drop-shadow-2xl">
-              {userName}! 👋
+          <motion.div variants={fadeUp} className="flex flex-col items-center">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight drop-shadow-2xl flex flex-wrap justify-center items-center gap-2">
+              <span className="text-white/80 font-semibold tracking-wide">{getGreeting()},</span>
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-amber-300 via-orange-400 to-orange-600 whitespace-nowrap">
+                {userName}! 👋
+              </span>
             </h1>
           </motion.div>
         ) : (
@@ -352,7 +343,7 @@ export default function HomePage() {
         </motion.div>
 
         {/* ─── Recently Reported Feed ─── */}
-        {recentItems.length > 0 && (
+        {(isLoadingItems || recentItems.length > 0) && (
           <motion.div variants={fadeUp} className="w-full mt-10">
             <p className="text-[11px] font-black uppercase tracking-[0.25em] text-white/50 mb-4 text-center">
               Recently Reported
@@ -361,7 +352,23 @@ export default function HomePage() {
         )}
 
         {/* Horizontal scroll on mobile, grid on desktop */}
-        {recentItems.length > 0 && (
+        {isLoadingItems ? (
+          <div className="flex gap-4 mt-1 -mx-6 px-6 md:mx-0 md:px-0 md:grid md:grid-cols-3 lg:grid-cols-6 w-full overflow-hidden">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="shrink-0 w-44 md:w-auto h-40 bg-white/[0.03] border border-white/5 rounded-3xl p-4 animate-pulse flex flex-col justify-center">
+                <div className="w-full flex justify-center mb-4">
+                  <div className="w-12 h-12 bg-white/5 rounded-2xl" />
+                </div>
+                <div className="h-4 w-3/4 bg-white/10 rounded mx-auto mb-2" />
+                <div className="h-2 w-1/2 bg-white/5 rounded mx-auto mb-4" />
+                <div className="flex justify-between items-center mt-auto">
+                  <div className="h-2 w-1/3 bg-white/5 rounded" />
+                  <div className="h-3 w-10 bg-white/10 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : recentItems.length > 0 && (
           <>
             {/* Mobile: drag scroll */}
             <div className="md:hidden overflow-hidden mt-1 -mx-6 px-6" ref={recentScrollRef}>

@@ -3,8 +3,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Search, Tag, Plus, MessageCircle, User, ChevronRight, LogOut, Trash2, Camera, Image, X, Send, Loader2, ArrowLeft, Lock, Shield, Eye, EyeOff } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
+import ProfileLoading from './loading';
+
+import NavBar from '@/components/NavBar';
 
 export default function ProfilePage() {
   const { user: authUser, authLoading } = useAuthGuard();
@@ -94,7 +98,7 @@ export default function ProfilePage() {
           });
           const aiResult = await aiRes.json();
           if (aiResult.flagged) {
-            alert('This image was detected as inappropriate by our AI. Please choose a different photo.');
+            toast.error('This image was detected as inappropriate by our AI. Please choose a different photo.');
             setUploading(false);
             return;
           }
@@ -126,7 +130,7 @@ export default function ProfilePage() {
 
       setProfile(prev => ({ ...prev, avatar_url: publicUrl }));
     } catch (error) {
-      alert('Upload failed: ' + error.message);
+      toast.error('Upload failed: ' + error.message);
     } finally {
       setUploading(false);
     }
@@ -160,7 +164,7 @@ export default function ProfilePage() {
     try {
       setLoading(true);
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { alert('You must be logged in.'); return; }
+      if (!session) { toast.error('You must be logged in.'); return; }
 
       const res = await fetch('/api/account/delete', {
         method: 'DELETE',
@@ -172,7 +176,7 @@ export default function ProfilePage() {
       await supabase.auth.signOut();
       router.push('/login');
     } catch (error) {
-      alert("Error deleting account: " + error.message);
+      toast.error("Error deleting account: " + error.message);
     } finally {
       setLoading(false);
       setShowDeleteModal(false);
@@ -189,7 +193,7 @@ export default function ProfilePage() {
   };
 
   const handlePost = async () => {
-    if (!title || !description || !selectedImage) return alert("Please fill in all fields");
+    if (!title || !description || !selectedImage) return toast.error("Please fill in all fields");
     try {
       setPosting(true);
       const { data: { user } } = await supabase.auth.getUser();
@@ -216,24 +220,19 @@ export default function ProfilePage() {
 
       if (dbError) throw dbError;
 
-      alert("Item successfully posted to FoundIt!");
+      toast.success("Item successfully posted to FoundIt!");
       setShowPostModal(false);
       setSelectedImage(null);
       setTitle('');
       setDescription('');
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message);
     } finally {
       setPosting(false);
     }
   };
 
-  if (authLoading || loading) return (
-    <div className="min-h-screen flex flex-col items-center justify-center text-white">
-      <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4" />
-      <p className="font-medium opacity-50">Loading profile...</p>
-    </div>
-  );
+  if (authLoading || loading) return <ProfileLoading />;
 
   return (
     <div className="min-h-screen pb-20 font-sans">
@@ -249,7 +248,7 @@ export default function ProfilePage() {
       </div>
 
       <main className="px-6 mt-8 max-w-lg mx-auto space-y-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           className="rounded-[2.5rem] bg-orange-500/[0.03] backdrop-blur-xl border border-orange-500/20 p-8 flex flex-col items-center shadow-[0_0_40px_rgba(249,115,22,0.05)] relative overflow-hidden">
           
           {/* Subtle background glow */}
@@ -351,7 +350,7 @@ export default function ProfilePage() {
         </div>
       </main>
 
-
+      <NavBar currentRoute="/profile" />
 
       {/* Modals */}
       <AnimatePresence>
@@ -468,15 +467,4 @@ export default function ProfilePage() {
       </AnimatePresence>
     </div>
   );
-}
-
-
-
-function NavIcon({ icon, label, active = false, onClick }) {
-  return (
-    <button onClick={onClick} className={`flex flex-col items-center gap-1 ${active ? 'text-orange-400' : 'text-orange-300/50'}`}>
-      <div className={`${active ? 'bg-orange-500/10 p-2 rounded-xl' : ''}`}>{icon}</div>
-      <span className="text-[10px] font-bold uppercase tracking-tighter">{label}</span>
-    </button>
-  );
-}
+}

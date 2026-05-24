@@ -7,6 +7,7 @@ import { ArrowLeft, Send, Loader2, AlertCircle, ChevronDown, Check, Maximize2, C
 import ItemPostModal from '@/components/ItemPostModal';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import Cropper from 'react-easy-crop';
+import { toast } from 'react-hot-toast';
 import { ITEM_CATEGORIES, CAMPUS_LOCATION_OPTIONS } from '@/lib/constants';
 
 // --- CUSTOM DROPDOWN COMPONENT ---
@@ -160,7 +161,7 @@ function PostItemContent() {
 
   const handlePost = async () => {
     if (!title || !description || !finalImage || !locationTag) {
-      return alert("Please fill in all fields");
+      return toast.error("Please fill in all fields");
     }
 
     try {
@@ -226,7 +227,7 @@ function PostItemContent() {
       // Brief delay so user sees the confirmation before redirect
       setTimeout(() => router.push('/items'), 2500);
     } catch (err) {
-      alert(`Error: ${err.message}`);
+      toast.error(`Error: ${err.message}`);
     } finally {
       setLoading(false);
     }

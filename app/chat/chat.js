@@ -4,10 +4,12 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Send, Loader2, User, Trash2, X, CheckCircle2, AlertCircle, Lock, AlertTriangle, Flag, ImageIcon, Plus, Camera, ShieldAlert } from "lucide-react";
 import { containsProfanity } from "@/utils/profanityFilter";
+import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import NavBar from "@/components/NavBar";
 import ItemPostModal from "@/components/ItemPostModal";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
+import ChatLoading from "./loading";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -101,7 +103,8 @@ export default function ChatPage() {
   const getUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setUser(user);
-    setLoading(false);
+    // Don't setLoading(false) here — keep skeleton visible until
+    // fetchConversations finishes so we never flash "No conversations yet"
   };
 
   const fetchConversations = async () => {
@@ -153,6 +156,8 @@ export default function ChatPage() {
       const updated = mapped.find(c => c.id === prev.id);
       return updated ? updated : prev;
     });
+    // Dismiss skeleton now that conversations are ready
+    setLoading(false);
   };
 
   const selectConversation = async (conv) => {
@@ -367,7 +372,7 @@ export default function ChatPage() {
     const file = e.target.files?.[0];
     if (!file || !selectedConversation || !user) return;
     e.target.value = '';
-    if (file.size > 10 * 1024 * 1024) { alert('Image must be under 10 MB'); return; }
+    if (file.size > 10 * 1024 * 1024) { toast.error('Image must be under 10 MB'); return; }
     setImageUploading(true);
     try {
       // Compress image — if compression fails on mobile (HEIC format), fall back to raw file
@@ -454,7 +459,7 @@ export default function ChatPage() {
       }
     } catch (err) {
       console.error('Image send error:', err);
-      alert('Could not send image: ' + (err.message || 'Unknown error'));
+      toast.error('Could not send image: ' + (err.message || 'Unknown error'));
     } finally {
       setImageUploading(false);
     }
@@ -472,7 +477,7 @@ export default function ChatPage() {
       backToList();
     } catch (err) {
       console.error("Delete chat error:", err);
-      alert("Could not delete chat: " + err.message);
+      toast.error("Could not delete chat: " + err.message);
     } finally {
       setDeletingChat(false);
     }
@@ -515,7 +520,7 @@ export default function ChatPage() {
       await fetchConversations();
     } catch (err) {
       console.error("Resolution error:", err);
-      alert("Failed to update resolution status: " + err.message);
+      toast.error("Failed to update resolution status: " + err.message);
     } finally {
       setResolving(false);
     }
@@ -547,7 +552,7 @@ export default function ChatPage() {
         setReportSuccess(false);
       }, 2000);
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message);
     } finally {
       setReportSubmitting(false);
     }
@@ -600,18 +605,8 @@ export default function ChatPage() {
     fetchConversations();
   };
 
-  if (loading) return (
-    <div className="min-h-[100dvh] flex items-center justify-center">
-      <Loader2 className="h-8 w-8 animate-spin text-orange-400" />
-    </div>
-  );
-
-  if (authLoading) {
-    return (
-      <div className="min-h-[100dvh] flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+  if (loading || authLoading) {
+    return <ChatLoading />;
   }
 
   return (
@@ -619,38 +614,42 @@ export default function ChatPage() {
 
       {view === 'list' ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex-1 overflow-y-auto pb-24">
-          <div className="p-6 flex items-center gap-3">
-            <img src="/logo2.svg" alt="Logo" className="w-8 h-8 mix-blend-screen drop-shadow-[0_0_8px_rgba(249,115,22,0.4)] object-contain" />
-            <h1 className="text-2xl font-bold bg-linear-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">Messages</h1>
-          </div>
-          <div className="px-6 space-y-4">
-            {conversations.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-20 text-white/20">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em]">No conversations yet</p>
-              </div>
-            )}
-            {conversations.map((conv) => (
-              <button
-                key={conv.id}
-                onClick={() => selectConversation(conv)}
-                className="w-full bg-orange-500/[0.03] backdrop-blur-md border border-orange-500/20 rounded-3xl p-4 flex items-center gap-4 hover:bg-orange-500/10 hover:border-orange-500/40 hover:shadow-[0_0_15px_rgba(249,115,22,0.15)] transition-all text-left group"
-              >
-                <div className="w-14 h-14 bg-orange-500/10 rounded-full border border-orange-500/30 overflow-hidden shrink-0 shadow-[0_0_10px_rgba(249,115,22,0.1)]">
-                  {conv.otherUser?.avatar_url
-                    ? <img src={conv.otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
-                    : <div className="w-full h-full flex items-center justify-center"><User size={24} className="text-orange-400" /></div>}
+          <div className="w-full max-w-2xl mx-auto">
+            <div className="p-6 flex items-center gap-3">
+              <img src="/logo2.svg" alt="Logo" className="w-8 h-8 mix-blend-screen drop-shadow-[0_0_8px_rgba(249,115,22,0.4)] object-contain" />
+              <h1 className="text-2xl font-bold bg-linear-to-r from-orange-400 to-orange-600 bg-clip-text text-transparent">Messages</h1>
+            </div>
+            <div className="px-6 space-y-4">
+              {conversations.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-20 text-white/20">
+                  <Package size={48} className="mb-4 text-orange-500/20" strokeWidth={1.5} />
+                  <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2">No conversations yet</p>
+                  <p className="text-xs text-center px-8 opacity-60">Start a conversation by tapping 'Message Poster' on any item.</p>
                 </div>
-                <div className="flex-1 min-w-0 flex flex-col gap-1 justify-center">
-                  <div className="flex items-center justify-between w-full">
-                    <p className="font-bold text-white tracking-wide truncate pr-2">{conv.otherUser?.full_name}</p>
-                    <div className="text-[9px] text-orange-300/80 font-bold tracking-widest shrink-0 uppercase">
-                      {conv.lastMessageTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
+              )}
+              {conversations.map((conv) => (
+                <button
+                  key={conv.id}
+                  onClick={() => selectConversation(conv)}
+                  className="w-full bg-orange-500/[0.03] backdrop-blur-md border border-orange-500/20 rounded-3xl p-4 flex items-center gap-4 hover:bg-orange-500/10 hover:border-orange-500/40 hover:shadow-[0_0_15px_rgba(249,115,22,0.15)] transition-all text-left group"
+                >
+                  <div className="w-14 h-14 bg-orange-500/10 rounded-full border border-orange-500/30 overflow-hidden shrink-0 shadow-[0_0_10px_rgba(249,115,22,0.1)]">
+                    {conv.otherUser?.avatar_url
+                      ? <img src={conv.otherUser.avatar_url} alt="" className="w-full h-full object-cover" />
+                      : <div className="w-full h-full flex items-center justify-center"><User size={24} className="text-orange-400" /></div>}
                   </div>
-                  <p className="text-xs text-orange-100/70 truncate">{conv.lastMessage}</p>
-                </div>
-              </button>
-            ))}
+                  <div className="flex-1 min-w-0 flex flex-col gap-1 justify-center">
+                    <div className="flex items-center justify-between w-full">
+                      <p className="font-bold text-white tracking-wide truncate pr-2">{conv.otherUser?.full_name}</p>
+                      <div className="text-[9px] text-orange-300/80 font-bold tracking-widest shrink-0 uppercase">
+                        {conv.lastMessageTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                    <p className="text-xs text-orange-100/70 truncate">{conv.lastMessage}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         </motion.div>
       ) : (

@@ -13,6 +13,7 @@ import {
 import AdminUsersSection from '@/components/AdminUsersSection';
 import CustomDateRangePicker from '@/components/CustomDateRangePicker';
 import { ITEM_CATEGORIES, CAMPUS_LOCATIONS } from '@/lib/constants';
+import AdminLoading from './loading';
 
 /* ─────────────────────────── STATUS TABS ─────────────────────────── */
 const TABS = [
@@ -40,8 +41,8 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
     return (
         <motion.div
             layout
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
             className={`bg-white/[0.02] backdrop-blur-md border rounded-[1.5rem] overflow-hidden hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] transition-all duration-300 group flex flex-col h-full ${selected ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'border-white/5'}`}
         >
@@ -86,8 +87,8 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                             )}
                         </motion.div>
                     </div>
-                    <h3 className="font-bold text-white text-sm tracking-tight line-clamp-1">{item.title}</h3>
-                    <p className="text-white/40 text-[10px] mt-0.5 line-clamp-1">{item.description || 'No description'}</p>
+                    <h3 className="font-bold text-white text-base tracking-tight line-clamp-1">{item.title}</h3>
+                    <p className="text-white/40 text-xs mt-0.5 line-clamp-1">{item.description || 'No description'}</p>
                 </div>
 
                 {/* Item type + Location */}
@@ -113,8 +114,8 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                             )}
                         </div>
                         <div className="flex-1 min-w-0 flex flex-col justify-center">
-                            <p className="text-[11px] leading-tight font-bold text-white truncate">{poster?.full_name || 'Unknown'}</p>
-                            <p className="text-[9px] leading-tight text-white/30 font-mono">{poster?.student_number || 'N/A'}</p>
+                            <p className="text-sm leading-tight font-bold text-white truncate">{poster?.full_name || 'Unknown'}</p>
+                            <p className="text-[10px] leading-tight text-white/40 font-mono">{poster?.student_number || 'N/A'}</p>
                         </div>
                     </div>
 
@@ -125,14 +126,14 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                                 <button
                                     onClick={() => onApprove(item.id)}
                                     disabled={processing}
-                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-lg font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-lg font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                                 >
                                     <CheckCircle size={10} className="text-green-500" /> APPROVE
                                 </button>
                                 <button
                                     onClick={() => onReject(item.id)}
                                     disabled={processing}
-                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-lg font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-lg font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                                 >
                                     <XCircle size={10} className="text-red-500" /> REJECT
                                 </button>
@@ -142,7 +143,7 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                             <button
                                 onClick={() => onApprove(item.id)}
                                 disabled={processing}
-                                className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-lg font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-lg font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                             >
                                 <CheckCircle size={10} className="text-green-500" /> RE-APPROVE
                             </button>
@@ -151,7 +152,7 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                             <button
                                 onClick={() => onReject(item.id)}
                                 disabled={processing}
-                                className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-lg font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-lg font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                             >
                                 <XCircle size={10} className="text-red-500" /> REVOKE
                             </button>
@@ -862,12 +863,7 @@ export default function AdminPage() {
 
     /* ───── Loading guard ───── */
     if (guardLoading) {
-        return (
-            <div className="min-h-screen bg-transparent flex flex-col items-center justify-center gap-4">
-                <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
-                <p className="text-[10px] font-black tracking-widest text-orange-500/40 uppercase">Verifying admin access...</p>
-            </div>
-        );
+        return <AdminLoading />;
     }
 
     return (
@@ -1062,8 +1058,27 @@ export default function AdminPage() {
                             const toggleReportSelectAll = () => { selectedReports.size === filteredReports.length ? setSelectedReports(new Set()) : setSelectedReports(new Set(filteredReports.map(r => r.id))); };
 
                             return reportsLoading ? (
-                            <div className="flex items-center justify-center py-16">
-                                <Loader2 className="animate-spin text-orange-400" size={28} />
+                            <div className="p-6 rounded-[1.5rem] bg-white/[0.01] border border-white/5 shadow-[inset_0_0_24px_rgba(0,0,0,0.8)]">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-pulse">
+                                    {[1,2,3,4,5,6].map(i => (
+                                        <div key={i} className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 space-y-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-5 h-5 bg-white/5 rounded-md shrink-0" />
+                                                <div className="flex-1 space-y-1.5">
+                                                    <div className="h-3 w-24 bg-white/10 rounded" />
+                                                    <div className="h-2 w-32 bg-white/5 rounded" />
+                                                </div>
+                                                <div className="h-4 w-16 bg-yellow-500/10 rounded-full" />
+                                            </div>
+                                            <div className="h-2.5 w-full bg-white/5 rounded" />
+                                            <div className="h-2.5 w-3/4 bg-white/5 rounded" />
+                                            <div className="flex justify-between">
+                                                <div className="h-2 w-12 bg-white/5 rounded" />
+                                                <div className="h-2 w-16 bg-white/5 rounded" />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                             ) : filteredReports.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-16 text-white/20 border border-white/5 rounded-3xl">
@@ -1096,8 +1111,8 @@ export default function AdminPage() {
                                             <motion.div
                                                 key={report.id}
                                                 layout
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
                                                 className={`text-left bg-white/[0.02] backdrop-blur-md border rounded-2xl p-4 hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] transition-all duration-300 group cursor-pointer ${selectedReports.has(report.id) ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' :
                                                         report.status === 'pending' ? 'border-red-500/20' :
                                                             report.status === 'valid' || report.status === 'valid_ban' ? 'border-green-500/20' : 'border-white/10'
@@ -1419,8 +1434,31 @@ export default function AdminPage() {
                             const toggleAiLogSelectAll = () => { selectedAiLogs.size === filteredAiLogs.length ? setSelectedAiLogs(new Set()) : setSelectedAiLogs(new Set(filteredAiLogs.map(l => l.id))); };
 
                             return aiLogsLoading ? (
-                            <div className="flex items-center justify-center py-16">
-                                <Loader2 className="animate-spin text-orange-400" size={28} />
+                            <div className="p-6 rounded-[1.5rem] bg-white/[0.01] border border-white/5 shadow-[inset_0_0_24px_rgba(0,0,0,0.8)]">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-pulse">
+                                    {[1,2,3,4,5,6].map(i => (
+                                        <div key={i} className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 space-y-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-5 h-5 bg-white/5 rounded-md shrink-0" />
+                                                <div className="flex-1 space-y-1.5">
+                                                    <div className="h-3 w-28 bg-white/10 rounded" />
+                                                    <div className="h-2 w-20 bg-white/5 rounded" />
+                                                </div>
+                                                <div className="h-4 w-20 bg-yellow-500/10 rounded-full" />
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <div className="h-4 w-16 bg-orange-500/10 rounded-md" />
+                                                <div className="h-4 w-20 bg-white/5 rounded-md" />
+                                            </div>
+                                            <div className="h-2.5 w-full bg-white/5 rounded" />
+                                            <div className="h-2.5 w-2/3 bg-white/5 rounded" />
+                                            <div className="flex justify-between">
+                                                <div className="h-2 w-16 bg-white/5 rounded" />
+                                                <div className="h-2 w-14 bg-white/5 rounded" />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                             ) : filteredAiLogs.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-16 text-white/20 border border-white/5 rounded-3xl">
@@ -1467,7 +1505,7 @@ export default function AdminPage() {
                                 <div className="flex-1 admin-scroll overflow-y-auto min-h-0 p-6 rounded-[1.5rem] bg-white/[0.01] border border-white/5 shadow-[inset_0_0_24px_rgba(0,0,0,0.8)]">
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                         {filteredAiLogs.map(log => (
-                                            <motion.div key={log.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                                            <motion.div key={log.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                                                 className={`flex flex-col h-full bg-white/[0.02] backdrop-blur-md border rounded-2xl p-4 transition-all duration-300 hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] cursor-pointer ${selectedAiLogs.has(log.id) ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' :
                                                         !log.admin_reviewed && log.flagged ? 'border-orange-500/30' :
                                                             log.admin_decision === 'confirmed' ? 'border-red-500/20' :
@@ -1983,10 +2021,37 @@ export default function AdminPage() {
                                 <motion.div
                                     key="loader"
                                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                    className="flex flex-col items-center justify-center pt-20 gap-4"
+                                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-pulse"
                                 >
-                                    <div className="w-10 h-10 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
-                                    <p className="text-[10px] font-black tracking-widest text-orange-500/40 uppercase">Loading items...</p>
+                                    {[1,2,3,4,5,6,7,8].map(i => (
+                                        <div key={i} className="bg-white/[0.02] border border-white/5 rounded-[1.5rem] overflow-hidden flex flex-col">
+                                            <div className="h-28 w-full bg-white/[0.04]" />
+                                            <div className="p-4 space-y-3 flex-1">
+                                                <div className="flex gap-1.5">
+                                                    <div className="h-4 w-14 bg-yellow-500/10 rounded-md" />
+                                                    <div className="h-4 w-12 bg-orange-500/10 rounded-md" />
+                                                </div>
+                                                <div className="h-4 w-3/4 bg-white/10 rounded" />
+                                                <div className="h-2 w-1/2 bg-white/5 rounded" />
+                                                <div className="flex items-center gap-1.5">
+                                                    <div className="w-3 h-3 bg-orange-500/10 rounded-full" />
+                                                    <div className="h-2 w-20 bg-white/5 rounded" />
+                                                </div>
+                                                <div className="flex items-center gap-2 p-2 bg-white/[0.03] rounded-lg border border-white/5 mt-auto">
+                                                    <div className="w-7 h-7 rounded-full bg-orange-500/10 shrink-0" />
+                                                    <div className="space-y-1.5 flex-1">
+                                                        <div className="h-2.5 w-20 bg-white/10 rounded" />
+                                                        <div className="h-2 w-14 bg-white/5 rounded" />
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2 pt-2 border-t border-white/5">
+                                                    <div className="flex-1 h-8 bg-white/[0.03] border border-white/5 rounded-lg" />
+                                                    <div className="flex-1 h-8 bg-white/[0.03] border border-white/5 rounded-lg" />
+                                                    <div className="w-8 h-8 bg-white/[0.03] border border-white/5 rounded-lg" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </motion.div>
                             ) : filteredItems.length > 0 ? (
                                 <motion.div

@@ -487,14 +487,36 @@ export default function AdminUsersSection({ refreshTrigger }) {
             <div className="relative min-h-[400px]">
                 <AnimatePresence mode="wait">
                     {loading ? (
-                        <motion.div key="loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex flex-col items-center justify-center pt-20 gap-4">
-                            <div className="w-10 h-10 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
-                            <p className="text-[10px] font-black tracking-widest text-orange-500/40 uppercase">Loading users...</p>
+                        <motion.div key="loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-pulse">
+                            {[1,2,3,4,5,6,7,8].map(i => (
+                                <div key={i} className="bg-white/[0.02] border border-white/5 rounded-[1.5rem] p-4 flex flex-col space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-5 h-5 bg-white/5 rounded-md shrink-0" />
+                                        <div className="w-10 h-10 rounded-full bg-orange-500/10 shrink-0" />
+                                        <div className="flex-1 space-y-1.5">
+                                            <div className="h-3 w-24 bg-white/10 rounded" />
+                                            <div className="h-2 w-16 bg-white/5 rounded" />
+                                        </div>
+                                        <div className="h-4 w-16 bg-yellow-500/10 rounded-full" />
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 bg-orange-500/10 rounded-full" />
+                                        <div className="h-2 w-40 bg-white/5 rounded" />
+                                    </div>
+                                    <div className="w-full h-10 bg-white/[0.03] rounded-xl border border-white/5" />
+                                    <div className="h-2 w-28 bg-white/5 rounded mt-auto" />
+                                    <div className="flex gap-2 pt-2">
+                                        <div className="flex-1 h-8 bg-white/[0.03] border border-white/5 rounded-xl" />
+                                        <div className="flex-1 h-8 bg-white/[0.03] border border-white/5 rounded-xl" />
+                                        <div className="w-8 h-8 bg-white/[0.03] border border-white/5 rounded-xl" />
+                                    </div>
+                                </div>
+                            ))}
                         </motion.div>
                     ) : filtered.length > 0 ? (
                         <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {filtered.map(u => (
-                                <motion.div key={u.id} layout initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }}
+                                <motion.div key={u.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.95 }}
                                     onClick={() => toggleSelect(u.id)}
                                     className={`bg-white/[0.02] backdrop-blur-md border rounded-[1.5rem] p-4 flex flex-col h-full hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] transition-all duration-300 cursor-pointer ${selectedUsers.has(u.id) ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'border-white/5'}`}>
                                     <div className="space-y-3 mb-3">
@@ -508,8 +530,8 @@ export default function AdminUsersSection({ refreshTrigger }) {
                                                 {u.avatar_url ? <img src={u.avatar_url} className="w-full h-full object-cover" alt="" /> : <User size={16} className="text-orange-500" />}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-bold text-white truncate">{u.full_name || 'Unknown'}</p>
-                                                <p className="text-[10px] text-white/30 font-mono">{u.student_number || 'N/A'}</p>
+                                                <p className="text-base font-bold text-white truncate">{u.full_name || 'Unknown'}</p>
+                                                <p className="text-xs text-white/40 font-mono">{u.student_number || 'N/A'}</p>
                                             </div>
                                             {!u.is_banned && (
                                                 <span className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${statusColors[u.verification_status]}`}>{u.verification_status}</span>
@@ -521,7 +543,7 @@ export default function AdminUsersSection({ refreshTrigger }) {
                                         {/* Email */}
                                         <div className="flex items-center gap-2 text-white/30">
                                             <Mail size={12} className="text-orange-500" />
-                                            <span className="text-[10px] font-bold truncate">{u.email}</span>
+                                            <span className="text-xs font-bold truncate">{u.email}</span>
                                         </div>
                                         {/* Document preview button (Hidden for banned users to save space) */}
                                         {u.verification_doc_signed_url && !u.is_banned && (
@@ -550,30 +572,30 @@ export default function AdminUsersSection({ refreshTrigger }) {
                                         <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                                             {u.verification_status === 'pending' && (<>
                                                 <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
-                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
                                                     <CheckCircle size={10} className="text-green-500" /> APPROVE
                                                 </button>
                                                 <button onClick={() => setRejectTarget(u.id)} disabled={processing}
-                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
                                                     <XCircle size={10} className="text-red-500" /> REJECT
                                                 </button>
                                             </>)}
                                             {u.verification_status === 'rejected' && (
                                                 <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
-                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
                                                     <CheckCircle size={10} className="text-green-500" /> APPROVE
                                                 </button>
                                             )}
                                             {u.verification_status === 'approved' && !u.is_banned && (
                                                 <button onClick={() => setRejectTarget(u.id)} disabled={processing}
-                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
                                                     <XCircle size={10} className="text-red-500" /> REVOKE
                                                 </button>
                                             )}
                                             {/* Ban / Unban toggle */}
                                             {u.is_banned ? (
                                                 <button onClick={() => setUnbanTarget(u.id)} disabled={processing}
-                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-xl font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
                                                     <ShieldCheck size={10} className="text-orange-500" /> UNBAN
                                                 </button>
                                             ) : u.verification_status === 'approved' && (

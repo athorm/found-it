@@ -143,7 +143,7 @@ export default function ItemDetailModal({ item, isOpen, onClose, onStatusUpdate 
                     >
                         {/* Header Image */}
                         <div className="relative aspect-video w-full group cursor-pointer" onClick={() => setIsLightboxOpen(true)}>
-                            <img src={item.image_url} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 will-change-transform" alt={item.title} />
+                            <img src={item.image_url} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 will-change-transform" alt={item.title} />
 
                             {/* Tap to enlarge hint */}
                             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
