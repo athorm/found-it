@@ -7,38 +7,38 @@ export default function HomeLoading() {
       <div className="w-full max-w-md md:max-w-5xl px-6 text-center relative z-[1]">
         {/* Logo skeleton */}
         <div className="flex justify-center mb-6">
-          <div className="w-24 h-24 bg-white/5 rounded-3xl animate-pulse" />
+          <div className="w-24 h-24 bg-white/5 rounded-3xl animate-shimmer" />
         </div>
 
         {/* Greeting skeleton */}
         <div className="flex flex-col items-center justify-center">
-          <div className="h-3 w-32 bg-white/10 rounded animate-pulse mb-3" />
-          <div className="h-8 w-48 bg-white/10 rounded-xl animate-pulse mb-6" />
-          <div className="h-3 w-64 bg-white/5 rounded animate-pulse" />
+          <div className="h-3 w-32 bg-white/10 rounded animate-shimmer mb-3" />
+          <div className="h-8 w-48 bg-white/10 rounded-xl animate-shimmer mb-6" />
+          <div className="h-3 w-64 bg-white/5 rounded animate-shimmer" />
         </div>
 
         {/* Search Bar skeleton */}
         <div className="relative my-8 max-w-sm mx-auto">
-          <div className="w-full h-[66px] bg-white/[0.03] border border-white/5 rounded-[2rem] animate-pulse" />
+          <div className="w-full h-[66px] bg-white/[0.03] border border-white/5 rounded-[2rem] animate-shimmer" />
         </div>
 
         {/* Categories skeleton */}
         <div className="w-full max-w-sm md:max-w-5xl mx-auto mt-6">
-          <div className="h-2 w-24 bg-white/10 rounded mx-auto mb-5 animate-pulse" />
+          <div className="h-2 w-24 bg-white/10 rounded mx-auto mb-5 animate-shimmer" />
           <div className="flex gap-3 pb-2 overflow-hidden justify-center">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-[44px] w-24 bg-white/[0.03] border border-white/5 rounded-2xl animate-pulse shrink-0" />
+              <div key={i} className="h-[44px] w-24 bg-white/[0.03] border border-white/5 rounded-2xl animate-shimmer shrink-0" />
             ))}
           </div>
         </div>
 
         {/* Recent Items skeleton */}
         <div className="w-full mt-10">
-          <div className="h-2 w-32 bg-white/10 rounded mx-auto mb-6 animate-pulse" />
+          <div className="h-2 w-32 bg-white/10 rounded mx-auto mb-6 animate-shimmer" />
           
           <div className="flex gap-4 overflow-hidden mt-1 -mx-6 px-6 md:mx-0 md:px-0 md:grid md:grid-cols-3 lg:grid-cols-6 w-full">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="shrink-0 w-44 md:w-auto h-40 bg-white/[0.03] border border-white/5 rounded-3xl p-4 animate-pulse flex flex-col justify-center">
+              <div key={i} className="shrink-0 w-44 md:w-auto h-40 bg-white/[0.03] border border-white/5 rounded-3xl p-4 animate-shimmer flex flex-col justify-center">
                 <div className="w-full flex justify-center mb-4">
                   <div className="w-12 h-12 bg-white/5 rounded-2xl" />
                 </div>

@@ -10,17 +10,27 @@ import NavBar from "@/components/NavBar";
 import ItemPostModal from "@/components/ItemPostModal";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import ChatLoading from "./loading";
+import { useDataCache } from "@/lib/dataCache";
 
 export default function ChatPage() {
   const router = useRouter();
   const { user: authUser, authLoading } = useAuthGuard();
+  const cache = useDataCache();
   const [user, setUser] = useState(null);
   const [view, setView] = useState('list');
   const [selectedConversation, setSelectedConversation] = useState(null);
-  const [conversations, setConversations] = useState([]);
+
+  // ─── Cache-aware initial state for conversations ───
+  const [conversations, setConversations] = useState(() => {
+    const entry = cache.get('chat-conversations');
+    return entry ? entry.data : [];
+  });
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    const entry = cache.get('chat-conversations');
+    return !entry;
+  });
   const [showPostModal, setShowPostModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deletingChat, setDeletingChat] = useState(false);
@@ -151,6 +161,8 @@ export default function ChatPage() {
     }).sort((a, b) => b.lastMessageTime - a.lastMessageTime);
 
     setConversations(mapped);
+    // Write to cache for instant display on next visit
+    cache.set('chat-conversations', mapped);
     setSelectedConversation(prev => {
       if (!prev) return prev;
       const updated = mapped.find(c => c.id === prev.id);
@@ -163,17 +175,28 @@ export default function ChatPage() {
   const selectConversation = async (conv) => {
     setSelectedConversation(conv);
     setView('chat');
+
+    // Check cache for message history first
+    const msgCacheKey = `chat-messages-${conv.id}`;
+    const cachedMsgs = cache.get(msgCacheKey);
+    if (cachedMsgs) {
+      setMessages(cachedMsgs.data);
+    }
+
     const { data: history, error } = await supabase
       .from('messages').select('*').eq('chat_id', conv.id).order('created_at', { ascending: true });
     if (!error) {
       // Deduplicate by id — guards against a racing realtime INSERT event that
       // already appended the newest message before this fetch completed.
       const seen = new Set();
-      setMessages((history ?? []).filter(m => {
+      const deduped = (history ?? []).filter(m => {
         if (seen.has(m.id)) return false;
         seen.add(m.id);
         return true;
-      }));
+      });
+      setMessages(deduped);
+      // Write to cache
+      cache.set(msgCacheKey, deduped);
     }
 
     // Mark all unread messages in this chat as read (where current user is receiver).

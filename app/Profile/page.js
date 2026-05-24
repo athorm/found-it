@@ -7,12 +7,12 @@ import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
 import ProfileLoading from './loading';
+import { usePageCache } from '@/hooks/usePageCache';
 
 import NavBar from '@/components/NavBar';
 
 export default function ProfilePage() {
   const { user: authUser, authLoading } = useAuthGuard();
-  const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
@@ -21,61 +21,45 @@ export default function ProfilePage() {
   const [description, setDescription] = useState('');
   const [posting, setPosting] = useState(false);
 
-  const [profile, setProfile] = useState({
-    full_name: "",
-    student_number: "",
-    email: "",
-    avatar_url: ""
-  });
-
   // Change password state
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [passwordMsg, setPasswordMsg] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [showNewPw, setShowNewPw] = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
 
   const router = useRouter();
 
-  const getProfile = useCallback(async () => {
-    try {
-      setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
+  // ─── Cached: Profile Data (TTL 5min) ───
+  const { data: profileData, loading, refresh: refreshProfile } = usePageCache(
+    authUser ? `profile-${authUser.id}` : null,
+    async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, student_number, email, avatar_url, role')
+        .eq('id', authUser.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    { ttl: 300000, enabled: !!authUser }
+  );
 
-      if (user) {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('full_name, student_number, email, avatar_url, role')
-          .eq('id', user.id)
-          .maybeSingle();
-
-        if (error) throw error;
-
-        if (data) {
-          setProfile({
-            full_name: data.full_name || "LSPU Student",
-            student_number: data.student_number || "No ID Set",
-            email: data.email || user.email,
-            avatar_url: data.avatar_url || ""
-          });
-          setIsAdmin(data.role === 'admin');
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching profile:', error.message);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (authUser) {
-      getProfile();
-    }
-  }, [authUser, getProfile]);
+  // Derive display values from cached profile data
+  const profile = profileData ? {
+    full_name: profileData.full_name || "LSPU Student",
+    student_number: profileData.student_number || "No ID Set",
+    email: profileData.email || authUser?.email || "",
+    avatar_url: profileData.avatar_url || ""
+  } : {
+    full_name: "",
+    student_number: "",
+    email: "",
+    avatar_url: ""
+  };
+  const isAdmin = profileData?.role === 'admin';
 
   const handleUpload = async (event) => {
     try {
@@ -128,7 +112,8 @@ export default function ProfilePage() {
 
       if (updateError) throw updateError;
 
-      setProfile(prev => ({ ...prev, avatar_url: publicUrl }));
+      // Refresh cached profile so the new avatar shows everywhere
+      refreshProfile();
     } catch (error) {
       toast.error('Upload failed: ' + error.message);
     } finally {
@@ -160,9 +145,10 @@ export default function ProfilePage() {
     }
   };
 
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const handleDeleteAccount = async () => {
     try {
-      setLoading(true);
+      setDeletingAccount(true);
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { toast.error('You must be logged in.'); return; }
 
@@ -178,7 +164,7 @@ export default function ProfilePage() {
     } catch (error) {
       toast.error("Error deleting account: " + error.message);
     } finally {
-      setLoading(false);
+      setDeletingAccount(false);
       setShowDeleteModal(false);
     }
   };
@@ -420,8 +406,8 @@ export default function ProfilePage() {
               <h3 className="text-2xl font-black mb-2">Delete Account?</h3>
               <p className="text-sm text-white/40 mb-8 leading-relaxed">This action is permanent and cannot be undone.</p>
               <div className="flex flex-col gap-3">
-                <button onClick={handleDeleteAccount} disabled={loading} className="w-full py-4 bg-red-600 hover:bg-red-700 rounded-2xl font-black tracking-widest uppercase text-sm shadow-[0_4px_15px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center">
-                  {loading ? <Loader2 size={20} className="animate-spin" /> : "Yes, Delete"}
+                <button onClick={handleDeleteAccount} disabled={deletingAccount} className="w-full py-4 bg-red-600 hover:bg-red-700 rounded-2xl font-black tracking-widest uppercase text-sm shadow-[0_4px_15px_rgba(239,68,68,0.3)] transition-all active:scale-95 flex items-center justify-center">
+                  {deletingAccount ? <Loader2 size={20} className="animate-spin" /> : "Yes, Delete"}
                 </button>
                 <button onClick={() => setShowDeleteModal(false)} className="w-full py-4 bg-white/5 border border-white/10 hover:bg-white/10 rounded-2xl font-bold transition-all">Cancel</button>
               </div>

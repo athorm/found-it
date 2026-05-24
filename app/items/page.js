@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import {
@@ -15,6 +15,7 @@ import CustomDateRangePicker from "@/components/CustomDateRangePicker";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { CAMPUS_LOCATIONS_WITH_ALL, ITEM_CATEGORIES } from "@/lib/constants";
 import ItemsLoading from "./loading";
+import { useDataCache } from "@/lib/dataCache";
 
 // Time Ago Helper — shared utility (DRY)
 import { getTimeAgo } from "@/utils/timeAgo";
@@ -22,19 +23,38 @@ import { getTimeAgo } from "@/utils/timeAgo";
 export default function ItemsPage() {
   const router = useRouter();
   const { user, authLoading } = useAuthGuard();
+  const cache = useDataCache();
   const [activeTab, setActiveTab] = useState("lost");
-  const [viewMode, setViewMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem("itemsViewMode") || "grid";
+  // SSR-safe default. The correct preference is applied in a useLayoutEffect
+  // (see below) which runs before the browser paints — zero flash.
+  const [viewMode, setViewMode] = useState("grid");
+
+  // useLayoutEffect fires synchronously during React's commit phase, BEFORE
+  // the browser paints. This means viewMode is corrected to the saved
+  // preference before any pixel is drawn, eliminating the grid flash entirely.
+  // We use a server-safe guard so it silently skips during SSR.
+  useLayoutEffect(() => {
+    const saved = localStorage.getItem("itemsViewMode");
+    if (saved === "list" || saved === "grid") {
+      setViewMode(saved);
     }
-    return "grid";
-  });
+  }, []);
   const [showFilters, setShowFilters] = useState(false);
   const [viewUserPosts, setViewUserPosts] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [items, setItems] = useState([]);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+
+  // ─── Cache-aware initial state for items ───
+  // On mount, synchronously read cache so returning users see data instantly.
+  const [items, setItems] = useState(() => {
+    const entry = cache.get('items-lost');
+    return entry ? entry.data : [];
+  });
   const [userItems, setUserItems] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    const entry = cache.get('items-lost');
+    return !entry;
+  });
 
   // ─── Cursor-Based Pagination State ───
   const PAGE_SIZE = 12;
@@ -53,7 +73,7 @@ export default function ItemsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showPostModal, setShowPostModal] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  
+
   // Refs for drag constraints calculation
   const categoryScrollRef = useRef(null);
   const [categoryConstraints, setCategoryConstraints] = useState({ left: 0, right: 0 });
@@ -95,7 +115,7 @@ export default function ItemsPage() {
   const statusMap = { 'Active': 'Unclaimed', 'Resolved': 'Claimed' };
   const reverseStatusMap = { 'Unclaimed': 'Active', 'Claimed': 'Resolved' };
 
-  // Read ?search= and ?item_category= from URL on mount and load view preference
+  // Read URL params after mount and mark the page as initialized
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const q = params.get('search');
@@ -106,13 +126,21 @@ export default function ItemsPage() {
       setShowFilters(true); // auto-open filters when navigating with a category
     }
 
+    // viewMode is already handled by useLayoutEffect above — no read needed here.
+
     setIsInitialized(true);
   }, []);
+
+  // ─── Debounce search input to prevent rapid re-filtering ───
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchQuery(searchQuery), 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Sync state back to URL when filters change
   useEffect(() => {
     if (!isInitialized) return;
-    
+
     const params = new URLSearchParams(window.location.search);
     let changed = false;
 
@@ -196,11 +224,22 @@ export default function ItemsPage() {
   };
 
   const fetchItems = async (isLoadMore = false) => {
+    let hadCache = false;
     try {
       if (isLoadMore) {
         setLoadingMore(true);
       } else {
-        setLoading(true);
+        // Check cache before showing loading state
+        const cacheKey = `items-${activeTab}`;
+        const cached = cache.get(cacheKey);
+        if (cached) {
+          // Serve cached data instantly — no skeleton, no loading flash
+          hadCache = true;
+          setItems(cached.data);
+          setLoading(false);
+        } else {
+          setLoading(true);
+        }
         setCursor(null);
         setHasMore(true);
       }
@@ -243,6 +282,8 @@ export default function ItemsPage() {
         });
       } else {
         setItems(fetched);
+        // Write to cache for instant display on next visit
+        cache.set(`items-${activeTab}`, fetched);
       }
 
       // User items: always filtered from full items array (no separate pagination)
@@ -260,8 +301,9 @@ export default function ItemsPage() {
     } finally {
       if (isLoadMore) {
         setLoadingMore(false);
-      } else {
-        // Small delay ensures the grid doesn't flicker during rapid state updates
+      } else if (!hadCache) {
+        // Only use the delay when there was NO cache (genuine first load).
+        // When cache was used, loading is already false — no need to touch it.
         setTimeout(() => setLoading(false), 100);
       }
     }
@@ -289,9 +331,9 @@ export default function ItemsPage() {
     return () => observer.disconnect();
   }, [loadMore]);
 
-  const applyFilters = (list) => {
+  const applyFilters = useCallback((list) => {
     return list.filter(item => {
-      const query = searchQuery.toLowerCase().trim();
+      const query = debouncedSearchQuery.toLowerCase().trim();
       if (query === 'claimed' || query === 'unclaimed') return false;
       // Search title, description, and item_category
       const matchesSearch = !query || (
@@ -308,9 +350,9 @@ export default function ItemsPage() {
       const matchesDateTo = !dateTo || itemDate <= new Date(dateTo + 'T23:59:59');
       return matchesSearch && matchesLocation && matchesStatus && matchesCategory && matchesDateFrom && matchesDateTo;
     });
-  };
+  }, [debouncedSearchQuery, locationFilter, statusFilter, categoryFilter, dateFrom, dateTo]);
 
-  const currentDisplayList = applyFilters(viewUserPosts ? userItems : items);
+  const currentDisplayList = useMemo(() => applyFilters(viewUserPosts ? userItems : items), [applyFilters, viewUserPosts, userItems, items]);
 
   // Check if any filter is active (to show a badge on the filter button)
   const hasActiveFilters = locationFilter !== 'All' || statusFilter !== 'All' || categoryFilter !== 'All' || dateFrom || dateTo;
@@ -324,6 +366,8 @@ export default function ItemsPage() {
   };
 
   if (authLoading) {
+    // viewMode is corrected by useLayoutEffect before the browser paints,
+    // so passing it here is safe — no hydration mismatch, no flash.
     return <ItemsLoading viewMode={viewMode} />;
   }
 
@@ -342,8 +386,8 @@ export default function ItemsPage() {
             </div>
 
             <div className="ml-auto">
-              <button 
-                onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")} 
+              <button
+                onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
                 className="bg-white/5 p-2 rounded-xl border border-white/10 backdrop-blur-md flex items-center justify-center transition-all hover:bg-white/10 active:scale-95 shadow-[0_0_15px_rgba(0,0,0,0.2)]"
                 title={`Switch to ${viewMode === "grid" ? "List" : "Grid"} View`}
               >
@@ -368,7 +412,7 @@ export default function ItemsPage() {
         <div className="max-w-6xl mx-auto px-6 pt-1 pb-4 space-y-4 relative">
           {/* Ambient Glow */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[300px] h-[100px] bg-[radial-gradient(ellipse_at_center,rgba(249,115,22,0.15)_0%,transparent_70%)] pointer-events-none blur-xl" />
-          
+
           {/* TAB SWITCHER */}
           <div className="relative flex bg-white/5 p-1.5 rounded-[1.5rem] border border-white/10 shadow-2xl backdrop-blur-md">
             <motion.div
@@ -381,74 +425,94 @@ export default function ItemsPage() {
             <button onClick={() => setActiveTab('found')} className={`relative z-10 flex-1 py-2.5 text-xs font-black tracking-widest transition-colors ${activeTab === 'found' ? 'text-white' : 'text-white/30'}`}>FOUND</button>
           </div>
 
-        {/* CONTROLS */}
-        <div className="relative flex gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500" size={20} />
-            <input
-              type="text"
-              placeholder={`Search ${activeTab} items...`}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/[0.04] border border-white/10 py-3.5 pl-12 pr-4 min-h-[44px] rounded-2xl outline-none text-sm focus:border-orange-500/50 transition-all placeholder:text-white/40"
-            />
-          </div>
-          <button
-            onClick={() => setViewUserPosts(!viewUserPosts)}
-            className={`p-4 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-2xl border transition-all gap-2 ${viewUserPosts ? 'bg-orange-500 border-orange-400 text-white shadow-[0_0_20px_rgba(249,115,22,0.4)]' : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'}`}
-            title="My Posts"
-          >
-            <Bookmark size={22} fill={viewUserPosts ? "currentColor" : "none"} />
-            {viewUserPosts && <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">My Posts</span>}
-          </button>
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className={`relative p-4 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-2xl border transition-all ${showFilters ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/10 text-orange-500 hover:bg-white/10'}`}
-          >
-            <SlidersHorizontal size={22} />
-            {/* Active filter indicator dot */}
-            {hasActiveFilters && !showFilters && (
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full border-2 border-[#0a0a0a] shadow-lg" />
-            )}
-          </button>
+          {/* CONTROLS */}
+          <div className="relative flex gap-3">
+            <div className="relative flex-1">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500" size={20} />
+              <input
+                type="text"
+                placeholder={`Search ${activeTab} items...`}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white/[0.04] border border-white/10 py-3.5 pl-12 pr-4 min-h-[44px] rounded-2xl outline-none text-sm focus:border-orange-500/50 transition-all placeholder:text-white/40"
+              />
+            </div>
+            <button
+              onClick={() => setViewUserPosts(!viewUserPosts)}
+              className={`p-4 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-2xl border transition-all gap-2 ${viewUserPosts ? 'bg-orange-500 border-orange-400 text-white shadow-[0_0_20px_rgba(249,115,22,0.4)]' : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10'}`}
+              title="My Posts"
+            >
+              <Bookmark size={22} fill={viewUserPosts ? "currentColor" : "none"} />
+              {viewUserPosts && <span className="text-[10px] font-black uppercase tracking-widest hidden sm:block">My Posts</span>}
+            </button>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`relative p-4 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-2xl border transition-all ${showFilters ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/10 text-orange-500 hover:bg-white/10'}`}
+            >
+              <SlidersHorizontal size={22} />
+              {/* Active filter indicator dot */}
+              {hasActiveFilters && !showFilters && (
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full border-2 border-[#0a0a0a] shadow-lg" />
+              )}
+            </button>
 
-          <AnimatePresence>
-            {showFilters && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className="absolute top-full right-0 mt-2 z-[100] w-[calc(100vw-3rem)] max-w-[450px] bg-[#121212]/95 border border-white/10 rounded-[2rem] backdrop-blur-3xl shadow-2xl max-h-[70vh] overflow-y-auto"
-              >
-                <div className="p-6 space-y-5">
-                  {/* Header with clear button */}
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black">Filters</span>
-                    {hasActiveFilters && (
-                      <button
-                        onClick={clearAllFilters}
-                        className="flex items-center gap-1 text-[10px] text-orange-400/70 hover:text-orange-400 font-bold transition-colors"
-                      >
-                        <X size={12} /> Clear all
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Item Category — Horizontal scroll */}
-                  <div>
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-3 block">Item Type</label>
-                    <div className="relative overflow-hidden rounded-xl -mx-1">
-                      {/* Mobile: horizontal drag scroll */}
-                      <div className="md:hidden" ref={categoryScrollRef}>
-                        <motion.div 
-                          drag="x"
-                          dragConstraints={categoryConstraints}
-                          className="flex gap-2 px-1 pb-2 cursor-grab active:cursor-grabbing w-max"
+            <AnimatePresence>
+              {showFilters && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute top-full right-0 mt-2 z-[100] w-[calc(100vw-3rem)] max-w-[450px] bg-[#121212]/95 border border-white/10 rounded-[2rem] backdrop-blur-3xl shadow-2xl max-h-[70vh] overflow-y-auto"
+                >
+                  <div className="p-6 space-y-5">
+                    {/* Header with clear button */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black">Filters</span>
+                      {hasActiveFilters && (
+                        <button
+                          onClick={clearAllFilters}
+                          className="flex items-center gap-1 text-[10px] text-orange-400/70 hover:text-orange-400 font-bold transition-colors"
                         >
+                          <X size={12} /> Clear all
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Item Category — Horizontal scroll */}
+                    <div>
+                      <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-3 block">Item Type</label>
+                      <div className="relative overflow-hidden rounded-xl -mx-1">
+                        {/* Mobile: horizontal drag scroll */}
+                        <div className="md:hidden" ref={categoryScrollRef}>
+                          <motion.div
+                            drag="x"
+                            dragConstraints={categoryConstraints}
+                            className="flex gap-2 px-1 pb-2 cursor-grab active:cursor-grabbing w-max"
+                          >
+                            <button
+                              onClick={() => setCategoryFilter('All')}
+                              className={`shrink-0 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}
+                            >
+                              All
+                            </button>
+                            {ITEM_CATEGORIES.map(cat => (
+                              <button
+                                key={cat.value}
+                                onClick={() => setCategoryFilter(cat.value)}
+                                className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}
+                              >
+                                <span className="text-xs">{cat.emoji}</span>
+                                {cat.label}
+                              </button>
+                            ))}
+                          </motion.div>
+                        </div>
+                        {/* Desktop: wrapping grid */}
+                        <div className="hidden md:flex flex-wrap gap-2 px-1 pb-2">
                           <button
                             onClick={() => setCategoryFilter('All')}
-                            className={`shrink-0 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}
+                            className={`px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}
                           >
                             All
                           </button>
@@ -456,138 +520,118 @@ export default function ItemsPage() {
                             <button
                               key={cat.value}
                               onClick={() => setCategoryFilter(cat.value)}
-                              className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}
+                              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}
                             >
                               <span className="text-xs">{cat.emoji}</span>
                               {cat.label}
                             </button>
                           ))}
-                        </motion.div>
+                        </div>
                       </div>
-                      {/* Desktop: wrapping grid */}
-                      <div className="hidden md:flex flex-wrap gap-2 px-1 pb-2">
-                        <button
-                          onClick={() => setCategoryFilter('All')}
-                          className={`px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}
-                        >
-                          All
-                        </button>
-                        {ITEM_CATEGORIES.map(cat => (
-                          <button
-                            key={cat.value}
-                            onClick={() => setCategoryFilter(cat.value)}
-                            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${categoryFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}
+                    </div>
+
+                    {/* Location */}
+                    <div>
+                      <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-3 block">Location</label>
+                      <div className="relative overflow-hidden rounded-xl -mx-1">
+                        {/* Mobile: horizontal drag scroll */}
+                        <div className="md:hidden" ref={locationScrollRef}>
+                          <motion.div
+                            drag="x"
+                            dragConstraints={locationConstraints}
+                            className="flex gap-2 px-1 pb-2 cursor-grab active:cursor-grabbing w-max"
                           >
-                            <span className="text-xs">{cat.emoji}</span>
-                            {cat.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Location */}
-                  <div>
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-3 block">Location</label>
-                    <div className="relative overflow-hidden rounded-xl -mx-1">
-                      {/* Mobile: horizontal drag scroll */}
-                      <div className="md:hidden" ref={locationScrollRef}>
-                        <motion.div 
-                          drag="x"
-                          dragConstraints={locationConstraints}
-                          className="flex gap-2 px-1 pb-2 cursor-grab active:cursor-grabbing w-max"
-                        >
+                            {locations.map(loc => (
+                              <button key={loc} onClick={() => setLocationFilter(loc)} className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}>{loc}</button>
+                            ))}
+                          </motion.div>
+                        </div>
+                        {/* Desktop: wrapping grid */}
+                        <div className="hidden md:flex flex-wrap gap-2 px-1 pb-2">
                           {locations.map(loc => (
-                            <button key={loc} onClick={() => setLocationFilter(loc)} className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}>{loc}</button>
+                            <button key={loc} onClick={() => setLocationFilter(loc)} className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}>{loc}</button>
                           ))}
-                        </motion.div>
+                        </div>
                       </div>
-                      {/* Desktop: wrapping grid */}
-                      <div className="hidden md:flex flex-wrap gap-2 px-1 pb-2">
-                        {locations.map(loc => (
-                          <button key={loc} onClick={() => setLocationFilter(loc)} className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/60'}`}>{loc}</button>
+                    </div>
+
+                    {/* Status */}
+                    <div>
+                      <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-3 block">Status</label>
+                      <div className="flex gap-2">
+                        {statuses.map(stat => (
+                          <button key={stat} onClick={() => setStatusFilter(stat)} className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${statusFilter === stat ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/5 text-white/60'}`}>{stat}</button>
                         ))}
                       </div>
                     </div>
-                  </div>
 
-                  {/* Status */}
-                  <div>
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-3 block">Status</label>
-                    <div className="flex gap-2">
-                      {statuses.map(stat => (
-                        <button key={stat} onClick={() => setStatusFilter(stat)} className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${statusFilter === stat ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/5 text-white/60'}`}>{stat}</button>
-                      ))}
+                    {/* Date Range */}
+                    <div>
+                      <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-3 block">Date Posted</label>
+                      <CustomDateRangePicker
+                        dateFrom={dateFrom} setDateFrom={setDateFrom}
+                        dateTo={dateTo} setDateTo={setDateTo}
+                      />
                     </div>
                   </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
-                  {/* Date Range */}
-                  <div>
-                    <label className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black mb-3 block">Date Posted</label>
-                    <CustomDateRangePicker 
-                      dateFrom={dateFrom} setDateFrom={setDateFrom}
-                      dateTo={dateTo} setDateTo={setDateTo}
-                    />
-                  </div>
-                </div>
+          {/* Active filter chips — shown below controls */}
+          <AnimatePresence>
+            {hasActiveFilters && !showFilters && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="flex flex-wrap gap-2"
+              >
+                {categoryFilter !== 'All' && (
+                  <button
+                    onClick={() => setCategoryFilter('All')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all"
+                  >
+                    {ITEM_CATEGORIES.find(c => c.value === categoryFilter)?.emoji} {categoryFilter}
+                    <X size={10} className="opacity-60" />
+                  </button>
+                )}
+                {locationFilter !== 'All' && (
+                  <button
+                    onClick={() => setLocationFilter('All')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all"
+                  >
+                    <MapPin size={10} /> {locationFilter}
+                    <X size={10} className="opacity-60" />
+                  </button>
+                )}
+                {statusFilter !== 'All' && (
+                  <button
+                    onClick={() => setStatusFilter('All')}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all"
+                  >
+                    {statusFilter}
+                    <X size={10} className="opacity-60" />
+                  </button>
+                )}
+                {(dateFrom || dateTo) && (
+                  <button
+                    onClick={() => { setDateFrom(''); setDateTo(''); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all"
+                  >
+                    <Calendar size={10} /> {dateFrom || '...'} — {dateTo || '...'}
+                    <X size={10} className="opacity-60" />
+                  </button>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
-
-        {/* Active filter chips — shown below controls */}
-        <AnimatePresence>
-          {hasActiveFilters && !showFilters && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="flex flex-wrap gap-2"
-            >
-              {categoryFilter !== 'All' && (
-                <button
-                  onClick={() => setCategoryFilter('All')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all"
-                >
-                  {ITEM_CATEGORIES.find(c => c.value === categoryFilter)?.emoji} {categoryFilter}
-                  <X size={10} className="opacity-60" />
-                </button>
-              )}
-              {locationFilter !== 'All' && (
-                <button
-                  onClick={() => setLocationFilter('All')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all"
-                >
-                  <MapPin size={10} /> {locationFilter}
-                  <X size={10} className="opacity-60" />
-                </button>
-              )}
-              {statusFilter !== 'All' && (
-                <button
-                  onClick={() => setStatusFilter('All')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all"
-                >
-                  {statusFilter}
-                  <X size={10} className="opacity-60" />
-                </button>
-              )}
-              {(dateFrom || dateTo) && (
-                <button
-                  onClick={() => { setDateFrom(''); setDateTo(''); }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all"
-                >
-                  <Calendar size={10} /> {dateFrom || '...'} — {dateTo || '...'}
-                  <X size={10} className="opacity-60" />
-                </button>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-        </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-6 pb-40">
-        
+
         {/* CONTENT AREA WITH LOADING & ANIMATION[cite: 3] */}
         <div className="relative min-h-[400px] pt-6">
           <AnimatePresence mode="wait">
@@ -626,27 +670,23 @@ export default function ItemsPage() {
               </motion.div>
             ) : (
               <motion.div
-                key="list"
-                layout
+                key={`list-${viewMode}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
                 className={viewMode === "grid" ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "flex flex-col gap-4"}
               >
                 <AnimatePresence mode="popLayout">
                   {currentDisplayList.length > 0 ? (
                     currentDisplayList.map((item, index) => (
                       <motion.div
-                        // Cap stagger delay to first PAGE_SIZE items to avoid slow renders on large lists
-                        layout
+                        layout="position"
                         key={item.id}
-                        initial={{ opacity: 0 }}
-                        animate={{
-                          opacity: 1,
-                          transition: {
-                            delay: Math.min(index, PAGE_SIZE) * 0.03,
-                            duration: 0.3,
-                            ease: "easeOut"
-                          }
-                        }}
-                        exit={{ opacity: 0, transition: { duration: 0.15 } }}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.2 } }}
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
 
                         // iOS-STYLE TACTILE INTERACTION
                         whileTap={{ scale: 0.96 }}
@@ -678,20 +718,20 @@ export default function ItemsPage() {
                           {/* Status badge on image (grid only) */}
                           {viewMode === "grid" && (
                             <div className="absolute bottom-3 left-3">
-                                {(() => {
-                                  const isResolved = item.status === 'Resolved';
-                                  const tagLabel = isResolved ? 'Claimed' : 'Unclaimed';
-                                  const tagColor = isResolved 
-                                    ? 'bg-black/60 text-emerald-400 border-white/10 backdrop-blur-md' 
-                                    : 'bg-black/60 text-orange-400 border-white/10 backdrop-blur-md';
-                                  const dotColor = isResolved ? 'bg-emerald-400' : 'bg-orange-500';
-                                  return (
-                                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border text-[7px] font-black uppercase tracking-widest ${tagColor}`}>
-                                      <span className={`w-1 h-1 rounded-full shadow-[0_0_5px_currentColor] ${dotColor}`} />
-                                      {tagLabel}
-                                    </span>
-                                  );
-                                })()}
+                              {(() => {
+                                const isResolved = item.status === 'Resolved';
+                                const tagLabel = isResolved ? 'Claimed' : 'Unclaimed';
+                                const tagColor = isResolved
+                                  ? 'bg-black/60 text-emerald-400 border-white/10 backdrop-blur-md'
+                                  : 'bg-black/60 text-orange-400 border-white/10 backdrop-blur-md';
+                                const dotColor = isResolved ? 'bg-emerald-400' : 'bg-orange-500';
+                                return (
+                                  <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg border text-[7px] font-black uppercase tracking-widest ${tagColor}`}>
+                                    <span className={`w-1 h-1 rounded-full shadow-[0_0_5px_currentColor] ${dotColor}`} />
+                                    {tagLabel}
+                                  </span>
+                                );
+                              })()}
                             </div>
                           )}
                         </div>
@@ -699,41 +739,40 @@ export default function ItemsPage() {
                         <div className={`flex-1 min-w-0 flex flex-col justify-center ${viewMode === "list" ? "py-1 pr-2" : "p-5"}`}>
                           <div className="flex items-start justify-between mb-1 w-full">
                             <div className="flex-1 min-w-0 mr-2 mt-0.5">
-                                <MarqueeTitle text={item.title} className="font-bold text-sm tracking-tight text-white/90" />
-                                <span className="flex items-center gap-1 text-[8px] text-white/50 font-bold tracking-wider mt-1.5 whitespace-nowrap">
-                                  <Clock size={10} className="opacity-60 shrink-0" />
-                                  <span>{getTimeAgo(item.created_at)}</span>
-                                </span>
+                              <MarqueeTitle text={item.title} className="font-bold text-sm tracking-tight text-white/90" />
+                              <span className="flex items-center gap-1 text-[8px] text-white/50 font-bold tracking-wider mt-1.5 whitespace-nowrap">
+                                <Clock size={10} className="opacity-60 shrink-0" />
+                                <span>{getTimeAgo(item.created_at)}</span>
+                              </span>
                             </div>
-                            
+
                             {/* Status Tag (List view only) */}
                             {viewMode === "list" && (
                               <div className="shrink-0">
-                                  {(() => {
-                                    const isResolved = item.status === 'Resolved';
-                                    const tagLabel = isResolved ? 'Claimed' : 'Unclaimed';
-                                    const tagColor = isResolved 
-                                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
-                                      : 'bg-orange-500/10 text-orange-500 border-orange-500/20';
-                                    const dotColor = isResolved ? 'bg-emerald-400' : 'bg-orange-500';
-                                    return (
-                                      <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-[7px] font-black uppercase tracking-widest ${tagColor}`}>
-                                        <span className={`w-1 h-1 rounded-full shadow-[0_0_5px_currentColor] ${dotColor}`} />
-                                        {tagLabel}
-                                      </span>
-                                    );
-                                  })()}
+                                {(() => {
+                                  const isResolved = item.status === 'Resolved';
+                                  const tagLabel = isResolved ? 'Claimed' : 'Unclaimed';
+                                  const tagColor = isResolved
+                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                    : 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+                                  const dotColor = isResolved ? 'bg-emerald-400' : 'bg-orange-500';
+                                  return (
+                                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded border text-[7px] font-black uppercase tracking-widest ${tagColor}`}>
+                                      <span className={`w-1 h-1 rounded-full shadow-[0_0_5px_currentColor] ${dotColor}`} />
+                                      {tagLabel}
+                                    </span>
+                                  );
+                                })()}
                               </div>
                             )}
                           </div>
 
                           {/* Moderation badge — only shown for the user's own pending/rejected posts */}
                           {viewUserPosts && item.moderation_status && item.moderation_status !== 'approved' && (
-                            <div className={`flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest w-fit ${
-                              item.moderation_status === 'pending'
+                            <div className={`flex items-center gap-1.5 mb-2 px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest w-fit ${item.moderation_status === 'pending'
                                 ? 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/20'
                                 : 'bg-red-500/15 text-red-400 border border-red-500/20'
-                            }`}>
+                              }`}>
                               {item.moderation_status === 'pending'
                                 ? <><Clock size={10} /> Pending Review</>
                                 : <><XCircle size={10} /> Rejected</>
