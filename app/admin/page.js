@@ -87,8 +87,8 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                             )}
                         </motion.div>
                     </div>
-                    <h3 className="font-bold text-white text-sm tracking-tight line-clamp-1">{item.title}</h3>
-                    <p className="text-white/40 text-[10px] mt-0.5 line-clamp-1">{item.description || 'No description'}</p>
+                    <h3 className="font-bold text-white text-base tracking-tight line-clamp-1">{item.title}</h3>
+                    <p className="text-white/40 text-xs mt-0.5 line-clamp-1">{item.description || 'No description'}</p>
                 </div>
 
                 {/* Item type + Location */}
@@ -114,8 +114,8 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                             )}
                         </div>
                         <div className="flex-1 min-w-0 flex flex-col justify-center">
-                            <p className="text-[11px] leading-tight font-bold text-white truncate">{poster?.full_name || 'Unknown'}</p>
-                            <p className="text-[9px] leading-tight text-white/30 font-mono">{poster?.student_number || 'N/A'}</p>
+                            <p className="text-sm leading-tight font-bold text-white truncate">{poster?.full_name || 'Unknown'}</p>
+                            <p className="text-[10px] leading-tight text-white/40 font-mono">{poster?.student_number || 'N/A'}</p>
                         </div>
                     </div>
 
@@ -126,14 +126,14 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                                 <button
                                     onClick={() => onApprove(item.id)}
                                     disabled={processing}
-                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-lg font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-lg font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                                 >
                                     <CheckCircle size={10} className="text-green-500" /> APPROVE
                                 </button>
                                 <button
                                     onClick={() => onReject(item.id)}
                                     disabled={processing}
-                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-lg font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-lg font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                                 >
                                     <XCircle size={10} className="text-red-500" /> REJECT
                                 </button>
@@ -143,7 +143,7 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                             <button
                                 onClick={() => onApprove(item.id)}
                                 disabled={processing}
-                                className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-lg font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-lg font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                             >
                                 <CheckCircle size={10} className="text-green-500" /> RE-APPROVE
                             </button>
@@ -152,7 +152,7 @@ function AdminItemCard({ item, onApprove, onReject, onDelete, onPreview, process
                             <button
                                 onClick={() => onReject(item.id)}
                                 disabled={processing}
-                                className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-lg font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
+                                className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-lg font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50"
                             >
                                 <XCircle size={10} className="text-red-500" /> REVOKE
                             </button>

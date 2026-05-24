@@ -530,8 +530,8 @@ export default function AdminUsersSection({ refreshTrigger }) {
                                                 {u.avatar_url ? <img src={u.avatar_url} className="w-full h-full object-cover" alt="" /> : <User size={16} className="text-orange-500" />}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-bold text-white truncate">{u.full_name || 'Unknown'}</p>
-                                                <p className="text-[10px] text-white/30 font-mono">{u.student_number || 'N/A'}</p>
+                                                <p className="text-base font-bold text-white truncate">{u.full_name || 'Unknown'}</p>
+                                                <p className="text-xs text-white/40 font-mono">{u.student_number || 'N/A'}</p>
                                             </div>
                                             {!u.is_banned && (
                                                 <span className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${statusColors[u.verification_status]}`}>{u.verification_status}</span>
@@ -543,7 +543,7 @@ export default function AdminUsersSection({ refreshTrigger }) {
                                         {/* Email */}
                                         <div className="flex items-center gap-2 text-white/30">
                                             <Mail size={12} className="text-orange-500" />
-                                            <span className="text-[10px] font-bold truncate">{u.email}</span>
+                                            <span className="text-xs font-bold truncate">{u.email}</span>
                                         </div>
                                         {/* Document preview button (Hidden for banned users to save space) */}
                                         {u.verification_doc_signed_url && !u.is_banned && (
@@ -572,30 +572,30 @@ export default function AdminUsersSection({ refreshTrigger }) {
                                         <div className="flex gap-2" onClick={e => e.stopPropagation()}>
                                             {u.verification_status === 'pending' && (<>
                                                 <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
-                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
                                                     <CheckCircle size={10} className="text-green-500" /> APPROVE
                                                 </button>
                                                 <button onClick={() => setRejectTarget(u.id)} disabled={processing}
-                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
                                                     <XCircle size={10} className="text-red-500" /> REJECT
                                                 </button>
                                             </>)}
                                             {u.verification_status === 'rejected' && (
                                                 <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
-                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
                                                     <CheckCircle size={10} className="text-green-500" /> APPROVE
                                                 </button>
                                             )}
                                             {u.verification_status === 'approved' && !u.is_banned && (
                                                 <button onClick={() => setRejectTarget(u.id)} disabled={processing}
-                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
                                                     <XCircle size={10} className="text-red-500" /> REVOKE
                                                 </button>
                                             )}
                                             {/* Ban / Unban toggle */}
                                             {u.is_banned ? (
                                                 <button onClick={() => setUnbanTarget(u.id)} disabled={processing}
-                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-xl font-black text-[9px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
                                                     <ShieldCheck size={10} className="text-orange-500" /> UNBAN
                                                 </button>
                                             ) : u.verification_status === 'approved' && (

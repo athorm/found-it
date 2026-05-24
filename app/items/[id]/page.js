@@ -4,6 +4,7 @@ import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, MapPin, Clock, User, MessageCircle, Lock } from "lucide-react";
 import { motion } from "framer-motion";
+import { toast } from "react-hot-toast";
 import NavBar from "@/components/NavBar";
 import ItemPostModal from "@/components/ItemPostModal";
 import ItemDetailLoading from "./loading";
@@ -94,7 +95,7 @@ export default function ItemDetailPage() {
 
         if (error) {
             console.error("Error updating status:", error);
-            alert("Failed to update status.");
+            toast.error("Failed to update status.");
         } else {
             setItem({ ...item, status: newStatus });
         }
@@ -102,12 +103,12 @@ export default function ItemDetailPage() {
 
     const handleContactOwner = async () => {
         if (!user) {
-            alert('Please log in to message the poster.');
+            toast.error('Please log in to message the poster.');
             return;
         }
 
         if (user.id === item.user_id) {
-            alert('This is your own item.');
+            toast.error('This is your own item.');
             return;
         }
 
@@ -160,7 +161,7 @@ export default function ItemDetailPage() {
 
         } catch (error) {
             console.error("Detailed Chat Error:", error.message || error);
-            alert(`Could not start conversation: ${error.message || 'Unknown error'}`);
+            toast.error(`Could not start conversation: ${error.message || 'Unknown error'}`);
         }
     };
 

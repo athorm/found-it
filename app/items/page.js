@@ -16,21 +16,8 @@ import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { CAMPUS_LOCATIONS_WITH_ALL, ITEM_CATEGORIES } from "@/lib/constants";
 import ItemsLoading from "./loading";
 
-// ─── Time Ago Helper ───
-function getTimeAgo(dateString) {
-  const now = new Date();
-  const then = new Date(dateString);
-  const diffMs = now - then;
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHrs = Math.floor(diffMins / 60);
-  if (diffHrs < 24) return `${diffHrs}h ago`;
-  const diffDays = Math.floor(diffHrs / 24);
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return `${Math.floor(diffDays / 7)}w ago`;
-}
+// Time Ago Helper — shared utility (DRY)
+import { getTimeAgo } from "@/utils/timeAgo";
 
 export default function ItemsPage() {
   const router = useRouter();
@@ -673,7 +660,8 @@ export default function ItemsPage() {
                           }`}>
                           <img
                             src={item.image_url}
-                            alt=""
+                            alt={item.title || "Item image"}
+                            loading={index < 4 ? "eager" : "lazy"}
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                           />
 

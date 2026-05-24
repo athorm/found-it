@@ -68,21 +68,8 @@ function getSubtitle() {
   return pool[dayOfYear % pool.length];
 }
 
-// ─── Time Ago Helper ───
-function getTimeAgo(dateString) {
-  const now = new Date();
-  const then = new Date(dateString);
-  const diffMs = now - then;
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHrs = Math.floor(diffMins / 60);
-  if (diffHrs < 24) return `${diffHrs}h ago`;
-  const diffDays = Math.floor(diffHrs / 24);
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return `${Math.floor(diffDays / 7)}w ago`;
-}
+// Time Ago Helper — shared utility (DRY)
+import { getTimeAgo } from "@/utils/timeAgo";
 
 // Item categories and emojis now imported from @/lib/constants
 
@@ -278,10 +265,12 @@ export default function HomePage() {
 
         {/* ─── User Greeting ─── */}
         {userName ? (
-          <motion.div variants={fadeUp}>
-            <p className="text-white/60 text-xs font-semibold tracking-[0.2em] uppercase mb-1.5">{getGreeting()}</p>
-            <h1 className="text-3xl font-extrabold tracking-tight text-transparent bg-clip-text bg-linear-to-r from-amber-300 via-orange-400 to-orange-600 drop-shadow-2xl">
-              {userName}! 👋
+          <motion.div variants={fadeUp} className="flex flex-col items-center">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight drop-shadow-2xl flex flex-wrap justify-center items-center gap-2">
+              <span className="text-white/80 font-semibold tracking-wide">{getGreeting()},</span>
+              <span className="text-transparent bg-clip-text bg-linear-to-r from-amber-300 via-orange-400 to-orange-600 whitespace-nowrap">
+                {userName}! 👋
+              </span>
             </h1>
           </motion.div>
         ) : (

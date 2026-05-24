@@ -87,18 +87,20 @@ export default function NavBar({ activePage, onPlusClick }) {
                 
                 if (!isMounted) return;
 
-                // 4. Subscribe to new messages
+                // 4. Subscribe to new messages (scoped to this user)
                 msgChannel = supabase
                     .channel(`unread-messages-navbar-${Date.now()}`)
                     .on('postgres_changes', { 
                         event: 'INSERT', 
                         schema: 'public', 
-                        table: 'messages' 
+                        table: 'messages',
+                        filter: `receiver_id=eq.${user.id}`
                     }, () => fetchUnreadCount())
                     .on('postgres_changes', { 
                         event: 'UPDATE', 
                         schema: 'public', 
-                        table: 'messages' 
+                        table: 'messages',
+                        filter: `receiver_id=eq.${user.id}`
                     }, () => fetchUnreadCount())
                     .subscribe();
 
@@ -176,7 +178,7 @@ export default function NavBar({ activePage, onPlusClick }) {
                 */}
                 <motion.button
                     whileTap={{ scale: 0.92 }}
-                    className="p-4 rounded-full -translate-y-6 border-4 border-[#431407] shadow-[0_0_20px_rgba(249,115,22,0.4)] bg-linear-to-br from-orange-500 to-orange-700 hover:shadow-[0_0_25px_rgba(249,115,22,0.6)] active:scale-90 transition-all duration-300"
+                    className="p-4 rounded-full -translate-y-6 border-4 border-orange-800/70 shadow-[0_0_20px_rgba(249,115,22,0.4)] bg-linear-to-br from-orange-500 to-orange-700 hover:shadow-[0_0_25px_rgba(249,115,22,0.6)] active:scale-90 transition-all duration-300"
                     onClick={handlePlusClick}
                 >
                     <Plus size={24} color="white" strokeWidth={3} />
@@ -208,7 +210,7 @@ function NavIcon({ icon, label, active = false, onClick, href, badgeCount = 0 })
         <Component 
             href={href} 
             onClick={onClick} 
-            className={`flex flex-col items-center gap-1 relative transition-colors duration-200 group active:scale-95 ${active ? 'text-orange-400' : 'text-orange-300/60 hover:text-orange-300/90'}`}
+            className={`flex flex-col items-center gap-1 relative transition-colors duration-200 group active:scale-95 ${active ? 'text-orange-400' : 'text-orange-300/70 hover:text-orange-300/90'}`}
         >
             <div className={`transition-all duration-300 ${active ? 'bg-orange-500/15 p-2 rounded-xl shadow-[inset_0_0_12px_rgba(249,115,22,0.15)]' : 'p-2 group-hover:bg-white/5 rounded-xl'}`}>
                 {icon}
