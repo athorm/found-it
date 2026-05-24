@@ -208,7 +208,7 @@ function NavIcon({ icon, label, active = false, onClick, href, badgeCount = 0 })
         <Component 
             href={href} 
             onClick={onClick} 
-            className={`flex flex-col items-center gap-1 relative transition-colors duration-200 group active:scale-95 ${active ? 'text-orange-400' : 'text-orange-300/50 hover:text-orange-300/80'}`}
+            className={`flex flex-col items-center gap-1 relative transition-colors duration-200 group active:scale-95 ${active ? 'text-orange-400' : 'text-orange-300/60 hover:text-orange-300/90'}`}
         >
             <div className={`transition-all duration-300 ${active ? 'bg-orange-500/15 p-2 rounded-xl shadow-[inset_0_0_12px_rgba(249,115,22,0.15)]' : 'p-2 group-hover:bg-white/5 rounded-xl'}`}>
                 {icon}

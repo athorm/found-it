@@ -14,6 +14,7 @@ import MarqueeTitle from "@/components/MarqueeTitle";
 import CustomDateRangePicker from "@/components/CustomDateRangePicker";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { CAMPUS_LOCATIONS_WITH_ALL, ITEM_CATEGORIES } from "@/lib/constants";
+import ItemsLoading from "./loading";
 
 // ─── Time Ago Helper ───
 function getTimeAgo(dateString) {
@@ -35,7 +36,12 @@ export default function ItemsPage() {
   const router = useRouter();
   const { user, authLoading } = useAuthGuard();
   const [activeTab, setActiveTab] = useState("lost");
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem("itemsViewMode") || "grid";
+    }
+    return "grid";
+  });
   const [showFilters, setShowFilters] = useState(false);
   const [viewUserPosts, setViewUserPosts] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -113,9 +119,6 @@ export default function ItemsPage() {
       setShowFilters(true); // auto-open filters when navigating with a category
     }
 
-    const savedViewMode = localStorage.getItem("itemsViewMode");
-    if (savedViewMode) setViewMode(savedViewMode);
-    
     setIsInitialized(true);
   }, []);
 
@@ -334,11 +337,7 @@ export default function ItemsPage() {
   };
 
   if (authLoading) {
-    return (
-      <div className="min-h-[100dvh] flex flex-col items-center justify-center gap-4">
-        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <ItemsLoading viewMode={viewMode} />;
   }
 
   return (
@@ -611,10 +610,32 @@ export default function ItemsPage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center pt-20 space-y-4"
+                className={viewMode === "grid" ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "flex flex-col gap-4"}
               >
-                <div className="w-10 h-10 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
-                <p className="text-[10px] font-black tracking-widest text-orange-500/40 uppercase">Fetching items...</p>
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  viewMode === "grid" ? (
+                    <div key={i} className="bg-white/[0.04] border border-white/10 rounded-[2.2rem] overflow-hidden animate-pulse flex flex-col">
+                      <div className="aspect-square w-full bg-white/[0.04]" />
+                      <div className="p-5 space-y-3">
+                        <div className="h-4 w-3/4 bg-white/10 rounded" />
+                        <div className="h-2 w-1/2 bg-white/5 rounded" />
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 bg-white/5 rounded-full" />
+                          <div className="h-2 w-1/3 bg-white/5 rounded" />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div key={i} className="flex p-3 gap-5 items-center bg-white/[0.04] border border-white/10 rounded-[2.2rem] animate-pulse">
+                      <div className="w-24 h-24 rounded-[1.5rem] bg-white/[0.04] shrink-0" />
+                      <div className="flex-1 space-y-3">
+                        <div className="h-4 w-3/4 bg-white/10 rounded" />
+                        <div className="h-2 w-1/2 bg-white/5 rounded" />
+                        <div className="h-2 w-1/3 bg-white/5 rounded" />
+                      </div>
+                    </div>
+                  )
+                ))}
               </motion.div>
             ) : (
               <motion.div
@@ -629,21 +650,20 @@ export default function ItemsPage() {
                         // Cap stagger delay to first PAGE_SIZE items to avoid slow renders on large lists
                         layout
                         key={item.id}
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0 }}
                         animate={{
                           opacity: 1,
-                          y: 0,
                           transition: {
-                            delay: Math.min(index, PAGE_SIZE) * 0.05,
-                            duration: 0.4,
-                            ease: [0.23, 1, 0.32, 1]
+                            delay: Math.min(index, PAGE_SIZE) * 0.03,
+                            duration: 0.3,
+                            ease: "easeOut"
                           }
                         }}
-                        exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+                        exit={{ opacity: 0, transition: { duration: 0.15 } }}
 
                         // iOS-STYLE TACTILE INTERACTION
-                        whileTap={{ scale: 0.96 }} // Subtle shrink on tap
-                        whileHover={{ y: -4 }} // Gentle lift-up instead of scaling out
+                        whileTap={{ scale: 0.96 }}
+                        whileHover={{ y: -4 }}
 
                         onClick={() => handleItemClick(item)}
                         className={`group relative bg-white/[0.04] border border-white/10 rounded-[2.2rem] overflow-hidden hover:border-orange-500/40 transition-colors duration-300 backdrop-blur-sm shadow-xl cursor-pointer active:bg-white/[0.08] ${viewMode === "list" ? "flex p-3 gap-5 items-center" : "flex flex-col"
@@ -740,7 +760,7 @@ export default function ItemsPage() {
                             </span>
                           )}
 
-                          <div className="flex items-center gap-1.5 text-white/30">
+                          <div className="flex items-center gap-1.5 text-white/50">
                             <MapPin size={10} className="text-orange-500" />
                             <span className="text-[9px] font-bold uppercase tracking-widest">{item.location_tag}</span>
                           </div>

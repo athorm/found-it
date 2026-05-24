@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Search, Tag, Plus, MessageCircle, User, ChevronRight, LogOut, Trash2, Camera, Image, X, Send, Loader2, ArrowLeft, Lock, Shield, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthGuard } from '@/hooks/useAuthGuard';
+import ProfileLoading from './loading';
 
 export default function ProfilePage() {
   const { user: authUser, authLoading } = useAuthGuard();
@@ -228,12 +229,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (authLoading || loading) return (
-    <div className="min-h-screen flex flex-col items-center justify-center text-white">
-      <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4" />
-      <p className="font-medium opacity-50">Loading profile...</p>
-    </div>
-  );
+  if (authLoading || loading) return <ProfileLoading />;
 
   return (
     <div className="min-h-screen pb-20 font-sans">
@@ -249,7 +245,7 @@ export default function ProfilePage() {
       </div>
 
       <main className="px-6 mt-8 max-w-lg mx-auto space-y-6">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
           className="rounded-[2.5rem] bg-orange-500/[0.03] backdrop-blur-xl border border-orange-500/20 p-8 flex flex-col items-center shadow-[0_0_40px_rgba(249,115,22,0.05)] relative overflow-hidden">
           
           {/* Subtle background glow */}

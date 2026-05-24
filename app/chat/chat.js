@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import NavBar from "@/components/NavBar";
 import ItemPostModal from "@/components/ItemPostModal";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
+import ChatLoading from "./loading";
 
 export default function ChatPage() {
   const router = useRouter();
@@ -101,7 +102,8 @@ export default function ChatPage() {
   const getUser = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     setUser(user);
-    setLoading(false);
+    // Don't setLoading(false) here — keep skeleton visible until
+    // fetchConversations finishes so we never flash "No conversations yet"
   };
 
   const fetchConversations = async () => {
@@ -153,6 +155,8 @@ export default function ChatPage() {
       const updated = mapped.find(c => c.id === prev.id);
       return updated ? updated : prev;
     });
+    // Dismiss skeleton now that conversations are ready
+    setLoading(false);
   };
 
   const selectConversation = async (conv) => {
@@ -600,18 +604,8 @@ export default function ChatPage() {
     fetchConversations();
   };
 
-  if (loading) return (
-    <div className="min-h-[100dvh] flex items-center justify-center">
-      <Loader2 className="h-8 w-8 animate-spin text-orange-400" />
-    </div>
-  );
-
-  if (authLoading) {
-    return (
-      <div className="min-h-[100dvh] flex items-center justify-center">
-        <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+  if (loading || authLoading) {
+    return <ChatLoading />;
   }
 
   return (
