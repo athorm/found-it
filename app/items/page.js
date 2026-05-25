@@ -194,7 +194,7 @@ export default function ItemsPage() {
 
     // Real-time subscription for item updates (status changes, new inserts, etc.)
     const channel = supabase
-      .channel('items-realtime-updates')
+      .channel(`items-realtime-${Date.now()}`)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'items' }, (payload) => {
         const updateList = (prev) => prev.map(item => item.id === payload.new.id ? { ...item, ...payload.new } : item);
         setItems(updateList);

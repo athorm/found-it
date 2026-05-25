@@ -1,16 +1,206 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { ArrowLeft, Send, Loader2, User, Trash2, X, CheckCircle2, AlertCircle, Lock, AlertTriangle, Flag, ImageIcon, Plus, Camera, ShieldAlert } from "lucide-react";
+import { ArrowLeft, Send, Loader2, User, Trash2, X, CheckCircle2, AlertCircle, Lock, AlertTriangle, Flag, ImageIcon, Plus, Camera, ShieldAlert, Reply, Package } from "lucide-react";
 import { containsProfanity } from "@/utils/profanityFilter";
 import { toast } from "react-hot-toast";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import NavBar from "@/components/NavBar";
 import ItemPostModal from "@/components/ItemPostModal";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import ChatLoading from "./loading";
 import { useDataCache } from "@/lib/dataCache";
+
+// ─── Swipeable Message Bubble (WhatsApp-style swipe-to-reply) ───
+// Extracted as a separate component so each message gets its own useMotionValue hook.
+function SwipeableMessage({
+  msg, isMe, showAvatar, isConsecutive, parsed, selectedConversation,
+  onReply, onDelete, onImageTap, onToggleTime, visibleTime,
+  deleteConfirmId, setDeleteConfirmId, deletingMsgId, longPressTimerRef,
+}) {
+  const x = useMotionValue(0);
+  const swipeTriggeredRef = useRef(false);
+
+  // For own messages: swipe left → reply icon appears on the right
+  // For other's messages: swipe right → reply icon appears on the left
+  const replyIconOpacity = useTransform(
+    x,
+    isMe ? [-60, -25, 0, 25, 60] : [-60, -25, 0, 25, 60],
+    isMe ? [1, 0.4, 0, 0, 0] : [0, 0, 0, 0.4, 1]
+  );
+  const replyIconScale = useTransform(
+    x,
+    isMe ? [-60, -20, 0, 20, 60] : [-60, -20, 0, 20, 60],
+    isMe ? [1, 0.6, 0.3, 0.3, 0.3] : [0.3, 0.3, 0.3, 0.6, 1]
+  );
+
+  const REPLY_THRESHOLD = 50; // px position
+  const VELOCITY_THRESHOLD = 200; // px/s — allows fast flicks even if short distance
+
+  const handleDragEnd = (e, info) => {
+    if (swipeTriggeredRef.current) return; // already fired
+
+    const triggeredByPosition = isMe
+      ? info.offset.x < -REPLY_THRESHOLD
+      : info.offset.x > REPLY_THRESHOLD;
+    const triggeredByVelocity = isMe
+      ? info.velocity.x < -VELOCITY_THRESHOLD
+      : info.velocity.x > VELOCITY_THRESHOLD;
+
+    if (triggeredByPosition || triggeredByVelocity) {
+      swipeTriggeredRef.current = true;
+      onReply(msg);
+      // Reset after a brief moment so rapid re-swipes work
+      setTimeout(() => { swipeTriggeredRef.current = false; }, 300);
+    }
+  };
+
+  return (
+    <div id={`msg-${msg.id}`} className={`relative flex items-end gap-2 ${isMe ? 'justify-end' : 'justify-start'} ${isConsecutive ? 'mt-0.5' : 'mt-4'} overflow-x-clip`}>
+      {!isMe && (
+        <div className={`w-8 h-8 rounded-full bg-orange-500/10 overflow-hidden shrink-0 border border-white/5 ${!showAvatar && 'opacity-0'}`}>
+          {selectedConversation?.otherUser?.avatar_url
+            ? <img src={selectedConversation.otherUser.avatar_url} className="w-full h-full object-cover" alt="" />
+            : <div className="w-full h-full flex items-center justify-center"><User size={14} className="text-orange-400/50" /></div>}
+        </div>
+      )}
+      <div className={`relative flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]`}>
+        {/* Reply icon that appears behind the bubble during swipe */}
+        <motion.div
+          className="absolute top-0 bottom-0 flex items-center pointer-events-none"
+          style={{
+            [isMe ? 'right' : 'left']: isMe ? -36 : -36,
+            opacity: replyIconOpacity,
+            scale: replyIconScale,
+          }}
+        >
+          <div className="w-8 h-8 rounded-full bg-orange-500/20 flex items-center justify-center">
+            <Reply size={14} className="text-orange-400" />
+          </div>
+        </motion.div>
+
+        <motion.div
+          drag="x"
+          dragDirectionLock
+          dragConstraints={{ left: isMe ? -80 : 0, right: isMe ? 0 : 80 }}
+          dragElastic={0.15}
+          dragSnapToOrigin
+          onDragEnd={handleDragEnd}
+          style={{ x }}
+          className="relative z-10 w-full flex flex-col touch-pan-y"
+          whileDrag={{ cursor: 'grabbing' }}
+        >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0, y: 5 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            onClick={() => {
+              msg.image_url ? onImageTap(msg.image_url) : onToggleTime(msg.id);
+            }}
+            // Long-press on own messages → show unsend option (mobile)
+            onTouchStart={() => {
+              if (!isMe) return;
+              longPressTimerRef.current = setTimeout(() => {
+                setDeleteConfirmId(msg.id);
+              }, 500);
+            }}
+            onTouchEnd={() => clearTimeout(longPressTimerRef.current)}
+            onTouchMove={() => clearTimeout(longPressTimerRef.current)}
+            // Right-click on own messages → show unsend option (desktop)
+            onContextMenu={(e) => {
+              if (!isMe) return;
+              e.preventDefault();
+              setDeleteConfirmId(msg.id);
+            }}
+            className={`overflow-hidden cursor-pointer ${msg.image_url
+                ? 'p-0 rounded-2xl border border-white/10 bg-[#1a1a1a]'
+                : `px-4 py-2.5 text-[14px] leading-relaxed ${isMe
+                  ? 'bg-gradient-to-br from-orange-500 to-orange-600 rounded-[20px] rounded-br-[4px] shadow-[0_4px_15px_rgba(249,115,22,0.2)] border border-orange-400/50'
+                  : 'bg-white/10 backdrop-blur-md rounded-[20px] rounded-bl-[4px] shadow-lg border border-white/5 text-white/90'
+                }`
+              }`}
+            style={{ alignSelf: isMe ? 'flex-end' : 'flex-start' }}
+          >
+            {parsed.isReply && (
+              <div
+                className={`mb-2 px-3 py-2 rounded-xl text-xs flex flex-col gap-0.5 border-l-2 cursor-pointer transition-all hover:brightness-110 active:scale-[0.98]
+                  ${isMe ? 'bg-orange-700/40 border-orange-200 text-orange-50' : 'bg-black/20 border-orange-400 text-white/90'}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const el = document.getElementById(`msg-${parsed.replyId}`);
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.style.transition = 'background-color 0.3s';
+                    el.style.backgroundColor = 'rgba(249, 115, 22, 0.2)';
+                    setTimeout(() => el.style.backgroundColor = 'transparent', 1000);
+                  }
+                }}
+              >
+                <span className={`font-black text-[10px] uppercase tracking-wider ${isMe ? 'text-orange-200' : 'text-orange-400'}`}>
+                  {parsed.replyName}
+                </span>
+                <span className="truncate opacity-90 line-clamp-1">{parsed.replyExcerpt}</span>
+              </div>
+            )}
+
+            {msg.image_url ? (
+              <img
+                src={msg.image_url}
+                alt="Shared image"
+                className="max-w-[220px] max-h-[220px] object-cover block"
+              />
+            ) : (
+              <span className="whitespace-pre-wrap">{parsed.text}</span>
+            )}
+          </motion.div>
+
+          {/* Unsend confirmation popup (long-press / right-click on own messages) */}
+          <AnimatePresence>
+            {deleteConfirmId === msg.id && isMe && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 4 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 4 }}
+                className="absolute -top-12 right-0 z-50 flex items-center gap-1.5 bg-[#1a1a1a] border border-white/10 rounded-2xl p-1.5 shadow-2xl shadow-black/60"
+              >
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDelete(msg.id); }}
+                  disabled={deletingMsgId === msg.id}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-red-400 hover:bg-red-500/10 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all disabled:opacity-50"
+                >
+                  {deletingMsgId === msg.id
+                    ? <Loader2 size={12} className="animate-spin" />
+                    : <Trash2 size={12} />}
+                  Unsend
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }}
+                  className="p-1.5 text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                >
+                  <X size={12} />
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <AnimatePresence>
+            {visibleTime && (
+              <motion.span
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="text-[9px] text-white/40 mt-1.5 px-2 font-bold tracking-wider uppercase"
+              >
+                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {isMe && <span className="ml-2 text-orange-400/60">{msg.is_read ? 'Read' : 'Delivered'}</span>}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
 
 export default function ChatPage() {
   const router = useRouter();
@@ -65,6 +255,30 @@ export default function ChatPage() {
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [deletingMsgId, setDeletingMsgId] = useState(null);
   const longPressTimerRef = useRef(null);
+  const fetchDebounceRef = useRef(null);
+  const [replyTo, setReplyTo] = useState(null);
+
+  const encodeReply = (originalMsg, senderName, newContent) => {
+    const excerpt = originalMsg.image_url ? '🖼️ Photo' : (originalMsg.content || '').substring(0, 50).replace(/\n/g, ' ');
+    return `::REPLY::${originalMsg.id}::${senderName}::${excerpt}::ENDREPLY::${newContent}`;
+  };
+
+  const parseReply = (content) => {
+    if (content && content.startsWith('::REPLY::')) {
+       const parts = content.split('::ENDREPLY::');
+       if (parts.length >= 2) {
+          const meta = parts[0].split('::');
+          return {
+             isReply: true,
+             replyId: meta[2],
+             replyName: meta[3],
+             replyExcerpt: meta.slice(4).join('::'),
+             text: parts.slice(1).join('::ENDREPLY::')
+          };
+       }
+    }
+    return { isReply: false, text: content };
+  };
 
   const toggleTime = (msgId) => {
     setVisibleTimes(prev => ({ ...prev, [msgId]: !prev[msgId] }));
@@ -72,19 +286,32 @@ export default function ChatPage() {
 
   useEffect(() => { getUser(); }, []);
 
+  // Debounced fetch: coalesces rapid-fire realtime events into a single fetch
+  const debouncedFetchConversations = useCallback(() => {
+    if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
+    fetchDebounceRef.current = setTimeout(() => {
+      fetchConversations();
+    }, 300);
+  }, [user]);
+
   useEffect(() => {
     if (user) {
       fetchConversations();
       const listChannel = supabase
-        .channel(`global-updates-${Date.now()}`)
-        .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => fetchConversations())
-        .on("postgres_changes", { event: "*", schema: "public", table: "chats" }, () => fetchConversations())
-        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "items" }, () => fetchConversations())
+        .channel(`chat-list-${user.id}-${Date.now()}`)
+        // Only listen to messages where this user is sender or receiver
+        .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `receiver_id=eq.${user.id}` }, () => debouncedFetchConversations())
+        .on("postgres_changes", { event: "*", schema: "public", table: "messages", filter: `sender_id=eq.${user.id}` }, () => debouncedFetchConversations())
+        // Only listen to chats where this user is finder or claimer
+        .on("postgres_changes", { event: "*", schema: "public", table: "chats", filter: `finder_id=eq.${user.id}` }, () => debouncedFetchConversations())
+        .on("postgres_changes", { event: "*", schema: "public", table: "chats", filter: `claimer_id=eq.${user.id}` }, () => debouncedFetchConversations())
         .subscribe();
       return () => {
         supabase.removeChannel(listChannel);
+        if (channelRef.current) { supabase.removeChannel(channelRef.current); channelRef.current = null; }
         if (activeChannelRef.current) supabase.removeChannel(activeChannelRef.current);
         activeChannelRef.current = null;
+        if (fetchDebounceRef.current) clearTimeout(fetchDebounceRef.current);
       };
     }
   }, [user]);
@@ -268,7 +495,7 @@ export default function ChatPage() {
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation || !user) return;
-    const content = newMessage.trim();
+    let content = newMessage.trim();
 
     // ─── Profanity Check FIRST (fast, local — instant blocker) ───
     const { isClean } = await containsProfanity(content);
@@ -278,8 +505,14 @@ export default function ChatPage() {
       return; // Block the send — message stays in the input box
     }
 
+    if (replyTo) {
+       const senderName = replyTo.sender_id === user.id ? 'You' : (selectedConversation.otherUser?.full_name || 'User');
+       content = encodeReply(replyTo, senderName, content);
+    }
+
     // If profanity filter passes, send immediately (no waiting for AI)
     setNewMessage("");
+    setReplyTo(null);
     profanityStrikeRef.current = 0; // Reset strike count on clean message
 
     const { data: inserted, error } = await supabase
@@ -461,6 +694,14 @@ export default function ChatPage() {
         .upload(path, compressed, { contentType: 'image/jpeg', upsert: false });
       if (uploadErr) throw uploadErr;
       const { data: { publicUrl } } = supabase.storage.from('chat-images').getPublicUrl(path);
+
+      let contentStr = '🖼️ Photo';
+      if (replyTo) {
+         const senderName = replyTo.sender_id === user.id ? 'You' : (selectedConversation.otherUser?.full_name || 'User');
+         contentStr = encodeReply(replyTo, senderName, contentStr);
+         setReplyTo(null);
+      }
+
       const { data: inserted, error } = await supabase
         .from('messages')
         .insert({
@@ -468,7 +709,7 @@ export default function ChatPage() {
           receiver_id: selectedConversation.otherUserId,
           chat_id: selectedConversation.id,
           item_id: selectedConversation.itemId,
-          content: '🖼️ Photo',
+          content: contentStr,
           image_url: publicUrl,
           is_read: false,
         })
@@ -647,7 +888,7 @@ export default function ChatPage() {
                 <div className="flex flex-col items-center justify-center py-20 text-white/20">
                   <Package size={48} className="mb-4 text-orange-500/20" strokeWidth={1.5} />
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] mb-2">No conversations yet</p>
-                  <p className="text-xs text-center px-8 opacity-60">Start a conversation by tapping 'Message Poster' on any item.</p>
+                  <p className="text-xs text-center px-8 opacity-60">Start a conversation by tapping &apos;Message Poster&apos; on any item.</p>
                 </div>
               )}
               {conversations.map((conv) => (
@@ -745,109 +986,34 @@ export default function ChatPage() {
           </div>
 
           {/* CHAT AREA */}
-          <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-4 bg-transparent scroll-smooth" onClick={() => deleteConfirmId && setDeleteConfirmId(null)}>
-            {messages.map((msg, idx) => {
+          <div className="flex-1 overflow-y-auto px-4 pb-4 bg-transparent scroll-smooth flex flex-col" onClick={() => deleteConfirmId && setDeleteConfirmId(null)}>
+            {user && messages.map((msg, idx) => {
               const isMe = msg.sender_id === user.id;
               const showAvatar = !isMe && (idx === messages.length - 1 || messages[idx + 1]?.sender_id === user.id);
-              
+              const prevMsg = idx > 0 ? messages[idx - 1] : null;
+              const timeDiff = prevMsg ? new Date(msg.created_at) - new Date(prevMsg.created_at) : 0;
+              const isConsecutive = prevMsg && prevMsg.sender_id === msg.sender_id && timeDiff < 5 * 60 * 1000;
+              const parsed = parseReply(msg.content);
+
               return (
-                <div key={msg.id} className={`flex items-end gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                  {!isMe && (
-                    <div className={`w-8 h-8 rounded-full bg-orange-500/10 overflow-hidden shrink-0 border border-white/5 ${!showAvatar && 'opacity-0'}`}>
-                      {selectedConversation?.otherUser?.avatar_url
-                        ? <img src={selectedConversation.otherUser.avatar_url} className="w-full h-full object-cover" alt="" />
-                        : <div className="w-full h-full flex items-center justify-center"><User size={14} className="text-orange-400/50" /></div>}
-                    </div>
-                  )}
-                  <div className={`relative flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]`}>
-                    <motion.div
-                      initial={{ scale: 0.95, opacity: 0, y: 5 }}
-                      animate={{ scale: 1, opacity: 1, y: 0 }}
-                      onClick={() => {
-                        // Dismiss any open delete confirm when tapping elsewhere
-                        if (deleteConfirmId && deleteConfirmId !== msg.id) {
-                          setDeleteConfirmId(null);
-                        }
-                        msg.image_url ? setLightboxUrl(msg.image_url) : toggleTime(msg.id);
-                      }}
-                      // Long-press on own messages → show unsend option (mobile)
-                      onTouchStart={() => {
-                        if (!isMe) return;
-                        longPressTimerRef.current = setTimeout(() => {
-                          setDeleteConfirmId(msg.id);
-                        }, 500);
-                      }}
-                      onTouchEnd={() => clearTimeout(longPressTimerRef.current)}
-                      onTouchMove={() => clearTimeout(longPressTimerRef.current)}
-                      // Right-click on own messages → show unsend option (desktop)
-                      onContextMenu={(e) => {
-                        if (!isMe) return;
-                        e.preventDefault();
-                        setDeleteConfirmId(msg.id);
-                      }}
-                      className={`overflow-hidden cursor-pointer ${
-                        msg.image_url
-                          ? 'p-0 rounded-2xl border border-white/10'
-                          : `px-4 py-2.5 text-[14px] leading-relaxed ${
-                              isMe 
-                                ? 'bg-gradient-to-br from-orange-500 to-orange-600 rounded-[20px] rounded-br-[4px] shadow-[0_4px_15px_rgba(249,115,22,0.2)] border border-orange-400/50' 
-                                : 'bg-white/10 backdrop-blur-md rounded-[20px] rounded-bl-[4px] shadow-lg border border-white/5 text-white/90'
-                            }`
-                      }`}
-                    >
-                      {msg.image_url ? (
-                        <img
-                          src={msg.image_url}
-                          alt="Shared image"
-                          className="max-w-[220px] max-h-[220px] object-cover block"
-                        />
-                      ) : (
-                        msg.content
-                      )}
-                    </motion.div>
-                    {/* Unsend confirmation popup */}
-                    <AnimatePresence>
-                      {deleteConfirmId === msg.id && isMe && (
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.9, y: 4 }}
-                          animate={{ opacity: 1, scale: 1, y: 0 }}
-                          exit={{ opacity: 0, scale: 0.9, y: 4 }}
-                          className="absolute -top-12 right-0 z-50 flex items-center gap-1.5 bg-[#1a1a1a] border border-white/10 rounded-2xl p-1.5 shadow-2xl shadow-black/60"
-                        >
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleDeleteMessage(msg.id); }}
-                            disabled={deletingMsgId === msg.id}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-red-400 hover:bg-red-500/10 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all disabled:opacity-50"
-                          >
-                            {deletingMsgId === msg.id
-                              ? <Loader2 size={12} className="animate-spin" />
-                              : <Trash2 size={12} />}
-                            Unsend
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setDeleteConfirmId(null); }}
-                            className="p-1.5 text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-all"
-                          >
-                            <X size={12} />
-                          </button>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                    <AnimatePresence>
-                      {visibleTimes[msg.id] && (
-                        <motion.span 
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="text-[9px] text-white/40 mt-1.5 px-2 font-bold tracking-wider uppercase"
-                        >
-                          {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          {isMe && <span className="ml-2 text-orange-400/60">{msg.is_read ? 'Read' : 'Delivered'}</span>}
-                        </motion.span>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
+                <SwipeableMessage
+                  key={msg.id}
+                  msg={msg}
+                  isMe={isMe}
+                  showAvatar={showAvatar}
+                  isConsecutive={isConsecutive}
+                  parsed={parsed}
+                  selectedConversation={selectedConversation}
+                  onReply={(m) => setReplyTo(m)}
+                  onDelete={(id) => handleDeleteMessage(id)}
+                  onImageTap={(url) => setLightboxUrl(url)}
+                  onToggleTime={(id) => toggleTime(id)}
+                  visibleTime={visibleTimes[msg.id]}
+                  deleteConfirmId={deleteConfirmId}
+                  setDeleteConfirmId={setDeleteConfirmId}
+                  deletingMsgId={deletingMsgId}
+                  longPressTimerRef={longPressTimerRef}
+                />
               );
             })}
             <div ref={messagesEndRef} className="h-2" />
@@ -866,8 +1032,34 @@ export default function ChatPage() {
                 <span className="text-[10px] font-black uppercase tracking-widest">User Suspended</span>
               </div>
             ) : (
-              <div className="flex items-end gap-2 bg-white/5 backdrop-blur-xl rounded-3xl p-2 border border-white/10 focus-within:border-orange-500/40 focus-within:bg-black/40 transition-all shadow-xl">
-                {/* Hidden file input for image sharing */}
+              <div className="w-full">
+                <AnimatePresence>
+                  {replyTo && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, height: 0 }}
+                      animate={{ opacity: 1, y: 0, height: 'auto' }}
+                      exit={{ opacity: 0, y: 10, height: 0 }}
+                      className="flex items-center justify-between bg-black/60 backdrop-blur-xl border border-white/10 rounded-2xl px-4 py-2.5 mb-3"
+                    >
+                       <div className="flex items-center gap-3 overflow-hidden opacity-90 min-w-0">
+                          <Reply size={16} className="text-orange-400 shrink-0" />
+                          <div className="flex flex-col min-w-0 flex-1">
+                             <span className="text-[10px] font-bold text-orange-400 truncate uppercase tracking-wider">
+                               Replying to {replyTo.sender_id === user?.id ? 'Yourself' : selectedConversation?.otherUser?.full_name}
+                             </span>
+                             <span className="text-xs text-white/70 truncate">
+                               {replyTo.image_url ? '🖼️ Photo' : parseReply(replyTo.content).text}
+                             </span>
+                          </div>
+                       </div>
+                       <button onClick={() => setReplyTo(null)} className="p-2 ml-2 hover:bg-white/10 rounded-full shrink-0 text-white/50 transition-colors">
+                          <X size={16} />
+                       </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <div className="flex items-end gap-2 bg-white/5 backdrop-blur-xl rounded-3xl p-2 border border-white/10 focus-within:border-orange-500/40 focus-within:bg-black/40 transition-all shadow-xl">
+                  {/* Hidden file input for image sharing */}
                 <input
                   ref={imageInputRef}
                   type="file"
@@ -939,14 +1131,15 @@ export default function ChatPage() {
                   }}
                 />
                 <div className="pb-1 pr-1">
-                  <button 
-                    onClick={sendMessage} 
+                  <button
+                    onClick={sendMessage}
                     disabled={!newMessage.trim()}
                     className="p-2.5 bg-orange-500 hover:bg-orange-600 disabled:bg-white/5 disabled:text-white/20 text-white rounded-full transition-all shadow-[0_0_10px_rgba(249,115,22,0.2)] disabled:shadow-none"
                   >
                     <Send size={18} />
                   </button>
                 </div>
+              </div>
               </div>
             )}
           </div>
