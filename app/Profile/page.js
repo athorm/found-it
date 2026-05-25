@@ -335,8 +335,7 @@ export default function ProfilePage() {
           </button>
         </div>
       </main>
-
-      <NavBar currentRoute="/profile" />
+      <NavBar activePage="profile" />
 
       {/* Modals */}
       <AnimatePresence>
