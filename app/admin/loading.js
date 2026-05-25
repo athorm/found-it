@@ -24,9 +24,9 @@ export default function AdminLoading() {
       <div className="w-full max-w-[100rem] mx-auto flex flex-col md:flex-row items-start relative">
         {/* SIDEBAR SKELETON (desktop) */}
         <aside className="hidden md:block sticky top-[80px] w-64 shrink-0 p-6 md:pr-0 h-[calc(100vh-80px)]">
-          <div className="flex flex-col gap-2 bg-white/[0.02] p-3 rounded-[2rem] border border-white/5 backdrop-blur-md animate-shimmer">
+          <div className="flex flex-col gap-2 bg-white/[0.02] p-3 rounded-[2rem] border border-white/5 backdrop-blur-md">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className={`flex items-center gap-3 px-5 py-4 rounded-[1.2rem] ${i === 1 ? 'bg-orange-500/20' : ''}`}>
+              <div key={i} className={`flex items-center gap-3 px-5 py-4 rounded-[1.2rem] animate-shimmer ${i === 1 ? 'bg-orange-500/20' : ''}`}>
                 <div className="w-[18px] h-[18px] bg-white/10 rounded shrink-0" />
                 <div className="h-3 w-16 bg-white/10 rounded" />
               </div>
@@ -35,10 +35,10 @@ export default function AdminLoading() {
         </aside>
 
         {/* MOBILE TAB BAR SKELETON */}
-        <div className="md:hidden w-full px-4 pt-4 animate-shimmer">
+        <div className="md:hidden w-full px-4 pt-4">
           <div className="flex gap-2 overflow-hidden">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className={`flex items-center gap-2 px-5 py-3 rounded-2xl border ${i === 1 ? 'bg-orange-500/20 border-orange-500/30' : 'bg-white/[0.02] border-white/5'}`}>
+              <div key={i} className={`flex items-center gap-2 px-5 py-3 rounded-2xl border animate-shimmer ${i === 1 ? 'bg-orange-500/20 border-orange-500/30' : 'bg-white/[0.02] border-white/5'}`}>
                 <div className="w-4 h-4 bg-white/10 rounded" />
                 <div className="h-2 w-10 bg-white/10 rounded" />
               </div>
@@ -49,9 +49,9 @@ export default function AdminLoading() {
         {/* MAIN CONTENT SKELETON */}
         <main className="flex-1 p-6 space-y-6 w-full min-w-0">
           {/* Stat Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-shimmer">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className={`p-5 rounded-[1.5rem] border backdrop-blur-md ${i === 1 ? 'bg-orange-500/10 border-orange-500/30' : 'bg-white/[0.02] border-white/5'}`}>
+              <div key={i} className={`p-5 rounded-[1.5rem] border backdrop-blur-md animate-shimmer ${i === 1 ? 'bg-orange-500/10 border-orange-500/30' : 'bg-white/[0.02] border-white/5'}`}>
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-9 h-9 bg-white/5 rounded-xl" />
                   <div className="h-8 w-8 bg-white/10 rounded" />
@@ -62,24 +62,24 @@ export default function AdminLoading() {
           </div>
 
           {/* Search + filter bar */}
-          <div className="flex gap-3 animate-shimmer">
-            <div className="flex-1 h-[52px] bg-white/[0.02] border border-white/5 rounded-2xl" />
-            <div className="w-[52px] h-[52px] bg-white/[0.02] border border-white/5 rounded-2xl" />
+          <div className="flex gap-3">
+            <div className="flex-1 h-[52px] bg-white/[0.02] border border-white/5 rounded-2xl animate-shimmer" />
+            <div className="w-[52px] h-[52px] bg-white/[0.02] border border-white/5 rounded-2xl animate-shimmer" />
           </div>
 
           {/* Status tabs */}
-          <div className="flex gap-2 animate-shimmer">
+          <div className="flex gap-2">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className={`px-4 py-2.5 rounded-xl border ${i === 1 ? 'bg-orange-500/10 border-orange-500/30' : 'bg-white/[0.02] border-white/5'}`}>
+              <div key={i} className={`px-4 py-2.5 rounded-xl border animate-shimmer ${i === 1 ? 'bg-orange-500/10 border-orange-500/30' : 'bg-white/[0.02] border-white/5'}`}>
                 <div className="h-2 w-14 bg-white/10 rounded" />
               </div>
             ))}
           </div>
 
           {/* Item Grid Skeleton */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-shimmer">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div key={i} className="bg-white/[0.02] border border-white/5 rounded-[1.5rem] overflow-hidden flex flex-col">
+              <div key={i} className="bg-white/[0.02] border border-white/5 rounded-[1.5rem] overflow-hidden flex flex-col animate-shimmer">
                 {/* Image placeholder */}
                 <div className="h-28 w-full bg-white/[0.04]" />
                 {/* Content */}

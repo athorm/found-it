@@ -76,11 +76,10 @@ function BanReasonModal({ onConfirm, onCancel, processing }) {
                 <div className="flex flex-wrap gap-2 mb-4 relative z-10">
                     {BAN_PREMADE_REASONS.map((r) => (
                         <button key={r} onClick={() => setReason(r)} type="button"
-                            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${
-                                reason === r
+                            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${reason === r
                                     ? 'bg-red-500/20 border-red-500/40 text-red-300'
                                     : 'bg-white/5 border-white/10 text-white/40 hover:border-red-500/30 hover:text-white/60'
-                            }`}>
+                                }`}>
                             {r}
                         </button>
                     ))}
@@ -119,11 +118,10 @@ function UnbanReasonModal({ onConfirm, onCancel, processing }) {
                 <div className="flex flex-wrap gap-2 mb-4 relative z-10">
                     {UNBAN_PREMADE_REASONS.map((r) => (
                         <button key={r} onClick={() => setReason(r)} type="button"
-                            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${
-                                reason === r
+                            className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all ${reason === r
                                     ? 'bg-orange-500/20 border-orange-500/40 text-orange-300'
                                     : 'bg-white/5 border-white/10 text-white/40 hover:border-orange-500/30 hover:text-white/60'
-                            }`}>
+                                }`}>
                             {r}
                         </button>
                     ))}
@@ -425,48 +423,48 @@ export default function AdminUsersSection({ refreshTrigger }) {
     return (
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
             <div className="shrink-0 space-y-6 pb-4">
-            {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 overflow-hidden rounded-[1.5rem]">
-                {[{ label: 'Pending', count: stats.pending, icon: Clock, color: 'text-yellow-400', tab: 'pending' },
-                { label: 'Verified', count: stats.approved, icon: CheckCircle, color: 'text-green-400', tab: 'approved' },
-                { label: 'Rejected', count: stats.rejected, icon: XCircle, color: 'text-red-400', tab: 'rejected' },
-                { label: 'Banned', count: stats.banned, icon: Ban, color: 'text-red-500', tab: 'banned' },
-                { label: 'Total Users', count: stats.total, icon: Users, color: 'text-orange-400', tab: 'all' }
-                ].map(s => (
-                    <button key={s.tab} onClick={() => setActiveTab(s.tab)}
-                        className={`p-5 rounded-[1.5rem] border transition-all duration-300 text-left backdrop-blur-md relative overflow-hidden group ${activeTab === s.tab ? 'bg-orange-500/15 border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'}`}>
-                        <div className={`absolute top-0 right-0 w-24 h-24 blur-[40px] rounded-full pointer-events-none opacity-20 transition-opacity duration-300 ${activeTab === s.tab ? 'opacity-40' : 'group-hover:opacity-30'} ${s.color === 'text-yellow-400' ? 'bg-yellow-500' : s.color === 'text-green-400' ? 'bg-green-500' : s.color === 'text-red-500' || s.color === 'text-red-400' ? 'bg-red-500' : 'bg-orange-500'}`} />
-                        <div className="flex items-center justify-between mb-3 relative z-10">
-                            <div className={`p-2 rounded-xl bg-white/5 border border-white/5 ${activeTab === s.tab ? 'scale-110 shadow-lg' : ''} transition-transform`}>
-                                <s.icon size={20} className={s.color} />
+                {/* Stats */}
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 overflow-hidden rounded-[1.5rem]">
+                    {[{ label: 'Pending', count: stats.pending, icon: Clock, color: 'text-yellow-400', tab: 'pending' },
+                    { label: 'Verified', count: stats.approved, icon: CheckCircle, color: 'text-green-400', tab: 'approved' },
+                    { label: 'Rejected', count: stats.rejected, icon: XCircle, color: 'text-red-400', tab: 'rejected' },
+                    { label: 'Banned', count: stats.banned, icon: Ban, color: 'text-red-500', tab: 'banned' },
+                    { label: 'Total Users', count: stats.total, icon: Users, color: 'text-orange-400', tab: 'all' }
+                    ].map(s => (
+                        <button key={s.tab} onClick={() => setActiveTab(s.tab)}
+                            className={`p-5 rounded-[1.5rem] border transition-all duration-300 text-left backdrop-blur-md relative overflow-hidden group ${activeTab === s.tab ? 'bg-orange-500/15 border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'}`}>
+                            <div className={`absolute top-0 right-0 w-24 h-24 blur-[40px] rounded-full pointer-events-none opacity-20 transition-opacity duration-300 ${activeTab === s.tab ? 'opacity-40' : 'group-hover:opacity-30'} ${s.color === 'text-yellow-400' ? 'bg-yellow-500' : s.color === 'text-green-400' ? 'bg-green-500' : s.color === 'text-red-500' || s.color === 'text-red-400' ? 'bg-red-500' : 'bg-orange-500'}`} />
+                            <div className="flex items-center justify-between mb-3 relative z-10">
+                                <div className={`p-2 rounded-xl bg-white/5 border border-white/5 ${activeTab === s.tab ? 'scale-110 shadow-lg' : ''} transition-transform`}>
+                                    <s.icon size={20} className={s.color} />
+                                </div>
+                                <span className="text-3xl font-black text-white">{s.count}</span>
                             </div>
-                            <span className="text-3xl font-black text-white">{s.count}</span>
-                        </div>
-                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 relative z-10">{s.label}</p>
-                    </button>
-                ))}
-            </div>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 relative z-10">{s.label}</p>
+                        </button>
+                    ))}
+                </div>
 
-            {/* Tabs + Search */}
-            <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
-                <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide lg:overflow-visible lg:mx-0 lg:px-0 lg:pb-0">
-                    <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max lg:w-auto">
-                        {USER_TABS.map(tab => (
-                            <button key={tab.key} onClick={() => setActiveTab(tab.key)}
-                                className={`flex items-center gap-2 px-5 py-2.5 rounded-[0.9rem] text-xs font-black tracking-widest transition-all whitespace-nowrap ${activeTab === tab.key ? `${tab.bg} text-white shadow-lg` : 'text-white/30 hover:text-white/50'}`}>
-                                <tab.icon size={14} />{tab.label}
-                            </button>
-                        ))}
+                {/* Tabs + Search */}
+                <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
+                    <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide lg:overflow-visible lg:mx-0 lg:px-0 lg:pb-0">
+                        <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max lg:w-auto">
+                            {USER_TABS.map(tab => (
+                                <button key={tab.key} onClick={() => setActiveTab(tab.key)}
+                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-[0.9rem] text-xs font-black tracking-widest transition-all whitespace-nowrap ${activeTab === tab.key ? `${tab.bg} text-white shadow-lg` : 'text-white/30 hover:text-white/50'}`}>
+                                    <tab.icon size={14} />{tab.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-4 lg:ml-auto w-full lg:w-auto flex-1 lg:justify-end">
+                        <div className="relative flex-1 max-w-md">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500/50" size={18} />
+                            <input type="text" placeholder="Search by name, email, student ID..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-white/[0.04] border border-white/10 py-3 pl-11 pr-4 rounded-xl outline-none text-sm focus:border-orange-500/50 transition-all placeholder:text-white/20" />
+                        </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-4 lg:ml-auto w-full lg:w-auto flex-1 lg:justify-end">
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500/50" size={18} />
-                        <input type="text" placeholder="Search by name, email, student ID..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-white/[0.04] border border-white/10 py-3 pl-11 pr-4 rounded-xl outline-none text-sm focus:border-orange-500/50 transition-all placeholder:text-white/20" />
-                    </div>
-                </div>
-            </div>
 
             </div>
 
@@ -484,143 +482,143 @@ export default function AdminUsersSection({ refreshTrigger }) {
             )}
 
             <div className="flex-1 admin-scroll overflow-y-auto min-h-0 p-6 rounded-[1.5rem] bg-white/[0.01] border border-white/5 shadow-[inset_0_0_24px_rgba(0,0,0,0.8)]">
-            <div className="relative min-h-[400px]">
-                <AnimatePresence mode="wait">
-                    {loading ? (
-                        <motion.div key="loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-pulse">
-                            {[1,2,3,4,5,6,7,8].map(i => (
-                                <div key={i} className="bg-white/[0.02] border border-white/5 rounded-[1.5rem] p-4 flex flex-col space-y-3">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-5 h-5 bg-white/5 rounded-md shrink-0" />
-                                        <div className="w-10 h-10 rounded-full bg-orange-500/10 shrink-0" />
-                                        <div className="flex-1 space-y-1.5">
-                                            <div className="h-3 w-24 bg-white/10 rounded" />
-                                            <div className="h-2 w-16 bg-white/5 rounded" />
-                                        </div>
-                                        <div className="h-4 w-16 bg-yellow-500/10 rounded-full" />
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 bg-orange-500/10 rounded-full" />
-                                        <div className="h-2 w-40 bg-white/5 rounded" />
-                                    </div>
-                                    <div className="w-full h-10 bg-white/[0.03] rounded-xl border border-white/5" />
-                                    <div className="h-2 w-28 bg-white/5 rounded mt-auto" />
-                                    <div className="flex gap-2 pt-2">
-                                        <div className="flex-1 h-8 bg-white/[0.03] border border-white/5 rounded-xl" />
-                                        <div className="flex-1 h-8 bg-white/[0.03] border border-white/5 rounded-xl" />
-                                        <div className="w-8 h-8 bg-white/[0.03] border border-white/5 rounded-xl" />
-                                    </div>
-                                </div>
-                            ))}
-                        </motion.div>
-                    ) : filtered.length > 0 ? (
-                        <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {filtered.map(u => (
-                                <motion.div key={u.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.95 }}
-                                    onClick={() => toggleSelect(u.id)}
-                                    className={`bg-white/[0.02] backdrop-blur-md border rounded-[1.5rem] p-4 flex flex-col h-full hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] transition-all duration-300 cursor-pointer ${selectedUsers.has(u.id) ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'border-white/5'}`}>
-                                    <div className="space-y-3 mb-3">
-                                        {/* User header */}
+                <div className="relative min-h-[400px]">
+                    <AnimatePresence mode="wait">
+                        {loading ? (
+                            <motion.div key="loader" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                                    <div key={i} className="bg-white/[0.02] border border-white/5 rounded-[1.5rem] p-4 flex flex-col space-y-3 animate-shimmer">
                                         <div className="flex items-center gap-2">
-                                            <button onClick={(e) => { e.stopPropagation(); toggleSelect(u.id); }}
-                                                className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${selectedUsers.has(u.id) ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20'}`}>
-                                                {selectedUsers.has(u.id) && <CheckCircle size={12} className="text-white" />}
-                                            </button>
-                                            <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center overflow-hidden shrink-0">
-                                                {u.avatar_url ? <img src={u.avatar_url} className="w-full h-full object-cover" alt="" /> : <User size={16} className="text-orange-500" />}
+                                            <div className="w-5 h-5 bg-white/5 rounded-md shrink-0" />
+                                            <div className="w-10 h-10 rounded-full bg-orange-500/10 shrink-0" />
+                                            <div className="flex-1 space-y-1.5">
+                                                <div className="h-3 w-24 bg-white/10 rounded" />
+                                                <div className="h-2 w-16 bg-white/5 rounded" />
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-base font-bold text-white truncate">{u.full_name || 'Unknown'}</p>
-                                                <p className="text-xs text-white/40 font-mono">{u.student_number || 'N/A'}</p>
-                                            </div>
-                                            {!u.is_banned && (
-                                                <span className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${statusColors[u.verification_status]}`}>{u.verification_status}</span>
-                                            )}
-                                            {u.is_banned && (
-                                                <span className="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border bg-red-500/20 text-red-400 border-red-500/30">Banned</span>
-                                            )}
+                                            <div className="h-4 w-16 bg-yellow-500/10 rounded-full" />
                                         </div>
-                                        {/* Email */}
-                                        <div className="flex items-center gap-2 text-white/30">
-                                            <Mail size={12} className="text-orange-500" />
-                                            <span className="text-xs font-bold truncate">{u.email}</span>
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-3 h-3 bg-orange-500/10 rounded-full" />
+                                            <div className="h-2 w-40 bg-white/5 rounded" />
                                         </div>
-                                        {/* Document preview button (Hidden for banned users to save space) */}
-                                        {u.verification_doc_signed_url && !u.is_banned && (
-                                            <button onClick={() => setPreviewDocUrl(u.verification_doc_signed_url)}
-                                                className="w-full flex items-center gap-2 p-3 bg-white/[0.03] rounded-xl border border-white/5 hover:border-orange-500/30 transition-all text-left">
-                                                <FileText size={16} className="text-orange-500 shrink-0" />
-                                                <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">View Document</span>
-                                                <Eye size={14} className="ml-auto text-white/20" />
-                                            </button>
-                                        )}
-                                        {/* Rejection reason */}
-                                        {u.verification_status === 'rejected' && u.verification_rejection_reason && (
-                                            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
-                                                <p className="text-[8px] font-black uppercase tracking-widest text-red-400 mb-1">Rejection Reason</p>
-                                                <p className="text-white/50 text-[10px] line-clamp-2">{u.verification_rejection_reason}</p>
-                                            </div>
-                                        )}
+                                        <div className="w-full h-10 bg-white/[0.03] rounded-xl border border-white/5" />
+                                        <div className="h-2 w-28 bg-white/5 rounded mt-auto" />
+                                        <div className="flex gap-2 pt-2">
+                                            <div className="flex-1 h-8 bg-white/[0.03] border border-white/5 rounded-xl" />
+                                            <div className="flex-1 h-8 bg-white/[0.03] border border-white/5 rounded-xl" />
+                                            <div className="w-8 h-8 bg-white/[0.03] border border-white/5 rounded-xl" />
+                                        </div>
                                     </div>
+                                ))}
+                            </motion.div>
+                        ) : filtered.length > 0 ? (
+                            <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                                {filtered.map(u => (
+                                    <motion.div key={u.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+                                        onClick={() => toggleSelect(u.id)}
+                                        className={`bg-white/[0.02] backdrop-blur-md border rounded-[1.5rem] p-4 flex flex-col h-full hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] transition-all duration-300 cursor-pointer ${selectedUsers.has(u.id) ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'border-white/5'}`}>
+                                        <div className="space-y-3 mb-3">
+                                            {/* User header */}
+                                            <div className="flex items-center gap-2">
+                                                <button onClick={(e) => { e.stopPropagation(); toggleSelect(u.id); }}
+                                                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${selectedUsers.has(u.id) ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20'}`}>
+                                                    {selectedUsers.has(u.id) && <CheckCircle size={12} className="text-white" />}
+                                                </button>
+                                                <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center overflow-hidden shrink-0">
+                                                    {u.avatar_url ? <img src={u.avatar_url} className="w-full h-full object-cover" alt="" /> : <User size={16} className="text-orange-500" />}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-base font-bold text-white truncate">{u.full_name || 'Unknown'}</p>
+                                                    <p className="text-xs text-white/40 font-mono">{u.student_number || 'N/A'}</p>
+                                                </div>
+                                                {!u.is_banned && (
+                                                    <span className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${statusColors[u.verification_status]}`}>{u.verification_status}</span>
+                                                )}
+                                                {u.is_banned && (
+                                                    <span className="px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border bg-red-500/20 text-red-400 border-red-500/30">Banned</span>
+                                                )}
+                                            </div>
+                                            {/* Email */}
+                                            <div className="flex items-center gap-2 text-white/30">
+                                                <Mail size={12} className="text-orange-500" />
+                                                <span className="text-xs font-bold truncate">{u.email}</span>
+                                            </div>
+                                            {/* Document preview button (Hidden for banned users to save space) */}
+                                            {u.verification_doc_signed_url && !u.is_banned && (
+                                                <button onClick={() => setPreviewDocUrl(u.verification_doc_signed_url)}
+                                                    className="w-full flex items-center gap-2 p-3 bg-white/[0.03] rounded-xl border border-white/5 hover:border-orange-500/30 transition-all text-left">
+                                                    <FileText size={16} className="text-orange-500 shrink-0" />
+                                                    <span className="text-[10px] font-bold text-white/50 uppercase tracking-widest">View Document</span>
+                                                    <Eye size={14} className="ml-auto text-white/20" />
+                                                </button>
+                                            )}
+                                            {/* Rejection reason */}
+                                            {u.verification_status === 'rejected' && u.verification_rejection_reason && (
+                                                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
+                                                    <p className="text-[8px] font-black uppercase tracking-widest text-red-400 mb-1">Rejection Reason</p>
+                                                    <p className="text-white/50 text-[10px] line-clamp-2">{u.verification_rejection_reason}</p>
+                                                </div>
+                                            )}
+                                        </div>
 
-                                    <div className="mt-auto space-y-4 pt-2">
-                                        {/* Timestamp */}
-                                        <p className="text-[10px] text-white/20 font-bold tracking-widest uppercase">
-                                            Joined {new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                        </p>
-                                        {/* Actions */}
-                                        <div className="flex gap-2" onClick={e => e.stopPropagation()}>
-                                            {u.verification_status === 'pending' && (<>
-                                                <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
-                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                    <CheckCircle size={10} className="text-green-500" /> APPROVE
+                                        <div className="mt-auto space-y-4 pt-2">
+                                            {/* Timestamp */}
+                                            <p className="text-[10px] text-white/20 font-bold tracking-widest uppercase">
+                                                Joined {new Date(u.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                            </p>
+                                            {/* Actions */}
+                                            <div className="flex gap-2" onClick={e => e.stopPropagation()}>
+                                                {u.verification_status === 'pending' && (<>
+                                                    <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
+                                                        className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                        <CheckCircle size={10} className="text-green-500" /> APPROVE
+                                                    </button>
+                                                    <button onClick={() => setRejectTarget(u.id)} disabled={processing}
+                                                        className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                        <XCircle size={10} className="text-red-500" /> REJECT
+                                                    </button>
+                                                </>)}
+                                                {u.verification_status === 'rejected' && (
+                                                    <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
+                                                        className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                        <CheckCircle size={10} className="text-green-500" /> APPROVE
+                                                    </button>
+                                                )}
+                                                {u.verification_status === 'approved' && !u.is_banned && (
+                                                    <button onClick={() => setRejectTarget(u.id)} disabled={processing}
+                                                        className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                        <XCircle size={10} className="text-red-500" /> REVOKE
+                                                    </button>
+                                                )}
+                                                {/* Ban / Unban toggle */}
+                                                {u.is_banned ? (
+                                                    <button onClick={() => setUnbanTarget(u.id)} disabled={processing}
+                                                        className="flex-1 py-2 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                                                        <ShieldCheck size={10} className="text-orange-500" /> UNBAN
+                                                    </button>
+                                                ) : u.verification_status === 'approved' && (
+                                                    <button onClick={() => setBanTarget(u.id)} disabled={processing}
+                                                        className="p-2 bg-white/[0.03] hover:bg-red-500/10 text-white/50 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl transition-all active:scale-95 disabled:opacity-50" title="Ban user">
+                                                        <Ban size={10} className="text-red-500" />
+                                                    </button>
+                                                )}
+                                                <button onClick={() => setDeleteTarget(u.id)} disabled={processing}
+                                                    className="p-2 bg-white/[0.03] hover:bg-red-500/10 text-white/50 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl transition-all active:scale-95 disabled:opacity-50" title="Delete account">
+                                                    <Trash2 size={10} className="text-red-500" />
                                                 </button>
-                                                <button onClick={() => setRejectTarget(u.id)} disabled={processing}
-                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                    <XCircle size={10} className="text-red-500" /> REJECT
-                                                </button>
-                                            </>)}
-                                            {u.verification_status === 'rejected' && (
-                                                <button onClick={() => handleModerate(u.id, 'approve')} disabled={processing}
-                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-green-500/10 text-white border border-white/10 hover:border-green-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                    <CheckCircle size={10} className="text-green-500" /> APPROVE
-                                                </button>
-                                            )}
-                                            {u.verification_status === 'approved' && !u.is_banned && (
-                                                <button onClick={() => setRejectTarget(u.id)} disabled={processing}
-                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white/70 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                    <XCircle size={10} className="text-red-500" /> REVOKE
-                                                </button>
-                                            )}
-                                            {/* Ban / Unban toggle */}
-                                            {u.is_banned ? (
-                                                <button onClick={() => setUnbanTarget(u.id)} disabled={processing}
-                                                    className="flex-1 py-2 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-xl font-black text-[10px] tracking-widest transition-all active:scale-95 flex items-center justify-center gap-1.5 disabled:opacity-50">
-                                                    <ShieldCheck size={10} className="text-orange-500" /> UNBAN
-                                                </button>
-                                            ) : u.verification_status === 'approved' && (
-                                                <button onClick={() => setBanTarget(u.id)} disabled={processing}
-                                                    className="p-2 bg-white/[0.03] hover:bg-red-500/10 text-white/50 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl transition-all active:scale-95 disabled:opacity-50" title="Ban user">
-                                                    <Ban size={10} className="text-red-500" />
-                                                </button>
-                                            )}
-                                            <button onClick={() => setDeleteTarget(u.id)} disabled={processing}
-                                                className="p-2 bg-white/[0.03] hover:bg-red-500/10 text-white/50 hover:text-white border border-white/10 hover:border-red-500/50 rounded-xl transition-all active:scale-95 disabled:opacity-50" title="Delete account">
-                                                <Trash2 size={10} className="text-red-500" />
-                                            </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </motion.div>
-                    ) : (
-                        <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-20 text-white/20">
-                            <Users size={48} strokeWidth={1} className="mb-4" />
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em]">{searchQuery ? 'No users match' : `No ${activeTab === 'all' ? '' : activeTab} users`}</p>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </div>
+                                    </motion.div>
+                                ))}
+                            </motion.div>
+                        ) : (
+                            <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-20 text-white/20">
+                                <Users size={48} strokeWidth={1} className="mb-4" />
+                                <p className="text-[10px] font-black uppercase tracking-[0.2em]">{searchQuery ? 'No users match' : `No ${activeTab === 'all' ? '' : activeTab} users`}</p>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
             </div>
 
             {/* Toast */}
