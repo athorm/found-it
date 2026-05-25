@@ -304,8 +304,8 @@ function BanReasonModal({ onConfirm, onCancel, processing }) {
                     {BAN_PREMADE_REASONS.map((r) => (
                         <button key={r} onClick={() => setReason(r)} type="button"
                             className={`px-3 py-2 rounded-xl text-[10px] font-black tracking-wide border transition-all ${reason === r
-                                    ? 'bg-red-500/20 border-red-500/50 text-red-300 shadow-[inset_0_0_15px_rgba(239,68,68,0.2)]'
-                                    : 'bg-white/[0.03] border-white/10 text-white/40 hover:border-red-500/30 hover:text-white/80'
+                                ? 'bg-red-500/20 border-red-500/50 text-red-300 shadow-[inset_0_0_15px_rgba(239,68,68,0.2)]'
+                                : 'bg-white/[0.03] border-white/10 text-white/40 hover:border-red-500/30 hover:text-white/80'
                                 }`}>
                             {r}
                         </button>
@@ -1001,56 +1001,56 @@ export default function AdminPage() {
                         <AdminUsersSection refreshTrigger={userRefreshTrigger} />
                     </div>
 
-                {/* ─── REPORTS SECTION ─── */}
-                <div className={`${adminSection === 'reports' ? 'flex' : 'hidden'} flex-1 min-h-0 flex-col overflow-hidden`}>
-                    <div className="shrink-0 space-y-6 pb-4">
+                    {/* ─── REPORTS SECTION ─── */}
+                    <div className={`${adminSection === 'reports' ? 'flex' : 'hidden'} flex-1 min-h-0 flex-col overflow-hidden`}>
+                        <div className="shrink-0 space-y-6 pb-4">
 
-                        {/* Reports Stats */}
-                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 overflow-hidden rounded-[1.5rem]">
-                            {[
-                                { label: 'For Review', count: reports.filter(r => r.status === 'pending').length, icon: Clock, color: 'text-yellow-400', tab: 'pending' },
-                                { label: 'Dismissed', count: reports.filter(r => r.status === 'dismissed').length, icon: XCircle, color: 'text-white/40', tab: 'dismissed' },
-                                { label: 'Invalid', count: reports.filter(r => r.status === 'valid').length, icon: CheckCircle, color: 'text-gray-400', tab: 'valid' },
-                                { label: 'Valid + Ban', count: reports.filter(r => r.status === 'valid_ban').length, icon: Ban, color: 'text-red-500', tab: 'valid_ban' },
-                                { label: 'Total Reports', count: reports.length, icon: Flag, color: 'text-orange-400', tab: 'all' }
-                            ].map(s => (
-                                <button key={s.tab} onClick={() => { setReportFilter(s.tab); setSelectedReports(new Set()); }}
-                                    className={`p-5 rounded-[1.5rem] border transition-all duration-300 text-left backdrop-blur-md relative overflow-hidden group ${reportFilter === s.tab ? 'bg-orange-500/15 border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'}`}>
-                                    <div className={`absolute top-0 right-0 w-24 h-24 blur-[40px] rounded-full pointer-events-none opacity-20 transition-opacity duration-300 ${reportFilter === s.tab ? 'opacity-40' : 'group-hover:opacity-30'} ${s.color === 'text-yellow-400' ? 'bg-yellow-500' : s.color === 'text-green-400' ? 'bg-green-500' : s.color === 'text-red-500' || s.color === 'text-red-400' ? 'bg-red-500' : 'bg-orange-500'}`} />
-                                    <div className="flex items-center justify-between mb-3 relative z-10">
-                                        <div className={`p-2 rounded-xl bg-white/5 border border-white/5 ${reportFilter === s.tab ? 'scale-110 shadow-lg' : ''} transition-transform`}>
-                                            <s.icon size={20} className={s.color} />
-                                        </div>
-                                        <span className="text-3xl font-black text-white">{s.count}</span>
-                                    </div>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 relative z-10">{s.label}</p>
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Filter Tabs */}
-                        <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide">
-                            <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max gap-1">
+                            {/* Reports Stats */}
+                            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 overflow-hidden rounded-[1.5rem]">
                                 {[
-                                    { key: 'pending', label: 'For Review' },
-                                    { key: 'dismissed', label: 'Dismissed' },
-                                    { key: 'valid', label: 'Invalid' },
-                                    { key: 'valid_ban', label: 'Valid + Ban' },
-                                    { key: 'all', label: 'All' },
-                                ].map(tab => (
-                                    <button key={tab.key} onClick={() => { setReportFilter(tab.key); setSelectedReports(new Set()); }}
-                                        className={`px-4 py-2 rounded-[0.9rem] text-xs font-black tracking-widest transition-all whitespace-nowrap ${reportFilter === tab.key ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
-                                        {tab.label}
-                                        {tab.key === 'pending' && reports.filter(r => r.status === 'pending').length > 0 && (
-                                            <span className="ml-1.5 px-1.5 py-0.5 bg-red-500 text-white text-[8px] rounded-full font-black">
-                                                {reports.filter(r => r.status === 'pending').length}
-                                            </span>
-                                        )}
+                                    { label: 'For Review', count: reports.filter(r => r.status === 'pending').length, icon: Clock, color: 'text-yellow-400', tab: 'pending' },
+                                    { label: 'Dismissed', count: reports.filter(r => r.status === 'dismissed').length, icon: XCircle, color: 'text-white/40', tab: 'dismissed' },
+                                    { label: 'Invalid', count: reports.filter(r => r.status === 'valid').length, icon: CheckCircle, color: 'text-gray-400', tab: 'valid' },
+                                    { label: 'Valid + Ban', count: reports.filter(r => r.status === 'valid_ban').length, icon: Ban, color: 'text-red-500', tab: 'valid_ban' },
+                                    { label: 'Total Reports', count: reports.length, icon: Flag, color: 'text-orange-400', tab: 'all' }
+                                ].map(s => (
+                                    <button key={s.tab} onClick={() => { setReportFilter(s.tab); setSelectedReports(new Set()); }}
+                                        className={`p-5 rounded-[1.5rem] border transition-all duration-300 text-left backdrop-blur-md relative overflow-hidden group ${reportFilter === s.tab ? 'bg-orange-500/15 border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'}`}>
+                                        <div className={`absolute top-0 right-0 w-24 h-24 blur-[40px] rounded-full pointer-events-none opacity-20 transition-opacity duration-300 ${reportFilter === s.tab ? 'opacity-40' : 'group-hover:opacity-30'} ${s.color === 'text-yellow-400' ? 'bg-yellow-500' : s.color === 'text-green-400' ? 'bg-green-500' : s.color === 'text-red-500' || s.color === 'text-red-400' ? 'bg-red-500' : 'bg-orange-500'}`} />
+                                        <div className="flex items-center justify-between mb-3 relative z-10">
+                                            <div className={`p-2 rounded-xl bg-white/5 border border-white/5 ${reportFilter === s.tab ? 'scale-110 shadow-lg' : ''} transition-transform`}>
+                                                <s.icon size={20} className={s.color} />
+                                            </div>
+                                            <span className="text-3xl font-black text-white">{s.count}</span>
+                                        </div>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 relative z-10">{s.label}</p>
                                     </button>
                                 ))}
                             </div>
+
+                            {/* Filter Tabs */}
+                            <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide">
+                                <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max gap-1">
+                                    {[
+                                        { key: 'pending', label: 'For Review' },
+                                        { key: 'dismissed', label: 'Dismissed' },
+                                        { key: 'valid', label: 'Invalid' },
+                                        { key: 'valid_ban', label: 'Valid + Ban' },
+                                        { key: 'all', label: 'All' },
+                                    ].map(tab => (
+                                        <button key={tab.key} onClick={() => { setReportFilter(tab.key); setSelectedReports(new Set()); }}
+                                            className={`px-4 py-2 rounded-[0.9rem] text-xs font-black tracking-widest transition-all whitespace-nowrap ${reportFilter === tab.key ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
+                                            {tab.label}
+                                            {tab.key === 'pending' && reports.filter(r => r.status === 'pending').length > 0 && (
+                                                <span className="ml-1.5 px-1.5 py-0.5 bg-red-500 text-white text-[8px] rounded-full font-black">
+                                                    {reports.filter(r => r.status === 'pending').length}
+                                                </span>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
                         {(() => {
                             const filteredReports = reportFilter === 'all' ? reports : reports.filter(r => r.status === reportFilter);
@@ -1058,28 +1058,28 @@ export default function AdminPage() {
                             const toggleReportSelectAll = () => { selectedReports.size === filteredReports.length ? setSelectedReports(new Set()) : setSelectedReports(new Set(filteredReports.map(r => r.id))); };
 
                             return reportsLoading ? (
-                            <div className="p-6 rounded-[1.5rem] bg-white/[0.01] border border-white/5 shadow-[inset_0_0_24px_rgba(0,0,0,0.8)]">
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-pulse">
-                                    {[1,2,3,4,5,6].map(i => (
-                                        <div key={i} className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 space-y-3">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-5 h-5 bg-white/5 rounded-md shrink-0" />
-                                                <div className="flex-1 space-y-1.5">
-                                                    <div className="h-3 w-24 bg-white/10 rounded" />
-                                                    <div className="h-2 w-32 bg-white/5 rounded" />
+                                <div className="p-6 rounded-[1.5rem] bg-white/[0.01] border border-white/5 shadow-[inset_0_0_24px_rgba(0,0,0,0.8)]">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                        {[1, 2, 3, 4, 5, 6].map(i => (
+                                            <div key={i} className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 space-y-3 animate-shimmer">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-5 h-5 bg-white/5 rounded-md shrink-0" />
+                                                    <div className="flex-1 space-y-1.5">
+                                                        <div className="h-3 w-24 bg-white/10 rounded" />
+                                                        <div className="h-2 w-32 bg-white/5 rounded" />
+                                                    </div>
+                                                    <div className="h-4 w-16 bg-yellow-500/10 rounded-full" />
                                                 </div>
-                                                <div className="h-4 w-16 bg-yellow-500/10 rounded-full" />
+                                                <div className="h-2.5 w-full bg-white/5 rounded" />
+                                                <div className="h-2.5 w-3/4 bg-white/5 rounded" />
+                                                <div className="flex justify-between">
+                                                    <div className="h-2 w-12 bg-white/5 rounded" />
+                                                    <div className="h-2 w-16 bg-white/5 rounded" />
+                                                </div>
                                             </div>
-                                            <div className="h-2.5 w-full bg-white/5 rounded" />
-                                            <div className="h-2.5 w-3/4 bg-white/5 rounded" />
-                                            <div className="flex justify-between">
-                                                <div className="h-2 w-12 bg-white/5 rounded" />
-                                                <div className="h-2 w-16 bg-white/5 rounded" />
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
                             ) : filteredReports.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-16 text-white/20 border border-white/5 rounded-3xl">
                                     <Flag size={32} className="mb-3 opacity-30" />
@@ -1090,19 +1090,19 @@ export default function AdminPage() {
                             ) : (<>
                                 {/* Select all + batch actions bar — pinned above scroll */}
                                 <div className="shrink-0 flex items-center gap-3 flex-wrap pb-3">
-                                        <button onClick={toggleReportSelectAll}
-                                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedReports.size === filteredReports.length && filteredReports.length > 0 ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20 hover:border-orange-500/60'}`}>
-                                            {selectedReports.size === filteredReports.length && filteredReports.length > 0 && <CheckCircle size={14} className="text-white" />}
+                                    <button onClick={toggleReportSelectAll}
+                                        className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedReports.size === filteredReports.length && filteredReports.length > 0 ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20 hover:border-orange-500/60'}`}>
+                                        {selectedReports.size === filteredReports.length && filteredReports.length > 0 && <CheckCircle size={14} className="text-white" />}
+                                    </button>
+                                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                                        {selectedReports.size > 0 ? `${selectedReports.size} selected` : 'Select all'}
+                                    </span>
+                                    {selectedReports.size > 0 && (
+                                        <button onClick={() => setBatchReportDeleteConfirm(true)}
+                                            className="ml-auto flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-black tracking-widest transition-all">
+                                            <Trash2 size={14} /> Delete {selectedReports.size}
                                         </button>
-                                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
-                                            {selectedReports.size > 0 ? `${selectedReports.size} selected` : 'Select all'}
-                                        </span>
-                                        {selectedReports.size > 0 && (
-                                            <button onClick={() => setBatchReportDeleteConfirm(true)}
-                                                className="ml-auto flex items-center gap-2 px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-black tracking-widest transition-all">
-                                                <Trash2 size={14} /> Delete {selectedReports.size}
-                                            </button>
-                                        )}
+                                    )}
                                 </div>
 
                                 <div className="flex-1 admin-scroll overflow-y-auto min-h-0 p-6 rounded-[1.5rem] bg-white/[0.01] border border-white/5 shadow-[inset_0_0_24px_rgba(0,0,0,0.8)]">
@@ -1114,8 +1114,8 @@ export default function AdminPage() {
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 1 }}
                                                 className={`text-left bg-white/[0.02] backdrop-blur-md border rounded-2xl p-4 hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] transition-all duration-300 group cursor-pointer ${selectedReports.has(report.id) ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' :
-                                                        report.status === 'pending' ? 'border-red-500/20' :
-                                                            report.status === 'valid' || report.status === 'valid_ban' ? 'border-green-500/20' : 'border-white/10'
+                                                    report.status === 'pending' ? 'border-red-500/20' :
+                                                        report.status === 'valid' || report.status === 'valid_ban' ? 'border-green-500/20' : 'border-white/10'
                                                     }`}
                                             >
                                                 {/* Compact header */}
@@ -1129,9 +1129,9 @@ export default function AdminPage() {
                                                         <p className="text-[10px] text-white/30 truncate">Reported by {report.reporter?.full_name || 'Unknown'}</p>
                                                     </div>
                                                     <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${report.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' :
-                                                            report.status === 'valid_ban' ? 'bg-red-500/10 text-red-400 border-red-500/30' :
-                                                                report.status === 'valid' ? 'bg-gray-500/10 text-gray-400 border-gray-500/30' :
-                                                                    'bg-white/5 text-white/30 border-white/10'
+                                                        report.status === 'valid_ban' ? 'bg-red-500/10 text-red-400 border-red-500/30' :
+                                                            report.status === 'valid' ? 'bg-gray-500/10 text-gray-400 border-gray-500/30' :
+                                                                'bg-white/5 text-white/30 border-white/10'
                                                         }`}>
                                                         {report.status === 'pending' ? 'For Review' : report.status === 'valid_ban' ? 'Valid + Ban' : report.status === 'valid' ? 'Invalid' : report.status}
                                                     </span>
@@ -1155,266 +1155,266 @@ export default function AdminPage() {
                                 </div>
                             </>);
                         })()}
-                </div>
+                    </div>
 
-                {/* ─── REPORT DETAIL MODAL ─── */}
-                <AnimatePresence>
-                    {selectedReport && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                            <motion.div
-                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                onClick={() => setSelectedReport(null)}
-                                className="absolute inset-0 bg-black/90 backdrop-blur-xl"
-                            />
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                                animate={{ scale: 1, opacity: 1, y: 0 }}
-                                exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                                className="relative w-full max-w-lg bg-[#111]/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] max-h-[90vh] overflow-y-auto"
-                            >
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-[50px] rounded-full pointer-events-none" />
-                                <div className="p-6 space-y-5">
-                                    {/* Modal header */}
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <h3 className="text-lg font-black text-white">Report Details</h3>
-                                            <p className="text-[10px] text-white/30 uppercase tracking-widest mt-0.5">
-                                                {new Date(selectedReport.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-                                            </p>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <button
-                                                onClick={() => handleDeleteReport(selectedReport.id)}
-                                                disabled={reportProcessing === selectedReport.id}
-                                                className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all disabled:opacity-50"
-                                                title="Delete Report Permanently"
-                                            >
-                                                {reportProcessing === selectedReport.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                                            </button>
-                                            <button onClick={() => setSelectedReport(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-white/40 transition-all">
-                                                <X size={16} />
-                                            </button>
-                                        </div>
-                                    </div>
-
-                                    {/* Reported user */}
-                                    <div className="bg-red-500/5 border border-red-500/15 rounded-2xl p-4">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-red-400/60 mb-2">Reported User</p>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0 overflow-hidden">
-                                                {selectedReport.reported_user?.avatar_url
-                                                    ? <img src={selectedReport.reported_user.avatar_url} className="w-full h-full object-cover" alt="" />
-                                                    : <User size={16} className="text-red-400" />}
-                                            </div>
+                    {/* ─── REPORT DETAIL MODAL ─── */}
+                    <AnimatePresence>
+                        {selectedReport && (
+                            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                                <motion.div
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                    onClick={() => setSelectedReport(null)}
+                                    className="absolute inset-0 bg-black/90 backdrop-blur-xl"
+                                />
+                                <motion.div
+                                    initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                                    exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                                    className="relative w-full max-w-lg bg-[#111]/90 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] max-h-[90vh] overflow-y-auto"
+                                >
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-orange-500/10 blur-[50px] rounded-full pointer-events-none" />
+                                    <div className="p-6 space-y-5">
+                                        {/* Modal header */}
+                                        <div className="flex items-start justify-between">
                                             <div>
-                                                <p className="text-sm font-bold text-white">{selectedReport.reported_user?.full_name || 'Unknown'}</p>
-                                                <p className="text-[10px] text-white/30">{selectedReport.reported_user?.student_number}</p>
+                                                <h3 className="text-lg font-black text-white">Report Details</h3>
+                                                <p className="text-[10px] text-white/30 uppercase tracking-widest mt-0.5">
+                                                    {new Date(selectedReport.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                                                </p>
                                             </div>
-                                            {selectedReport.reported_user?.is_banned && (
-                                                <span className="ml-auto px-2 py-0.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-[8px] font-black uppercase">Banned</span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Reporter */}
-                                    <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2">Reported By</p>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center shrink-0 overflow-hidden">
-                                                {selectedReport.reporter?.avatar_url
-                                                    ? <img src={selectedReport.reporter.avatar_url} className="w-full h-full object-cover" alt="" />
-                                                    : <User size={14} className="text-orange-400" />}
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    onClick={() => handleDeleteReport(selectedReport.id)}
+                                                    disabled={reportProcessing === selectedReport.id}
+                                                    className="p-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition-all disabled:opacity-50"
+                                                    title="Delete Report Permanently"
+                                                >
+                                                    {reportProcessing === selectedReport.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                                                </button>
+                                                <button onClick={() => setSelectedReport(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-white/40 transition-all">
+                                                    <X size={16} />
+                                                </button>
                                             </div>
-                                            <p className="text-xs font-bold text-white/60">{selectedReport.reporter?.full_name || 'Unknown'}</p>
                                         </div>
-                                    </div>
 
-                                    {/* Reason */}
-                                    <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2">Report Reason</p>
-                                        <p className="text-white/70 text-sm leading-relaxed">{selectedReport.reason}</p>
-                                    </div>
+                                        {/* Reported user */}
+                                        <div className="bg-red-500/5 border border-red-500/15 rounded-2xl p-4">
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-red-400/60 mb-2">Reported User</p>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0 overflow-hidden">
+                                                    {selectedReport.reported_user?.avatar_url
+                                                        ? <img src={selectedReport.reported_user.avatar_url} className="w-full h-full object-cover" alt="" />
+                                                        : <User size={16} className="text-red-400" />}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-white">{selectedReport.reported_user?.full_name || 'Unknown'}</p>
+                                                    <p className="text-[10px] text-white/30">{selectedReport.reported_user?.student_number}</p>
+                                                </div>
+                                                {selectedReport.reported_user?.is_banned && (
+                                                    <span className="ml-auto px-2 py-0.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-[8px] font-black uppercase">Banned</span>
+                                                )}
+                                            </div>
+                                        </div>
 
-                                    {/* Chat context with profiles */}
-                                    {selectedReport.chatMessages?.length > 0 && (
-                                        <div className="relative z-10">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-orange-400/80 mb-3 flex items-center gap-2">
-                                                <MessageSquare size={14} /> Chat Context ({selectedReport.chatMessages.length} messages)
-                                            </p>
-                                            <div className="bg-black/40 border border-white/5 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] rounded-3xl p-5 max-h-80 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-                                                {selectedReport.chatMessages.map(msg => {
-                                                    const isReported = msg.sender_id === selectedReport.reported_user?.id;
-                                                    const senderName = isReported
-                                                        ? selectedReport.reported_user?.full_name
-                                                        : selectedReport.reporter?.full_name;
-                                                    return (
-                                                        <div key={msg.id} className={`flex ${isReported ? 'justify-end' : 'justify-start'}`}>
-                                                            <div className="max-w-[85%]">
-                                                                <p className={`text-[10px] font-black uppercase tracking-wider mb-1 ${isReported ? 'text-right text-red-400/80' : 'text-white/40'}`}>
-                                                                    {senderName || 'Unknown'} {isReported && '⚠️'}
-                                                                </p>
-                                                                <div className={`px-4 py-3 rounded-[1.5rem] text-sm ${isReported
+                                        {/* Reporter */}
+                                        <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4">
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2">Reported By</p>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center shrink-0 overflow-hidden">
+                                                    {selectedReport.reporter?.avatar_url
+                                                        ? <img src={selectedReport.reporter.avatar_url} className="w-full h-full object-cover" alt="" />
+                                                        : <User size={14} className="text-orange-400" />}
+                                                </div>
+                                                <p className="text-xs font-bold text-white/60">{selectedReport.reporter?.full_name || 'Unknown'}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Reason */}
+                                        <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4">
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2">Report Reason</p>
+                                            <p className="text-white/70 text-sm leading-relaxed">{selectedReport.reason}</p>
+                                        </div>
+
+                                        {/* Chat context with profiles */}
+                                        {selectedReport.chatMessages?.length > 0 && (
+                                            <div className="relative z-10">
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-orange-400/80 mb-3 flex items-center gap-2">
+                                                    <MessageSquare size={14} /> Chat Context ({selectedReport.chatMessages.length} messages)
+                                                </p>
+                                                <div className="bg-black/40 border border-white/5 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)] rounded-3xl p-5 max-h-80 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+                                                    {selectedReport.chatMessages.map(msg => {
+                                                        const isReported = msg.sender_id === selectedReport.reported_user?.id;
+                                                        const senderName = isReported
+                                                            ? selectedReport.reported_user?.full_name
+                                                            : selectedReport.reporter?.full_name;
+                                                        return (
+                                                            <div key={msg.id} className={`flex ${isReported ? 'justify-end' : 'justify-start'}`}>
+                                                                <div className="max-w-[85%]">
+                                                                    <p className={`text-[10px] font-black uppercase tracking-wider mb-1 ${isReported ? 'text-right text-red-400/80' : 'text-white/40'}`}>
+                                                                        {senderName || 'Unknown'} {isReported && '⚠️'}
+                                                                    </p>
+                                                                    <div className={`px-4 py-3 rounded-[1.5rem] text-sm ${isReported
                                                                         ? 'bg-red-500/20 text-red-100 border border-red-500/30 shadow-[inset_0_0_20px_rgba(239,68,68,0.1)] rounded-tr-[4px]'
                                                                         : 'bg-white/[0.04] text-white/90 border border-white/10 backdrop-blur-md rounded-tl-[4px] shadow-[inset_0_0_20px_rgba(255,255,255,0.02)]'
-                                                                    }`}>
-                                                                    {msg.image_url ? (
-                                                                        <img src={msg.image_url} alt="Shared" className="max-w-[200px] rounded-xl border border-white/10 shadow-lg" />
-                                                                    ) : msg.content}
+                                                                        }`}>
+                                                                        {msg.image_url ? (
+                                                                            <img src={msg.image_url} alt="Shared" className="max-w-[200px] rounded-xl border border-white/10 shadow-lg" />
+                                                                        ) : msg.content}
+                                                                    </div>
+                                                                    <p className={`text-[9px] font-bold text-white/20 mt-1.5 px-2 ${isReported ? 'text-right' : 'text-left'}`}>
+                                                                        {new Date(msg.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                                                    </p>
                                                                 </div>
-                                                                <p className={`text-[9px] font-bold text-white/20 mt-1.5 px-2 ${isReported ? 'text-right' : 'text-left'}`}>
-                                                                    {new Date(msg.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                                                                </p>
                                                             </div>
-                                                        </div>
-                                                    );
-                                                })}
+                                                        );
+                                                    })}
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
-
-                                    {/* Reviewer info */}
-                                    {selectedReport.status !== 'pending' && selectedReport.reviewer && (
-                                        <div className="flex items-center gap-2 text-[10px] text-white/30">
-                                            <CheckCircle size={12} className="text-green-400/40" />
-                                            <span>Reviewed by <span className="text-white/50 font-bold">{selectedReport.reviewer.full_name}</span></span>
-                                        </div>
-                                    )}
-
-                                    {/* Actions — only for pending */}
-                                    {selectedReport.status === 'pending' && (
-                                        <div className="flex flex-col gap-2 pt-2 border-t border-white/5">
-                                            <button
-                                                onClick={() => { handleReportAction(selectedReport.id, 'dismissed', selectedReport.reported_user?.id); setSelectedReport(null); }}
-                                                disabled={reportProcessing === selectedReport.id}
-                                                className="w-full py-4 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                                            >
-                                                {reportProcessing === selectedReport.id ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} className="text-orange-500" />}
-                                                Dismiss Report
-                                            </button>
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={() => { handleReportAction(selectedReport.id, 'valid', selectedReport.reported_user?.id, false); setSelectedReport(null); }}
-                                                    disabled={reportProcessing === selectedReport.id}
-                                                    className="flex-1 py-4 bg-white/[0.03] hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                                                >
-                                                    <Flag size={14} /> Invalid
-                                                </button>
-                                                <button
-                                                    onClick={() => setReportBanReasonTarget(selectedReport)}
-                                                    disabled={reportProcessing === selectedReport.id || selectedReport.reported_user?.is_banned}
-                                                    className="flex-1 py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
-                                                >
-                                                    <Ban size={14} className="text-red-500" /> {selectedReport.reported_user?.is_banned ? 'Banned' : 'Valid + Ban'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {/* Close button for non-pending */}
-                                    {selectedReport.status !== 'pending' && (
-                                        <button onClick={() => setSelectedReport(null)}
-                                            className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">
-                                            CLOSE
-                                        </button>
-                                    )}
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
-
-                {/* ─── BATCH REPORT DELETE CONFIRMATION ─── */}
-                <AnimatePresence>
-                    {batchReportDeleteConfirm && (
-                        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setBatchReportDeleteConfirm(false)} />
-                            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                                className="relative bg-[#111] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(239,68,68,0.15)] overflow-hidden">
-                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150px] h-[50px] bg-red-500/30 blur-[40px] rounded-full pointer-events-none" />
-                                <div className="w-20 h-20 bg-red-500/10 border-2 border-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
-                                    <Trash2 size={36} className="text-red-500" />
-                                </div>
-                                <h3 className="text-2xl font-black text-white mb-2 relative z-10">Delete {selectedReports.size} Report{selectedReports.size > 1 ? 's' : ''}?</h3>
-                                <p className="text-white/40 text-sm mb-6 leading-relaxed relative z-10">This action is permanent and cannot be undone.</p>
-                                <div className="space-y-3 relative z-10">
-                                    <button onClick={handleBatchDeleteReports} disabled={processing}
-                                        className="w-full py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
-                                        {processing ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} className="text-red-500" />} DELETE PERMANENTLY
-                                    </button>
-                                    <button onClick={() => setBatchReportDeleteConfirm(false)}
-                                        className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">CANCEL</button>
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
-
-                {/* ─── BAN REASON MODAL (REPORTS) ─── */}
-                <AnimatePresence>
-                    {reportBanReasonTarget && (
-                        <BanReasonModal
-                            processing={reportProcessing === reportBanReasonTarget.id}
-                            onCancel={() => setReportBanReasonTarget(null)}
-                            onConfirm={(reason) => {
-                                handleReportAction(reportBanReasonTarget.id, 'valid', reportBanReasonTarget.reported_user?.id, true, reason);
-                                setReportBanReasonTarget(null);
-                                setSelectedReport(null);
-                            }}
-                        />
-                    )}
-                </AnimatePresence>
-
-                {/* ─── AI LOGS SECTION ─── */}
-                <div className={`${adminSection === 'ai-logs' ? 'flex' : 'hidden'} flex-1 min-h-0 flex-col overflow-hidden`}>
-                    <div className="shrink-0 space-y-6 pb-4">
-
-                        {/* AI Stats */}
-                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 overflow-hidden rounded-[1.5rem]">
-                            {[
-                                { label: 'Flagged', count: aiLogs.filter(l => l.flagged).length, icon: ShieldAlert, color: 'text-orange-400', tab: 'flagged' },
-                                { label: 'Unreviewed', count: aiLogs.filter(l => l.flagged && !l.admin_reviewed).length, icon: Clock, color: 'text-yellow-400', tab: 'unreviewed' },
-                                { label: 'Confirmed', count: aiLogs.filter(l => l.admin_decision === 'confirmed').length, icon: CheckCircle, color: 'text-red-400', tab: 'confirmed' },
-                                { label: 'Dismissed', count: aiLogs.filter(l => l.admin_decision === 'dismissed').length, icon: XCircle, color: 'text-green-400', tab: 'dismissed' },
-                                { label: 'Total Logs', count: aiLogs.length, icon: Shield, color: 'text-orange-400', tab: 'all' },
-                            ].map(s => (
-                                <button key={s.tab} onClick={() => { setAiLogFilter(s.tab); setSelectedAiLogs(new Set()); }}
-                                    className={`p-5 rounded-[1.5rem] border transition-all duration-300 text-left backdrop-blur-md relative overflow-hidden group ${aiLogFilter === s.tab ? 'bg-orange-500/15 border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'}`}>
-                                    <div className={`absolute top-0 right-0 w-24 h-24 blur-[40px] rounded-full pointer-events-none opacity-20 transition-opacity duration-300 ${aiLogFilter === s.tab ? 'opacity-40' : 'group-hover:opacity-30'} ${s.color === 'text-yellow-400' ? 'bg-yellow-500' : s.color === 'text-green-400' ? 'bg-green-500' : s.color === 'text-red-500' || s.color === 'text-red-400' ? 'bg-red-500' : 'bg-orange-500'}`} />
-                                    <div className="flex items-center justify-between mb-3 relative z-10">
-                                        <div className={`p-2 rounded-xl bg-white/5 border border-white/5 ${aiLogFilter === s.tab ? 'scale-110 shadow-lg' : ''} transition-transform`}>
-                                            <s.icon size={20} className={s.color} />
-                                        </div>
-                                        <span className="text-3xl font-black text-white">{s.count}</span>
-                                    </div>
-                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 relative z-10">{s.label}</p>
-                                </button>
-                            ))}
-                        </div>
-
-                        {/* Filter Tabs */}
-                        <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide">
-                            <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max gap-1">
-                                {[
-                                    { key: 'flagged', label: 'Flagged' },
-                                    { key: 'unreviewed', label: 'Unreviewed' },
-                                    { key: 'confirmed', label: 'Confirmed' },
-                                    { key: 'dismissed', label: 'Dismissed' },
-                                    { key: 'all', label: 'All' },
-                                ].map(tab => (
-                                    <button key={tab.key} onClick={() => { setAiLogFilter(tab.key); setSelectedAiLogs(new Set()); }}
-                                        className={`px-4 py-2 rounded-[0.9rem] text-xs font-black tracking-widest transition-all whitespace-nowrap ${aiLogFilter === tab.key ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
-                                        {tab.label}
-                                        {tab.key === 'unreviewed' && aiLogs.filter(l => l.flagged && !l.admin_reviewed).length > 0 && (
-                                            <span className="ml-1.5 px-1.5 py-0.5 bg-red-500 text-white text-[8px] rounded-full font-black">
-                                                {aiLogs.filter(l => l.flagged && !l.admin_reviewed).length}
-                                            </span>
                                         )}
+
+                                        {/* Reviewer info */}
+                                        {selectedReport.status !== 'pending' && selectedReport.reviewer && (
+                                            <div className="flex items-center gap-2 text-[10px] text-white/30">
+                                                <CheckCircle size={12} className="text-green-400/40" />
+                                                <span>Reviewed by <span className="text-white/50 font-bold">{selectedReport.reviewer.full_name}</span></span>
+                                            </div>
+                                        )}
+
+                                        {/* Actions — only for pending */}
+                                        {selectedReport.status === 'pending' && (
+                                            <div className="flex flex-col gap-2 pt-2 border-t border-white/5">
+                                                <button
+                                                    onClick={() => { handleReportAction(selectedReport.id, 'dismissed', selectedReport.reported_user?.id); setSelectedReport(null); }}
+                                                    disabled={reportProcessing === selectedReport.id}
+                                                    className="w-full py-4 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                                >
+                                                    {reportProcessing === selectedReport.id ? <Loader2 size={14} className="animate-spin" /> : <XCircle size={14} className="text-orange-500" />}
+                                                    Dismiss Report
+                                                </button>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => { handleReportAction(selectedReport.id, 'valid', selectedReport.reported_user?.id, false); setSelectedReport(null); }}
+                                                        disabled={reportProcessing === selectedReport.id}
+                                                        className="flex-1 py-4 bg-white/[0.03] hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                                    >
+                                                        <Flag size={14} /> Invalid
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setReportBanReasonTarget(selectedReport)}
+                                                        disabled={reportProcessing === selectedReport.id || selectedReport.reported_user?.is_banned}
+                                                        className="flex-1 py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                                                    >
+                                                        <Ban size={14} className="text-red-500" /> {selectedReport.reported_user?.is_banned ? 'Banned' : 'Valid + Ban'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Close button for non-pending */}
+                                        {selectedReport.status !== 'pending' && (
+                                            <button onClick={() => setSelectedReport(null)}
+                                                className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">
+                                                CLOSE
+                                            </button>
+                                        )}
+                                    </div>
+                                </motion.div>
+                            </div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* ─── BATCH REPORT DELETE CONFIRMATION ─── */}
+                    <AnimatePresence>
+                        {batchReportDeleteConfirm && (
+                            <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                    className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setBatchReportDeleteConfirm(false)} />
+                                <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                                    className="relative bg-[#111] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(239,68,68,0.15)] overflow-hidden">
+                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150px] h-[50px] bg-red-500/30 blur-[40px] rounded-full pointer-events-none" />
+                                    <div className="w-20 h-20 bg-red-500/10 border-2 border-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
+                                        <Trash2 size={36} className="text-red-500" />
+                                    </div>
+                                    <h3 className="text-2xl font-black text-white mb-2 relative z-10">Delete {selectedReports.size} Report{selectedReports.size > 1 ? 's' : ''}?</h3>
+                                    <p className="text-white/40 text-sm mb-6 leading-relaxed relative z-10">This action is permanent and cannot be undone.</p>
+                                    <div className="space-y-3 relative z-10">
+                                        <button onClick={handleBatchDeleteReports} disabled={processing}
+                                            className="w-full py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
+                                            {processing ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} className="text-red-500" />} DELETE PERMANENTLY
+                                        </button>
+                                        <button onClick={() => setBatchReportDeleteConfirm(false)}
+                                            className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">CANCEL</button>
+                                    </div>
+                                </motion.div>
+                            </div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* ─── BAN REASON MODAL (REPORTS) ─── */}
+                    <AnimatePresence>
+                        {reportBanReasonTarget && (
+                            <BanReasonModal
+                                processing={reportProcessing === reportBanReasonTarget.id}
+                                onCancel={() => setReportBanReasonTarget(null)}
+                                onConfirm={(reason) => {
+                                    handleReportAction(reportBanReasonTarget.id, 'valid', reportBanReasonTarget.reported_user?.id, true, reason);
+                                    setReportBanReasonTarget(null);
+                                    setSelectedReport(null);
+                                }}
+                            />
+                        )}
+                    </AnimatePresence>
+
+                    {/* ─── AI LOGS SECTION ─── */}
+                    <div className={`${adminSection === 'ai-logs' ? 'flex' : 'hidden'} flex-1 min-h-0 flex-col overflow-hidden`}>
+                        <div className="shrink-0 space-y-6 pb-4">
+
+                            {/* AI Stats */}
+                            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 overflow-hidden rounded-[1.5rem]">
+                                {[
+                                    { label: 'Flagged', count: aiLogs.filter(l => l.flagged).length, icon: ShieldAlert, color: 'text-orange-400', tab: 'flagged' },
+                                    { label: 'Unreviewed', count: aiLogs.filter(l => l.flagged && !l.admin_reviewed).length, icon: Clock, color: 'text-yellow-400', tab: 'unreviewed' },
+                                    { label: 'Confirmed', count: aiLogs.filter(l => l.admin_decision === 'confirmed').length, icon: CheckCircle, color: 'text-red-400', tab: 'confirmed' },
+                                    { label: 'Dismissed', count: aiLogs.filter(l => l.admin_decision === 'dismissed').length, icon: XCircle, color: 'text-green-400', tab: 'dismissed' },
+                                    { label: 'Total Logs', count: aiLogs.length, icon: Shield, color: 'text-orange-400', tab: 'all' },
+                                ].map(s => (
+                                    <button key={s.tab} onClick={() => { setAiLogFilter(s.tab); setSelectedAiLogs(new Set()); }}
+                                        className={`p-5 rounded-[1.5rem] border transition-all duration-300 text-left backdrop-blur-md relative overflow-hidden group ${aiLogFilter === s.tab ? 'bg-orange-500/15 border-orange-500/50 shadow-[0_0_30px_rgba(249,115,22,0.2)]' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04] hover:border-white/10'}`}>
+                                        <div className={`absolute top-0 right-0 w-24 h-24 blur-[40px] rounded-full pointer-events-none opacity-20 transition-opacity duration-300 ${aiLogFilter === s.tab ? 'opacity-40' : 'group-hover:opacity-30'} ${s.color === 'text-yellow-400' ? 'bg-yellow-500' : s.color === 'text-green-400' ? 'bg-green-500' : s.color === 'text-red-500' || s.color === 'text-red-400' ? 'bg-red-500' : 'bg-orange-500'}`} />
+                                        <div className="flex items-center justify-between mb-3 relative z-10">
+                                            <div className={`p-2 rounded-xl bg-white/5 border border-white/5 ${aiLogFilter === s.tab ? 'scale-110 shadow-lg' : ''} transition-transform`}>
+                                                <s.icon size={20} className={s.color} />
+                                            </div>
+                                            <span className="text-3xl font-black text-white">{s.count}</span>
+                                        </div>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 relative z-10">{s.label}</p>
                                     </button>
                                 ))}
                             </div>
+
+                            {/* Filter Tabs */}
+                            <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide">
+                                <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max gap-1">
+                                    {[
+                                        { key: 'flagged', label: 'Flagged' },
+                                        { key: 'unreviewed', label: 'Unreviewed' },
+                                        { key: 'confirmed', label: 'Confirmed' },
+                                        { key: 'dismissed', label: 'Dismissed' },
+                                        { key: 'all', label: 'All' },
+                                    ].map(tab => (
+                                        <button key={tab.key} onClick={() => { setAiLogFilter(tab.key); setSelectedAiLogs(new Set()); }}
+                                            className={`px-4 py-2 rounded-[0.9rem] text-xs font-black tracking-widest transition-all whitespace-nowrap ${aiLogFilter === tab.key ? 'bg-orange-500 text-white shadow-lg' : 'text-white/30 hover:text-white/50'}`}>
+                                            {tab.label}
+                                            {tab.key === 'unreviewed' && aiLogs.filter(l => l.flagged && !l.admin_reviewed).length > 0 && (
+                                                <span className="ml-1.5 px-1.5 py-0.5 bg-red-500 text-white text-[8px] rounded-full font-black">
+                                                    {aiLogs.filter(l => l.flagged && !l.admin_reviewed).length}
+                                                </span>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
                         {(() => {
                             const filteredAiLogs = aiLogs.filter(l => {
@@ -1434,32 +1434,32 @@ export default function AdminPage() {
                             const toggleAiLogSelectAll = () => { selectedAiLogs.size === filteredAiLogs.length ? setSelectedAiLogs(new Set()) : setSelectedAiLogs(new Set(filteredAiLogs.map(l => l.id))); };
 
                             return aiLogsLoading ? (
-                            <div className="p-6 rounded-[1.5rem] bg-white/[0.01] border border-white/5 shadow-[inset_0_0_24px_rgba(0,0,0,0.8)]">
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 animate-pulse">
-                                    {[1,2,3,4,5,6].map(i => (
-                                        <div key={i} className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 space-y-3">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-5 h-5 bg-white/5 rounded-md shrink-0" />
-                                                <div className="flex-1 space-y-1.5">
-                                                    <div className="h-3 w-28 bg-white/10 rounded" />
-                                                    <div className="h-2 w-20 bg-white/5 rounded" />
+                                <div className="p-6 rounded-[1.5rem] bg-white/[0.01] border border-white/5 shadow-[inset_0_0_24px_rgba(0,0,0,0.8)]">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                        {[1, 2, 3, 4, 5, 6].map(i => (
+                                            <div key={i} className="bg-white/[0.02] border border-white/5 rounded-2xl p-4 space-y-3 animate-shimmer">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-5 h-5 bg-white/5 rounded-md shrink-0" />
+                                                    <div className="flex-1 space-y-1.5">
+                                                        <div className="h-3 w-28 bg-white/10 rounded" />
+                                                        <div className="h-2 w-20 bg-white/5 rounded" />
+                                                    </div>
+                                                    <div className="h-4 w-20 bg-yellow-500/10 rounded-full" />
                                                 </div>
-                                                <div className="h-4 w-20 bg-yellow-500/10 rounded-full" />
+                                                <div className="flex gap-2">
+                                                    <div className="h-4 w-16 bg-orange-500/10 rounded-md" />
+                                                    <div className="h-4 w-20 bg-white/5 rounded-md" />
+                                                </div>
+                                                <div className="h-2.5 w-full bg-white/5 rounded" />
+                                                <div className="h-2.5 w-2/3 bg-white/5 rounded" />
+                                                <div className="flex justify-between">
+                                                    <div className="h-2 w-16 bg-white/5 rounded" />
+                                                    <div className="h-2 w-14 bg-white/5 rounded" />
+                                                </div>
                                             </div>
-                                            <div className="flex gap-2">
-                                                <div className="h-4 w-16 bg-orange-500/10 rounded-md" />
-                                                <div className="h-4 w-20 bg-white/5 rounded-md" />
-                                            </div>
-                                            <div className="h-2.5 w-full bg-white/5 rounded" />
-                                            <div className="h-2.5 w-2/3 bg-white/5 rounded" />
-                                            <div className="flex justify-between">
-                                                <div className="h-2 w-16 bg-white/5 rounded" />
-                                                <div className="h-2 w-14 bg-white/5 rounded" />
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
                             ) : filteredAiLogs.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center py-16 text-white/20 border border-white/5 rounded-3xl">
                                     <ShieldAlert size={32} className="mb-3 opacity-30" />
@@ -1471,35 +1471,35 @@ export default function AdminPage() {
                             ) : (<>
                                 {/* Select all + batch actions — pinned above scroll */}
                                 <div className="shrink-0 flex items-center gap-3 flex-wrap pb-3">
-                                        <button onClick={toggleAiLogSelectAll}
-                                            className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedAiLogs.size === filteredAiLogs.length && filteredAiLogs.length > 0 ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20 hover:border-orange-500/60'}`}>
-                                            {selectedAiLogs.size === filteredAiLogs.length && filteredAiLogs.length > 0 && <CheckCircle size={14} className="text-white" />}
-                                        </button>
-                                        <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
-                                            {selectedAiLogs.size > 0 ? `${selectedAiLogs.size} selected` : 'Select all'}
-                                        </span>
-                                        {selectedAiLogs.size > 0 && (
-                                            <div className="ml-auto flex items-center gap-2 flex-wrap">
-                                                {/* Show Confirm only when viewing flagged/unreviewed/all logs */}
-                                                {(aiLogFilter === 'flagged' || aiLogFilter === 'unreviewed' || aiLogFilter === 'all') && (
-                                                    <button onClick={() => handleBatchAiLogReview('confirmed')} disabled={processing}
-                                                        className="flex items-center gap-2 px-4 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-xl text-xs font-black tracking-widest transition-all disabled:opacity-50">
-                                                        <CheckCircle size={14} className="text-red-500" /> Confirm {selectedAiLogs.size}
-                                                    </button>
-                                                )}
-                                                {/* Show Dismiss only when viewing flagged/unreviewed/all logs */}
-                                                {(aiLogFilter === 'flagged' || aiLogFilter === 'unreviewed' || aiLogFilter === 'all') && (
-                                                    <button onClick={() => handleBatchAiLogReview('dismissed')} disabled={processing}
-                                                        className="flex items-center gap-2 px-4 py-2 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-xl text-xs font-black tracking-widest transition-all disabled:opacity-50">
-                                                        <XCircle size={14} className="text-orange-500" /> Dismiss {selectedAiLogs.size}
-                                                    </button>
-                                                )}
-                                                <button onClick={() => setBatchAiLogDeleteConfirm(true)}
-                                                    className="flex items-center gap-2 px-4 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-xl text-xs font-black tracking-widest transition-all">
-                                                    <Trash2 size={14} className="text-red-500" /> Delete {selectedAiLogs.size}
+                                    <button onClick={toggleAiLogSelectAll}
+                                        className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedAiLogs.size === filteredAiLogs.length && filteredAiLogs.length > 0 ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20 hover:border-orange-500/60'}`}>
+                                        {selectedAiLogs.size === filteredAiLogs.length && filteredAiLogs.length > 0 && <CheckCircle size={14} className="text-white" />}
+                                    </button>
+                                    <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                                        {selectedAiLogs.size > 0 ? `${selectedAiLogs.size} selected` : 'Select all'}
+                                    </span>
+                                    {selectedAiLogs.size > 0 && (
+                                        <div className="ml-auto flex items-center gap-2 flex-wrap">
+                                            {/* Show Confirm only when viewing flagged/unreviewed/all logs */}
+                                            {(aiLogFilter === 'flagged' || aiLogFilter === 'unreviewed' || aiLogFilter === 'all') && (
+                                                <button onClick={() => handleBatchAiLogReview('confirmed')} disabled={processing}
+                                                    className="flex items-center gap-2 px-4 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-xl text-xs font-black tracking-widest transition-all disabled:opacity-50">
+                                                    <CheckCircle size={14} className="text-red-500" /> Confirm {selectedAiLogs.size}
                                                 </button>
-                                            </div>
-                                        )}
+                                            )}
+                                            {/* Show Dismiss only when viewing flagged/unreviewed/all logs */}
+                                            {(aiLogFilter === 'flagged' || aiLogFilter === 'unreviewed' || aiLogFilter === 'all') && (
+                                                <button onClick={() => handleBatchAiLogReview('dismissed')} disabled={processing}
+                                                    className="flex items-center gap-2 px-4 py-2 bg-white/[0.03] hover:bg-orange-500/10 text-white border border-white/10 hover:border-orange-500/50 rounded-xl text-xs font-black tracking-widest transition-all disabled:opacity-50">
+                                                    <XCircle size={14} className="text-orange-500" /> Dismiss {selectedAiLogs.size}
+                                                </button>
+                                            )}
+                                            <button onClick={() => setBatchAiLogDeleteConfirm(true)}
+                                                className="flex items-center gap-2 px-4 py-2 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-xl text-xs font-black tracking-widest transition-all">
+                                                <Trash2 size={14} className="text-red-500" /> Delete {selectedAiLogs.size}
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="flex-1 admin-scroll overflow-y-auto min-h-0 p-6 rounded-[1.5rem] bg-white/[0.01] border border-white/5 shadow-[inset_0_0_24px_rgba(0,0,0,0.8)]">
@@ -1507,9 +1507,9 @@ export default function AdminPage() {
                                         {filteredAiLogs.map(log => (
                                             <motion.div key={log.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                                                 className={`flex flex-col h-full bg-white/[0.02] backdrop-blur-md border rounded-2xl p-4 transition-all duration-300 hover:border-orange-500/40 hover:shadow-[0_0_20px_rgba(249,115,22,0.15)] cursor-pointer ${selectedAiLogs.has(log.id) ? 'border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/30 shadow-[0_0_30px_rgba(249,115,22,0.2)]' :
-                                                        !log.admin_reviewed && log.flagged ? 'border-orange-500/30' :
-                                                            log.admin_decision === 'confirmed' ? 'border-red-500/20' :
-                                                                'border-white/10'
+                                                    !log.admin_reviewed && log.flagged ? 'border-orange-500/30' :
+                                                        log.admin_decision === 'confirmed' ? 'border-red-500/20' :
+                                                            'border-white/10'
                                                     }`}>
                                                 {/* Compact header — mirrors Report card: checkbox | user info | status */}
                                                 <div className="flex items-center gap-3 mb-3 shrink-0">
@@ -1521,12 +1521,11 @@ export default function AdminPage() {
                                                         <p className="text-xs font-bold text-white truncate">{log.user?.full_name || 'Unknown User'}</p>
                                                         <p className="text-[10px] text-white/30 truncate">{log.content_type} • {log.ai_model}</p>
                                                     </div>
-                                                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${
-                                                        log.admin_reviewed && log.admin_decision === 'confirmed' ? 'bg-red-500/10 text-red-400 border-red-500/30' :
-                                                        log.admin_reviewed && log.admin_decision === 'dismissed' ? 'bg-green-500/10 text-green-400 border-green-500/30' :
-                                                        log.flagged ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' :
-                                                        'bg-white/5 text-white/30 border-white/10'
-                                                    }`}>
+                                                    <span className={`shrink-0 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border ${log.admin_reviewed && log.admin_decision === 'confirmed' ? 'bg-red-500/10 text-red-400 border-red-500/30' :
+                                                            log.admin_reviewed && log.admin_decision === 'dismissed' ? 'bg-green-500/10 text-green-400 border-green-500/30' :
+                                                                log.flagged ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30' :
+                                                                    'bg-white/5 text-white/30 border-white/10'
+                                                        }`}>
                                                         {log.admin_reviewed ? log.admin_decision : log.flagged ? 'Needs Review' : 'Clean'}
                                                     </span>
                                                 </div>
@@ -1534,11 +1533,10 @@ export default function AdminPage() {
                                                 <div className="flex-1 flex flex-col justify-between cursor-pointer space-y-3" onClick={() => setSelectedAiLog(log)}>
                                                     <div className="space-y-2">
                                                         <div className="flex items-center gap-2">
-                                                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${
-                                                                log.flagged
+                                                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${log.flagged
                                                                     ? 'bg-orange-500/15 text-orange-400 border-orange-500/30'
                                                                     : 'bg-white/5 text-white/30 border-white/10'
-                                                            }`}>
+                                                                }`}>
                                                                 {log.flagged ? '⚠ Flagged' : 'Clean'}
                                                             </span>
                                                             <span className="text-[9px] text-purple-400/60 ml-auto flex items-center gap-1"><Eye size={10} /> View Context</span>
@@ -1574,523 +1572,523 @@ export default function AdminPage() {
                                 </div>
                             </>);
                         })()}
-                </div>
-
-                {/* ─── BATCH AI LOG DELETE CONFIRMATION ─── */}
-                <AnimatePresence>
-                    {batchAiLogDeleteConfirm && (
-                        <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
-                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setBatchAiLogDeleteConfirm(false)} />
-                            <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                                className="relative bg-[#111] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(239,68,68,0.15)] overflow-hidden">
-                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150px] h-[50px] bg-red-500/30 blur-[40px] rounded-full pointer-events-none" />
-                                <div className="w-20 h-20 bg-red-500/10 border-2 border-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
-                                    <Trash2 size={36} className="text-red-500" />
-                                </div>
-                                <h3 className="text-2xl font-black text-white mb-2 relative z-10">Delete {selectedAiLogs.size} AI Log{selectedAiLogs.size > 1 ? 's' : ''}?</h3>
-                                <p className="text-white/40 text-sm mb-6 leading-relaxed relative z-10">This action is permanent and cannot be undone.</p>
-                                <div className="space-y-3 relative z-10">
-                                    <button onClick={handleBatchDeleteAiLogs} disabled={processing}
-                                        className="w-full py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
-                                        {processing ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} className="text-red-500" />} DELETE PERMANENTLY
-                                    </button>
-                                    <button onClick={() => setBatchAiLogDeleteConfirm(false)}
-                                        className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">CANCEL</button>
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
-
-                {/* ─── AI LOG DETAIL MODAL ─── */}
-                <AnimatePresence>
-                    {selectedAiLog && (
-                        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                            <motion.div
-                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                onClick={() => setSelectedAiLog(null)}
-                                className="absolute inset-0 bg-black/90 backdrop-blur-xl"
-                            />
-                            <motion.div
-                                initial={{ scale: 0.9, opacity: 0, y: 20 }}
-                                animate={{ scale: 1, opacity: 1, y: 0 }}
-                                exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                                className="relative w-full max-w-lg bg-[#111] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] max-h-[90vh] overflow-y-auto"
-                            >
-                                <div className="p-6 space-y-5">
-                                    {/* Modal header */}
-                                    <div className="flex items-start justify-between">
-                                        <div>
-                                            <h3 className="text-lg font-black text-white">AI Log Context</h3>
-                                            <p className="text-[10px] text-white/30 uppercase tracking-widest mt-0.5">
-                                                {new Date(selectedAiLog.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                            </p>
-                                        </div>
-                                        <button onClick={() => setSelectedAiLog(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-white/40 transition-all">
-                                            <X size={16} />
-                                        </button>
-                                    </div>
-
-                                    {/* User info */}
-                                    <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2">Flagged User</p>
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center shrink-0 overflow-hidden">
-                                                {selectedAiLog.user?.avatar_url
-                                                    ? <img src={selectedAiLog.user.avatar_url} className="w-full h-full object-cover" alt="" />
-                                                    : <User size={16} className="text-orange-400" />}
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="text-sm font-bold text-white">{selectedAiLog.user?.full_name || 'Unknown User'}</p>
-                                                <p className="text-[10px] text-white/30">{selectedAiLog.user?.student_number || 'No student number'}</p>
-                                            </div>
-                                            {selectedAiLog.user?.is_banned && (
-                                                <span className="px-2 py-0.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-[8px] font-black uppercase">Banned</span>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Content type + Model */}
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4">
-                                            <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-1">Content Type</p>
-                                            <p className="text-sm font-bold text-white capitalize">{selectedAiLog.content_type}</p>
-                                        </div>
-                                        <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4">
-                                            <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-1">AI Model</p>
-                                            <p className="text-[11px] font-bold text-white break-all">{selectedAiLog.ai_model}</p>
-                                        </div>
-                                    </div>
-
-                                    {/* Flagged content preview */}
-                                    {selectedAiLog.input_content && (
-                                        <div className={`border rounded-2xl p-4 ${selectedAiLog.flagged ? 'bg-red-500/5 border-red-500/15' : 'bg-white/[0.04] border-white/10'}`}>
-                                            <p className="text-[9px] font-black uppercase tracking-widest text-red-400/60 mb-2 flex items-center gap-1.5">
-                                                <MessageSquare size={10} /> {selectedAiLog.content_type === 'message' ? 'Flagged Message' : 'Content Info'}
-                                            </p>
-                                            <p className="text-white/70 text-sm leading-relaxed break-words">{selectedAiLog.input_content}</p>
-                                        </div>
-                                    )}
-
-                                    {/* AI Analysis — WHY it was flagged */}
-                                    <div className="bg-purple-500/5 border border-purple-500/15 rounded-2xl p-4">
-                                        <p className="text-[9px] font-black uppercase tracking-widest text-purple-400/60 mb-3 flex items-center gap-1.5">
-                                            <ShieldAlert size={10} /> AI Analysis — Why It Was Flagged
-                                        </p>
-                                        <div className="space-y-2">
-                                            {/* Flag status */}
-                                            <div className="flex items-center gap-2">
-                                                <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${selectedAiLog.flagged ? 'bg-red-500/15 text-red-400 border-red-500/30' : 'bg-green-500/15 text-green-400 border-green-500/30'}`}>
-                                                    {selectedAiLog.flagged ? '⚠ FLAGGED' : '✓ CLEAN'}
-                                                </span>
-                                                <span className="text-[10px] text-white/30">Action: {selectedAiLog.action_taken}</span>
-                                            </div>
-                                            {/* Parse ai_result for human-readable display */}
-                                            {(() => {
-                                                const result = selectedAiLog.ai_result;
-                                                if (!result || Object.keys(result).length === 0) return <p className="text-[11px] text-white/30 italic">No detailed AI result data available</p>;
-
-                                                // Emergency blocklist hit
-                                                if (result.blocklist_phrase) {
-                                                    return (
-                                                        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mt-2">
-                                                            <p className="text-[10px] font-black text-red-400 mb-1">🚨 Emergency Blocklist Match</p>
-                                                            <p className="text-sm text-red-300 font-mono">"{result.blocklist_phrase}"</p>
-                                                            <p className="text-[10px] text-white/30 mt-1">Instantly blocked — matched a known harmful phrase</p>
-                                                        </div>
-                                                    );
-                                                }
-
-                                                // Text model (english scores)
-                                                if (result.english) {
-                                                    const scores = Array.isArray(result.english?.[0]) ? result.english[0] : (Array.isArray(result.english) ? result.english : null);
-                                                    return (
-                                                        <div className="space-y-2 mt-2">
-                                                            <p className="text-[10px] font-black text-purple-400/80">Toxicity Scores</p>
-                                                            {scores ? scores.map((s, i) => (
-                                                                <div key={i} className="flex items-center gap-3">
-                                                                    <span className="text-[10px] font-bold text-white/50 w-24 uppercase">{s.label}</span>
-                                                                    <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
-                                                                        <div className={`h-full rounded-full transition-all ${s.label === 'TOXIC' || s.label === 'toxic' ? 'bg-red-500' : 'bg-green-500'}`}
-                                                                            style={{ width: `${(s.score * 100).toFixed(0)}%` }} />
-                                                                    </div>
-                                                                    <span className="text-[10px] font-mono text-white/40 w-12 text-right">{(s.score * 100).toFixed(1)}%</span>
-                                                                </div>
-                                                            )) : <p className="text-[11px] text-white/30">Raw: {JSON.stringify(result.english)}</p>}
-                                                        </div>
-                                                    );
-                                                }
-
-                                                // Image model (nsfw scores array)
-                                                if (Array.isArray(result)) {
-                                                    const scores = Array.isArray(result[0]) ? result[0] : result;
-                                                    return (
-                                                        <div className="space-y-2 mt-2">
-                                                            <p className="text-[10px] font-black text-purple-400/80">NSFW Detection Scores</p>
-                                                            {scores.map((s, i) => (
-                                                                <div key={i} className="flex items-center gap-3">
-                                                                    <span className="text-[10px] font-bold text-white/50 w-24 uppercase">{s.label}</span>
-                                                                    <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
-                                                                        <div className={`h-full rounded-full transition-all ${s.label === 'nsfw' || s.label === 'NSFW' ? 'bg-red-500' : 'bg-green-500'}`}
-                                                                            style={{ width: `${(s.score * 100).toFixed(0)}%` }} />
-                                                                    </div>
-                                                                    <span className="text-[10px] font-mono text-white/40 w-12 text-right">{(s.score * 100).toFixed(1)}%</span>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    );
-                                                }
-
-                                                // Fallback: raw JSON display
-                                                return (
-                                                    <div className="bg-black/30 rounded-xl p-3 mt-2">
-                                                        <p className="text-[10px] font-black text-white/30 mb-1">Raw AI Result</p>
-                                                        <pre className="text-[10px] text-white/40 font-mono whitespace-pre-wrap break-all max-h-32 overflow-y-auto">{JSON.stringify(result, null, 2)}</pre>
-                                                    </div>
-                                                );
-                                            })()}
-                                        </div>
-                                    </div>
-
-                                    {/* Reviewer info */}
-                                    {selectedAiLog.admin_reviewed && selectedAiLog.reviewer && (
-                                        <div className="flex items-center gap-2 text-[10px] text-white/30">
-                                            <CheckCircle size={12} className="text-green-400/40" />
-                                            <span>Reviewed by <span className="text-white/50 font-bold">{selectedAiLog.reviewer.full_name}</span> — <span className={selectedAiLog.admin_decision === 'confirmed' ? 'text-red-400' : 'text-green-400'}>{selectedAiLog.admin_decision}</span></span>
-                                        </div>
-                                    )}
-
-                                    {/* Actions — only for flagged + unreviewed */}
-                                    {selectedAiLog.flagged && !selectedAiLog.admin_reviewed && (
-                                        <div className="flex gap-2 pt-2 border-t border-white/5">
-                                            <button
-                                                onClick={() => { handleAiLogReview(selectedAiLog.id, 'confirmed'); setSelectedAiLog(null); }}
-                                                className="flex-1 py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black text-xs tracking-widest uppercase transition-all flex items-center justify-center gap-2 active:scale-95">
-                                                <CheckCircle size={14} className="text-red-500" /> Confirm Flag
-                                            </button>
-                                            <button
-                                                onClick={() => { handleAiLogReview(selectedAiLog.id, 'dismissed'); setSelectedAiLog(null); }}
-                                                className="flex-1 py-4 bg-white/[0.03] hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-black text-xs tracking-widest uppercase transition-all flex items-center justify-center gap-2 active:scale-95">
-                                                <XCircle size={14} className="text-white" /> Dismiss
-                                            </button>
-                                        </div>
-                                    )}
-
-                                    {/* Close for reviewed logs */}
-                                    {(selectedAiLog.admin_reviewed || !selectedAiLog.flagged) && (
-                                        <button onClick={() => setSelectedAiLog(null)}
-                                            className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">
-                                            CLOSE
-                                        </button>
-                                    )}
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
-
-                <div className={`${adminSection === 'posts' ? 'flex' : 'hidden'} flex-1 min-h-0 flex-col overflow-hidden`}>
-                    <div className="shrink-0 space-y-6 pb-4">
-                        {/* ─── STAT CARDS ─── */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 overflow-hidden rounded-[1.5rem]">
-                        <StatCard label="Pending Review" count={stats.pending} icon={Clock} color="text-yellow-400" active={activeTab === 'pending'} onClick={() => setActiveTab('pending')} />
-                        <StatCard label="Approved" count={stats.approved} icon={CheckCircle} color="text-green-400" active={activeTab === 'approved'} onClick={() => setActiveTab('approved')} />
-                        <StatCard label="Rejected" count={stats.rejected} icon={XCircle} color="text-red-400" active={activeTab === 'rejected'} onClick={() => setActiveTab('rejected')} />
-                        <StatCard label="Total Items" count={stats.total} icon={Package} color="text-orange-400" active={activeTab === 'all'} onClick={() => setActiveTab('all')} />
                     </div>
 
-                    {/* ─── TABS + SEARCH + FILTERS ─── */}
-                    <div className="relative w-full z-60">
-                        <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
-                            <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide lg:overflow-visible lg:mx-0 lg:px-0 lg:pb-0">
-                                <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max lg:w-auto">
-                                    {TABS.map(tab => (
-                                        <button
-                                            key={tab.key}
-                                            onClick={() => setActiveTab(tab.key)}
-                                            className={`flex items-center gap-2 px-5 py-2.5 rounded-[0.9rem] text-xs font-black tracking-widest transition-all whitespace-nowrap ${activeTab === tab.key
-                                                ? `${tab.bg} text-white shadow-lg`
-                                                : 'text-white/30 hover:text-white/50'
-                                                }`}
-                                        >
-                                            <tab.icon size={14} />
-                                            {tab.label}
+                    {/* ─── BATCH AI LOG DELETE CONFIRMATION ─── */}
+                    <AnimatePresence>
+                        {batchAiLogDeleteConfirm && (
+                            <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                    className="absolute inset-0 bg-black/90 backdrop-blur-xl" onClick={() => setBatchAiLogDeleteConfirm(false)} />
+                                <motion.div initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                                    className="relative bg-[#111] border border-red-500/30 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-[0_0_50px_rgba(239,68,68,0.15)] overflow-hidden">
+                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[150px] h-[50px] bg-red-500/30 blur-[40px] rounded-full pointer-events-none" />
+                                    <div className="w-20 h-20 bg-red-500/10 border-2 border-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6 relative z-10">
+                                        <Trash2 size={36} className="text-red-500" />
+                                    </div>
+                                    <h3 className="text-2xl font-black text-white mb-2 relative z-10">Delete {selectedAiLogs.size} AI Log{selectedAiLogs.size > 1 ? 's' : ''}?</h3>
+                                    <p className="text-white/40 text-sm mb-6 leading-relaxed relative z-10">This action is permanent and cannot be undone.</p>
+                                    <div className="space-y-3 relative z-10">
+                                        <button onClick={handleBatchDeleteAiLogs} disabled={processing}
+                                            className="w-full py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50">
+                                            {processing ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} className="text-red-500" />} DELETE PERMANENTLY
                                         </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="flex items-center gap-4 lg:ml-auto w-full lg:w-auto flex-1 lg:justify-end">
-                                <div className="relative flex-1 max-w-md">
-                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500/50" size={18} />
-                                    <input
-                                        type="text"
-                                        placeholder="Search by title, poster, student ID..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="w-full bg-white/4 border border-white/10 py-3 pl-11 pr-4 rounded-xl outline-none text-sm focus:border-orange-500/50 transition-all placeholder:text-white/20"
-                                    />
-                                </div>
-
-                                {/* Filter toggle */}
-                                <button onClick={() => setShowFilters(!showFilters)}
-                                    className={`relative p-3 rounded-xl border transition-all shrink-0 ${showFilters ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/10 text-orange-500'}`}>
-                                    <Filter size={18} />
-                                    {hasActiveFilters && !showFilters && <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full border-2 border-[#0a0a0a]" />}
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* ─── FILTER OVERLAY ─── */}
-                        <AnimatePresence>
-                            {showFilters && (
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                                    transition={{ duration: 0.2 }}
-                                    className="absolute top-full right-0 mt-2 z-50 w-full max-w-md md:max-w-lg bg-[#121212]/95 border border-white/10 rounded-4xl backdrop-blur-2xl shadow-2xl p-6 space-y-5"
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black">Filters</span>
-                                        {hasActiveFilters && <button onClick={() => { setCategoryFilter('All'); setItemTypeFilter('All'); setStatusFilter('All'); setLocationFilter('All'); setDateFrom(''); setDateTo(''); }}
-                                            className="flex items-center gap-1 text-[10px] text-orange-400/70 hover:text-orange-400 font-bold transition-colors"><X size={12} /> Clear all</button>}
-                                    </div>
-                                    {/* Category */}
-                                    <div>
-                                        <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Category</label>
-                                        <div className="flex gap-2">
-                                            {['All', 'Lost', 'Found'].map(c => (
-                                                <button key={c} onClick={() => setCategoryFilter(c)}
-                                                    className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${categoryFilter === c ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{c}</button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    {/* Resolution Status */}
-                                    <div>
-                                        <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Resolution</label>
-                                        <div className="flex gap-2">
-                                            {['All', 'Active', 'Resolved'].map(s => (
-                                                <button key={s} onClick={() => setStatusFilter(s)}
-                                                    className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${statusFilter === s ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
-                                                    {s === 'Active' ? 'Unresolved' : s}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    {/* Item Type */}
-                                    <div>
-                                        <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Item Type</label>
-                                        <div className="relative overflow-hidden rounded-xl -mx-1">
-                                            {/* Mobile: horizontal drag scroll */}
-                                            <div className="md:hidden" ref={typeScrollRef}>
-                                                <motion.div
-                                                    drag="x"
-                                                    dragConstraints={typeConstraints}
-                                                    className="flex gap-2 px-1 pb-1 cursor-grab active:cursor-grabbing w-max"
-                                                >
-                                                    <button onClick={() => setItemTypeFilter('All')}
-                                                        className={`shrink-0 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${itemTypeFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
-                                                        All
-                                                    </button>
-                                                    {ITEM_CATEGORIES.map(cat => (
-                                                        <button key={cat.value} onClick={() => setItemTypeFilter(cat.value)}
-                                                            className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${itemTypeFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
-                                                            <span>{cat.emoji}</span> {cat.label}
-                                                        </button>
-                                                    ))}
-                                                </motion.div>
-                                            </div>
-                                            {/* Desktop: wrapping grid */}
-                                            <div className="hidden md:flex flex-wrap gap-2 px-1 pb-1">
-                                                <button onClick={() => setItemTypeFilter('All')}
-                                                    className={`px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${itemTypeFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
-                                                    All
-                                                </button>
-                                                {ITEM_CATEGORIES.map(cat => (
-                                                    <button key={cat.value} onClick={() => setItemTypeFilter(cat.value)}
-                                                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${itemTypeFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
-                                                        <span>{cat.emoji}</span> {cat.label}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {/* Location */}
-                                    <div>
-                                        <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Location</label>
-                                        <div className="relative overflow-hidden rounded-xl -mx-1">
-                                            {/* Mobile: horizontal drag scroll */}
-                                            <div className="md:hidden" ref={locScrollRef}>
-                                                <motion.div
-                                                    drag="x"
-                                                    dragConstraints={locConstraints}
-                                                    className="flex gap-2 px-1 pb-1 cursor-grab active:cursor-grabbing w-max"
-                                                >
-                                                    <button onClick={() => setLocationFilter('All')}
-                                                        className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${locationFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>All</button>
-                                                    {CAMPUS_LOCATIONS.map(loc => (
-                                                        <button key={loc} onClick={() => setLocationFilter(loc)}
-                                                            className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
-                                                    ))}
-                                                </motion.div>
-                                            </div>
-                                            {/* Desktop: wrapping grid */}
-                                            <div className="hidden md:flex flex-wrap gap-2 px-1 pb-1">
-                                                <button onClick={() => setLocationFilter('All')}
-                                                    className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${locationFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>All</button>
-                                                {CAMPUS_LOCATIONS.map(loc => (
-                                                    <button key={loc} onClick={() => setLocationFilter(loc)}
-                                                        className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    {/* Date Range */}
-                                    <div>
-                                        <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Date Range</label>
-                                        <CustomDateRangePicker
-                                            dateFrom={dateFrom} setDateFrom={setDateFrom}
-                                            dateTo={dateTo} setDateTo={setDateTo}
-                                        />
+                                        <button onClick={() => setBatchAiLogDeleteConfirm(false)}
+                                            className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">CANCEL</button>
                                     </div>
                                 </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-
-                    {/* ─── ACTIVE FILTER CHIPS ─── */}
-                    <AnimatePresence>
-                        {hasActiveFilters && !showFilters && (
-                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                                className="flex flex-wrap gap-2">
-                                {categoryFilter !== 'All' && (
-                                    <button onClick={() => setCategoryFilter('All')}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
-                                        {categoryFilter} <X size={10} className="opacity-60" />
-                                    </button>
-                                )}
-                                {statusFilter !== 'All' && (
-                                    <button onClick={() => setStatusFilter('All')}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
-                                        {statusFilter === 'Active' ? 'Unresolved' : 'Resolved'} <X size={10} className="opacity-60" />
-                                    </button>
-                                )}
-                                {itemTypeFilter !== 'All' && (
-                                    <button onClick={() => setItemTypeFilter('All')}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
-                                        {ITEM_CATEGORIES.find(c => c.value === itemTypeFilter)?.emoji} {itemTypeFilter} <X size={10} className="opacity-60" />
-                                    </button>
-                                )}
-                                {locationFilter !== 'All' && (
-                                    <button onClick={() => setLocationFilter('All')}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
-                                        <MapPin size={10} /> {locationFilter} <X size={10} className="opacity-60" />
-                                    </button>
-                                )}
-                                {(dateFrom || dateTo) && (
-                                    <button onClick={() => { setDateFrom(''); setDateTo(''); }}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
-                                        <Calendar size={10} /> {dateFrom || '...'} — {dateTo || '...'} <X size={10} className="opacity-60" />
-                                    </button>
-                                )}
-                            </motion.div>
+                            </div>
                         )}
                     </AnimatePresence>
-                    </div>
 
-                    {/* ─── SELECT ALL / COUNT ─── */}
-                    {filteredItems.length > 0 && (
-                        <div className="shrink-0 flex items-center gap-3 pb-3">
-                            <button onClick={toggleSelectAll}
-                                className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedItems.size === filteredItems.length && filteredItems.length > 0 ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20 hover:border-orange-500/60'}`}>
-                                {selectedItems.size === filteredItems.length && filteredItems.length > 0 && <CheckCircle size={14} className="text-white" />}
-                            </button>
-                            <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
-                                {selectedItems.size > 0 ? `${selectedItems.size} selected` : 'Select all'}
-                            </span>
-                        </div>
-                    )}
-
-                    <div className="flex-1 admin-scroll overflow-y-auto min-h-0 p-6 rounded-[1.5rem] bg-white/[0.01] border border-white/5 shadow-[inset_0_0_24px_rgba(0,0,0,0.8)]">
-                    {/* ─── ITEMS GRID ─── */}
-                    <div className="relative min-h-[400px]">
-                        <AnimatePresence mode="wait">
-                            {loading ? (
+                    {/* ─── AI LOG DETAIL MODAL ─── */}
+                    <AnimatePresence>
+                        {selectedAiLog && (
+                            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                                 <motion.div
-                                    key="loader"
                                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-pulse"
+                                    onClick={() => setSelectedAiLog(null)}
+                                    className="absolute inset-0 bg-black/90 backdrop-blur-xl"
+                                />
+                                <motion.div
+                                    initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                                    exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                                    className="relative w-full max-w-lg bg-[#111] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.5)] max-h-[90vh] overflow-y-auto"
                                 >
-                                    {[1,2,3,4,5,6,7,8].map(i => (
-                                        <div key={i} className="bg-white/[0.02] border border-white/5 rounded-[1.5rem] overflow-hidden flex flex-col">
-                                            <div className="h-28 w-full bg-white/[0.04]" />
-                                            <div className="p-4 space-y-3 flex-1">
-                                                <div className="flex gap-1.5">
-                                                    <div className="h-4 w-14 bg-yellow-500/10 rounded-md" />
-                                                    <div className="h-4 w-12 bg-orange-500/10 rounded-md" />
+                                    <div className="p-6 space-y-5">
+                                        {/* Modal header */}
+                                        <div className="flex items-start justify-between">
+                                            <div>
+                                                <h3 className="text-lg font-black text-white">AI Log Context</h3>
+                                                <p className="text-[10px] text-white/30 uppercase tracking-widest mt-0.5">
+                                                    {new Date(selectedAiLog.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                                </p>
+                                            </div>
+                                            <button onClick={() => setSelectedAiLog(null)} className="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-white/40 transition-all">
+                                                <X size={16} />
+                                            </button>
+                                        </div>
+
+                                        {/* User info */}
+                                        <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4">
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-2">Flagged User</p>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center shrink-0 overflow-hidden">
+                                                    {selectedAiLog.user?.avatar_url
+                                                        ? <img src={selectedAiLog.user.avatar_url} className="w-full h-full object-cover" alt="" />
+                                                        : <User size={16} className="text-orange-400" />}
                                                 </div>
-                                                <div className="h-4 w-3/4 bg-white/10 rounded" />
-                                                <div className="h-2 w-1/2 bg-white/5 rounded" />
-                                                <div className="flex items-center gap-1.5">
-                                                    <div className="w-3 h-3 bg-orange-500/10 rounded-full" />
-                                                    <div className="h-2 w-20 bg-white/5 rounded" />
+                                                <div className="flex-1">
+                                                    <p className="text-sm font-bold text-white">{selectedAiLog.user?.full_name || 'Unknown User'}</p>
+                                                    <p className="text-[10px] text-white/30">{selectedAiLog.user?.student_number || 'No student number'}</p>
                                                 </div>
-                                                <div className="flex items-center gap-2 p-2 bg-white/[0.03] rounded-lg border border-white/5 mt-auto">
-                                                    <div className="w-7 h-7 rounded-full bg-orange-500/10 shrink-0" />
-                                                    <div className="space-y-1.5 flex-1">
-                                                        <div className="h-2.5 w-20 bg-white/10 rounded" />
-                                                        <div className="h-2 w-14 bg-white/5 rounded" />
-                                                    </div>
-                                                </div>
-                                                <div className="flex gap-2 pt-2 border-t border-white/5">
-                                                    <div className="flex-1 h-8 bg-white/[0.03] border border-white/5 rounded-lg" />
-                                                    <div className="flex-1 h-8 bg-white/[0.03] border border-white/5 rounded-lg" />
-                                                    <div className="w-8 h-8 bg-white/[0.03] border border-white/5 rounded-lg" />
-                                                </div>
+                                                {selectedAiLog.user?.is_banned && (
+                                                    <span className="px-2 py-0.5 bg-red-500/20 text-red-400 border border-red-500/30 rounded-full text-[8px] font-black uppercase">Banned</span>
+                                                )}
                                             </div>
                                         </div>
-                                    ))}
+
+                                        {/* Content type + Model */}
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4">
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-1">Content Type</p>
+                                                <p className="text-sm font-bold text-white capitalize">{selectedAiLog.content_type}</p>
+                                            </div>
+                                            <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-4">
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-white/30 mb-1">AI Model</p>
+                                                <p className="text-[11px] font-bold text-white break-all">{selectedAiLog.ai_model}</p>
+                                            </div>
+                                        </div>
+
+                                        {/* Flagged content preview */}
+                                        {selectedAiLog.input_content && (
+                                            <div className={`border rounded-2xl p-4 ${selectedAiLog.flagged ? 'bg-red-500/5 border-red-500/15' : 'bg-white/[0.04] border-white/10'}`}>
+                                                <p className="text-[9px] font-black uppercase tracking-widest text-red-400/60 mb-2 flex items-center gap-1.5">
+                                                    <MessageSquare size={10} /> {selectedAiLog.content_type === 'message' ? 'Flagged Message' : 'Content Info'}
+                                                </p>
+                                                <p className="text-white/70 text-sm leading-relaxed break-words">{selectedAiLog.input_content}</p>
+                                            </div>
+                                        )}
+
+                                        {/* AI Analysis — WHY it was flagged */}
+                                        <div className="bg-purple-500/5 border border-purple-500/15 rounded-2xl p-4">
+                                            <p className="text-[9px] font-black uppercase tracking-widest text-purple-400/60 mb-3 flex items-center gap-1.5">
+                                                <ShieldAlert size={10} /> AI Analysis — Why It Was Flagged
+                                            </p>
+                                            <div className="space-y-2">
+                                                {/* Flag status */}
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${selectedAiLog.flagged ? 'bg-red-500/15 text-red-400 border-red-500/30' : 'bg-green-500/15 text-green-400 border-green-500/30'}`}>
+                                                        {selectedAiLog.flagged ? '⚠ FLAGGED' : '✓ CLEAN'}
+                                                    </span>
+                                                    <span className="text-[10px] text-white/30">Action: {selectedAiLog.action_taken}</span>
+                                                </div>
+                                                {/* Parse ai_result for human-readable display */}
+                                                {(() => {
+                                                    const result = selectedAiLog.ai_result;
+                                                    if (!result || Object.keys(result).length === 0) return <p className="text-[11px] text-white/30 italic">No detailed AI result data available</p>;
+
+                                                    // Emergency blocklist hit
+                                                    if (result.blocklist_phrase) {
+                                                        return (
+                                                            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 mt-2">
+                                                                <p className="text-[10px] font-black text-red-400 mb-1">🚨 Emergency Blocklist Match</p>
+                                                                <p className="text-sm text-red-300 font-mono">"{result.blocklist_phrase}"</p>
+                                                                <p className="text-[10px] text-white/30 mt-1">Instantly blocked — matched a known harmful phrase</p>
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    // Text model (english scores)
+                                                    if (result.english) {
+                                                        const scores = Array.isArray(result.english?.[0]) ? result.english[0] : (Array.isArray(result.english) ? result.english : null);
+                                                        return (
+                                                            <div className="space-y-2 mt-2">
+                                                                <p className="text-[10px] font-black text-purple-400/80">Toxicity Scores</p>
+                                                                {scores ? scores.map((s, i) => (
+                                                                    <div key={i} className="flex items-center gap-3">
+                                                                        <span className="text-[10px] font-bold text-white/50 w-24 uppercase">{s.label}</span>
+                                                                        <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                                                                            <div className={`h-full rounded-full transition-all ${s.label === 'TOXIC' || s.label === 'toxic' ? 'bg-red-500' : 'bg-green-500'}`}
+                                                                                style={{ width: `${(s.score * 100).toFixed(0)}%` }} />
+                                                                        </div>
+                                                                        <span className="text-[10px] font-mono text-white/40 w-12 text-right">{(s.score * 100).toFixed(1)}%</span>
+                                                                    </div>
+                                                                )) : <p className="text-[11px] text-white/30">Raw: {JSON.stringify(result.english)}</p>}
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    // Image model (nsfw scores array)
+                                                    if (Array.isArray(result)) {
+                                                        const scores = Array.isArray(result[0]) ? result[0] : result;
+                                                        return (
+                                                            <div className="space-y-2 mt-2">
+                                                                <p className="text-[10px] font-black text-purple-400/80">NSFW Detection Scores</p>
+                                                                {scores.map((s, i) => (
+                                                                    <div key={i} className="flex items-center gap-3">
+                                                                        <span className="text-[10px] font-bold text-white/50 w-24 uppercase">{s.label}</span>
+                                                                        <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+                                                                            <div className={`h-full rounded-full transition-all ${s.label === 'nsfw' || s.label === 'NSFW' ? 'bg-red-500' : 'bg-green-500'}`}
+                                                                                style={{ width: `${(s.score * 100).toFixed(0)}%` }} />
+                                                                        </div>
+                                                                        <span className="text-[10px] font-mono text-white/40 w-12 text-right">{(s.score * 100).toFixed(1)}%</span>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    // Fallback: raw JSON display
+                                                    return (
+                                                        <div className="bg-black/30 rounded-xl p-3 mt-2">
+                                                            <p className="text-[10px] font-black text-white/30 mb-1">Raw AI Result</p>
+                                                            <pre className="text-[10px] text-white/40 font-mono whitespace-pre-wrap break-all max-h-32 overflow-y-auto">{JSON.stringify(result, null, 2)}</pre>
+                                                        </div>
+                                                    );
+                                                })()}
+                                            </div>
+                                        </div>
+
+                                        {/* Reviewer info */}
+                                        {selectedAiLog.admin_reviewed && selectedAiLog.reviewer && (
+                                            <div className="flex items-center gap-2 text-[10px] text-white/30">
+                                                <CheckCircle size={12} className="text-green-400/40" />
+                                                <span>Reviewed by <span className="text-white/50 font-bold">{selectedAiLog.reviewer.full_name}</span> — <span className={selectedAiLog.admin_decision === 'confirmed' ? 'text-red-400' : 'text-green-400'}>{selectedAiLog.admin_decision}</span></span>
+                                            </div>
+                                        )}
+
+                                        {/* Actions — only for flagged + unreviewed */}
+                                        {selectedAiLog.flagged && !selectedAiLog.admin_reviewed && (
+                                            <div className="flex gap-2 pt-2 border-t border-white/5">
+                                                <button
+                                                    onClick={() => { handleAiLogReview(selectedAiLog.id, 'confirmed'); setSelectedAiLog(null); }}
+                                                    className="flex-1 py-4 bg-white/[0.03] hover:bg-red-500/10 text-white border border-white/10 hover:border-red-500/50 rounded-2xl font-black text-xs tracking-widest uppercase transition-all flex items-center justify-center gap-2 active:scale-95">
+                                                    <CheckCircle size={14} className="text-red-500" /> Confirm Flag
+                                                </button>
+                                                <button
+                                                    onClick={() => { handleAiLogReview(selectedAiLog.id, 'dismissed'); setSelectedAiLog(null); }}
+                                                    className="flex-1 py-4 bg-white/[0.03] hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-black text-xs tracking-widest uppercase transition-all flex items-center justify-center gap-2 active:scale-95">
+                                                    <XCircle size={14} className="text-white" /> Dismiss
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        {/* Close for reviewed logs */}
+                                        {(selectedAiLog.admin_reviewed || !selectedAiLog.flagged) && (
+                                            <button onClick={() => setSelectedAiLog(null)}
+                                                className="w-full py-4 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border border-white/10 hover:border-white/20 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all">
+                                                CLOSE
+                                            </button>
+                                        )}
+                                    </div>
                                 </motion.div>
-                            ) : filteredItems.length > 0 ? (
-                                <motion.div
-                                    key="grid"
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-                                >
-                                    <AnimatePresence>
-                                        {filteredItems.map(item => (
-                                            <AdminItemCard
-                                                key={item.id}
-                                                item={item}
-                                                selected={selectedItems.has(item.id)}
-                                                onToggleSelect={toggleSelect}
-                                                onApprove={(id) => handleModerate(id, 'approve')}
-                                                onReject={(id) => handleModerate(id, 'reject')}
-                                                onDelete={(id) => setDeleteTarget(id)}
-                                                onPreview={setPreviewItem}
-                                                processing={processing}
+                            </div>
+                        )}
+                    </AnimatePresence>
+
+                    <div className={`${adminSection === 'posts' ? 'flex' : 'hidden'} flex-1 min-h-0 flex-col overflow-hidden`}>
+                        <div className="shrink-0 space-y-6 pb-4">
+                            {/* ─── STAT CARDS ─── */}
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 overflow-hidden rounded-[1.5rem]">
+                                <StatCard label="Pending Review" count={stats.pending} icon={Clock} color="text-yellow-400" active={activeTab === 'pending'} onClick={() => setActiveTab('pending')} />
+                                <StatCard label="Approved" count={stats.approved} icon={CheckCircle} color="text-green-400" active={activeTab === 'approved'} onClick={() => setActiveTab('approved')} />
+                                <StatCard label="Rejected" count={stats.rejected} icon={XCircle} color="text-red-400" active={activeTab === 'rejected'} onClick={() => setActiveTab('rejected')} />
+                                <StatCard label="Total Items" count={stats.total} icon={Package} color="text-orange-400" active={activeTab === 'all'} onClick={() => setActiveTab('all')} />
+                            </div>
+
+                            {/* ─── TABS + SEARCH + FILTERS ─── */}
+                            <div className="relative w-full z-60">
+                                <div className="flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
+                                    <div className="overflow-x-auto -mx-6 px-6 pb-2 scrollbar-hide lg:overflow-visible lg:mx-0 lg:px-0 lg:pb-0">
+                                        <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/10 backdrop-blur-md w-max lg:w-auto">
+                                            {TABS.map(tab => (
+                                                <button
+                                                    key={tab.key}
+                                                    onClick={() => setActiveTab(tab.key)}
+                                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-[0.9rem] text-xs font-black tracking-widest transition-all whitespace-nowrap ${activeTab === tab.key
+                                                        ? `${tab.bg} text-white shadow-lg`
+                                                        : 'text-white/30 hover:text-white/50'
+                                                        }`}
+                                                >
+                                                    <tab.icon size={14} />
+                                                    {tab.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-4 lg:ml-auto w-full lg:w-auto flex-1 lg:justify-end">
+                                        <div className="relative flex-1 max-w-md">
+                                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500/50" size={18} />
+                                            <input
+                                                type="text"
+                                                placeholder="Search by title, poster, student ID..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="w-full bg-white/4 border border-white/10 py-3 pl-11 pr-4 rounded-xl outline-none text-sm focus:border-orange-500/50 transition-all placeholder:text-white/20"
                                             />
-                                        ))}
-                                    </AnimatePresence>
-                                </motion.div>
-                            ) : (
-                                <motion.div
-                                    key="empty"
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                    className="flex flex-col items-center justify-center py-20 text-white/20"
-                                >
-                                    <Package size={48} strokeWidth={1} className="mb-4" />
-                                    <p className="text-[10px] font-black uppercase tracking-[0.2em]">
-                                        {searchQuery ? 'No items match your search' : `No ${activeTab === 'all' ? '' : activeTab} items`}
-                                    </p>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                                        </div>
+
+                                        {/* Filter toggle */}
+                                        <button onClick={() => setShowFilters(!showFilters)}
+                                            className={`relative p-3 rounded-xl border transition-all shrink-0 ${showFilters ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/10 text-orange-500'}`}>
+                                            <Filter size={18} />
+                                            {hasActiveFilters && !showFilters && <span className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full border-2 border-[#0a0a0a]" />}
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* ─── FILTER OVERLAY ─── */}
+                                <AnimatePresence>
+                                    {showFilters && (
+                                        <motion.div
+                                            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="absolute top-full right-0 mt-2 z-50 w-full max-w-md md:max-w-lg bg-[#121212]/95 border border-white/10 rounded-4xl backdrop-blur-2xl shadow-2xl p-6 space-y-5"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[10px] uppercase tracking-[0.3em] text-orange-500 font-black">Filters</span>
+                                                {hasActiveFilters && <button onClick={() => { setCategoryFilter('All'); setItemTypeFilter('All'); setStatusFilter('All'); setLocationFilter('All'); setDateFrom(''); setDateTo(''); }}
+                                                    className="flex items-center gap-1 text-[10px] text-orange-400/70 hover:text-orange-400 font-bold transition-colors"><X size={12} /> Clear all</button>}
+                                            </div>
+                                            {/* Category */}
+                                            <div>
+                                                <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Category</label>
+                                                <div className="flex gap-2">
+                                                    {['All', 'Lost', 'Found'].map(c => (
+                                                        <button key={c} onClick={() => setCategoryFilter(c)}
+                                                            className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${categoryFilter === c ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{c}</button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            {/* Resolution Status */}
+                                            <div>
+                                                <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Resolution</label>
+                                                <div className="flex gap-2">
+                                                    {['All', 'Active', 'Resolved'].map(s => (
+                                                        <button key={s} onClick={() => setStatusFilter(s)}
+                                                            className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${statusFilter === s ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
+                                                            {s === 'Active' ? 'Unresolved' : s}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            {/* Item Type */}
+                                            <div>
+                                                <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Item Type</label>
+                                                <div className="relative overflow-hidden rounded-xl -mx-1">
+                                                    {/* Mobile: horizontal drag scroll */}
+                                                    <div className="md:hidden" ref={typeScrollRef}>
+                                                        <motion.div
+                                                            drag="x"
+                                                            dragConstraints={typeConstraints}
+                                                            className="flex gap-2 px-1 pb-1 cursor-grab active:cursor-grabbing w-max"
+                                                        >
+                                                            <button onClick={() => setItemTypeFilter('All')}
+                                                                className={`shrink-0 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${itemTypeFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
+                                                                All
+                                                            </button>
+                                                            {ITEM_CATEGORIES.map(cat => (
+                                                                <button key={cat.value} onClick={() => setItemTypeFilter(cat.value)}
+                                                                    className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${itemTypeFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
+                                                                    <span>{cat.emoji}</span> {cat.label}
+                                                                </button>
+                                                            ))}
+                                                        </motion.div>
+                                                    </div>
+                                                    {/* Desktop: wrapping grid */}
+                                                    <div className="hidden md:flex flex-wrap gap-2 px-1 pb-1">
+                                                        <button onClick={() => setItemTypeFilter('All')}
+                                                            className={`px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${itemTypeFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
+                                                            All
+                                                        </button>
+                                                        {ITEM_CATEGORIES.map(cat => (
+                                                            <button key={cat.value} onClick={() => setItemTypeFilter(cat.value)}
+                                                                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${itemTypeFilter === cat.value ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>
+                                                                <span>{cat.emoji}</span> {cat.label}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {/* Location */}
+                                            <div>
+                                                <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Location</label>
+                                                <div className="relative overflow-hidden rounded-xl -mx-1">
+                                                    {/* Mobile: horizontal drag scroll */}
+                                                    <div className="md:hidden" ref={locScrollRef}>
+                                                        <motion.div
+                                                            drag="x"
+                                                            dragConstraints={locConstraints}
+                                                            className="flex gap-2 px-1 pb-1 cursor-grab active:cursor-grabbing w-max"
+                                                        >
+                                                            <button onClick={() => setLocationFilter('All')}
+                                                                className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${locationFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>All</button>
+                                                            {CAMPUS_LOCATIONS.map(loc => (
+                                                                <button key={loc} onClick={() => setLocationFilter(loc)}
+                                                                    className={`shrink-0 px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
+                                                            ))}
+                                                        </motion.div>
+                                                    </div>
+                                                    {/* Desktop: wrapping grid */}
+                                                    <div className="hidden md:flex flex-wrap gap-2 px-1 pb-1">
+                                                        <button onClick={() => setLocationFilter('All')}
+                                                            className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all ${locationFilter === 'All' ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>All</button>
+                                                        {CAMPUS_LOCATIONS.map(loc => (
+                                                            <button key={loc} onClick={() => setLocationFilter(loc)}
+                                                                className={`px-4 py-2 rounded-xl text-[10px] font-bold border transition-all whitespace-nowrap ${locationFilter === loc ? 'bg-orange-500 border-orange-400 text-white' : 'bg-white/5 border-white/5 text-white/40'}`}>{loc}</button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {/* Date Range */}
+                                            <div>
+                                                <label className="text-[10px] uppercase tracking-[0.3em] text-white/40 font-black mb-2 block">Date Range</label>
+                                                <CustomDateRangePicker
+                                                    dateFrom={dateFrom} setDateFrom={setDateFrom}
+                                                    dateTo={dateTo} setDateTo={setDateTo}
+                                                />
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+
+                            {/* ─── ACTIVE FILTER CHIPS ─── */}
+                            <AnimatePresence>
+                                {hasActiveFilters && !showFilters && (
+                                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
+                                        className="flex flex-wrap gap-2">
+                                        {categoryFilter !== 'All' && (
+                                            <button onClick={() => setCategoryFilter('All')}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
+                                                {categoryFilter} <X size={10} className="opacity-60" />
+                                            </button>
+                                        )}
+                                        {statusFilter !== 'All' && (
+                                            <button onClick={() => setStatusFilter('All')}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
+                                                {statusFilter === 'Active' ? 'Unresolved' : 'Resolved'} <X size={10} className="opacity-60" />
+                                            </button>
+                                        )}
+                                        {itemTypeFilter !== 'All' && (
+                                            <button onClick={() => setItemTypeFilter('All')}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
+                                                {ITEM_CATEGORIES.find(c => c.value === itemTypeFilter)?.emoji} {itemTypeFilter} <X size={10} className="opacity-60" />
+                                            </button>
+                                        )}
+                                        {locationFilter !== 'All' && (
+                                            <button onClick={() => setLocationFilter('All')}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
+                                                <MapPin size={10} /> {locationFilter} <X size={10} className="opacity-60" />
+                                            </button>
+                                        )}
+                                        {(dateFrom || dateTo) && (
+                                            <button onClick={() => { setDateFrom(''); setDateTo(''); }}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/15 border border-orange-500/30 rounded-xl text-[10px] font-bold text-orange-300 hover:bg-orange-500/25 transition-all">
+                                                <Calendar size={10} /> {dateFrom || '...'} — {dateTo || '...'} <X size={10} className="opacity-60" />
+                                            </button>
+                                        )}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+
+                        {/* ─── SELECT ALL / COUNT ─── */}
+                        {filteredItems.length > 0 && (
+                            <div className="shrink-0 flex items-center gap-3 pb-3">
+                                <button onClick={toggleSelectAll}
+                                    className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${selectedItems.size === filteredItems.length && filteredItems.length > 0 ? 'bg-orange-500 border-orange-400' : 'bg-white/5 border-white/20 hover:border-orange-500/60'}`}>
+                                    {selectedItems.size === filteredItems.length && filteredItems.length > 0 && <CheckCircle size={14} className="text-white" />}
+                                </button>
+                                <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                                    {selectedItems.size > 0 ? `${selectedItems.size} selected` : 'Select all'}
+                                </span>
+                            </div>
+                        )}
+
+                        <div className="flex-1 admin-scroll overflow-y-auto min-h-0 p-6 rounded-[1.5rem] bg-white/[0.01] border border-white/5 shadow-[inset_0_0_24px_rgba(0,0,0,0.8)]">
+                            {/* ─── ITEMS GRID ─── */}
+                            <div className="relative min-h-[400px]">
+                                <AnimatePresence mode="wait">
+                                    {loading ? (
+                                        <motion.div
+                                            key="loader"
+                                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                                        >
+                                            {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
+                                                <div key={i} className="bg-white/[0.02] border border-white/5 rounded-[1.5rem] overflow-hidden flex flex-col animate-shimmer">
+                                                    <div className="h-28 w-full bg-white/[0.04]" />
+                                                    <div className="p-4 space-y-3 flex-1">
+                                                        <div className="flex gap-1.5">
+                                                            <div className="h-4 w-14 bg-yellow-500/10 rounded-md" />
+                                                            <div className="h-4 w-12 bg-orange-500/10 rounded-md" />
+                                                        </div>
+                                                        <div className="h-4 w-3/4 bg-white/10 rounded" />
+                                                        <div className="h-2 w-1/2 bg-white/5 rounded" />
+                                                        <div className="flex items-center gap-1.5">
+                                                            <div className="w-3 h-3 bg-orange-500/10 rounded-full" />
+                                                            <div className="h-2 w-20 bg-white/5 rounded" />
+                                                        </div>
+                                                        <div className="flex items-center gap-2 p-2 bg-white/[0.03] rounded-lg border border-white/5 mt-auto">
+                                                            <div className="w-7 h-7 rounded-full bg-orange-500/10 shrink-0" />
+                                                            <div className="space-y-1.5 flex-1">
+                                                                <div className="h-2.5 w-20 bg-white/10 rounded" />
+                                                                <div className="h-2 w-14 bg-white/5 rounded" />
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex gap-2 pt-2 border-t border-white/5">
+                                                            <div className="flex-1 h-8 bg-white/[0.03] border border-white/5 rounded-lg" />
+                                                            <div className="flex-1 h-8 bg-white/[0.03] border border-white/5 rounded-lg" />
+                                                            <div className="w-8 h-8 bg-white/[0.03] border border-white/5 rounded-lg" />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </motion.div>
+                                    ) : filteredItems.length > 0 ? (
+                                        <motion.div
+                                            key="grid"
+                                            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                                        >
+                                            <AnimatePresence>
+                                                {filteredItems.map(item => (
+                                                    <AdminItemCard
+                                                        key={item.id}
+                                                        item={item}
+                                                        selected={selectedItems.has(item.id)}
+                                                        onToggleSelect={toggleSelect}
+                                                        onApprove={(id) => handleModerate(id, 'approve')}
+                                                        onReject={(id) => handleModerate(id, 'reject')}
+                                                        onDelete={(id) => setDeleteTarget(id)}
+                                                        onPreview={setPreviewItem}
+                                                        processing={processing}
+                                                    />
+                                                ))}
+                                            </AnimatePresence>
+                                        </motion.div>
+                                    ) : (
+                                        <motion.div
+                                            key="empty"
+                                            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                            className="flex flex-col items-center justify-center py-20 text-white/20"
+                                        >
+                                            <Package size={48} strokeWidth={1} className="mb-4" />
+                                            <p className="text-[10px] font-black uppercase tracking-[0.2em]">
+                                                {searchQuery ? 'No items match your search' : `No ${activeTab === 'all' ? '' : activeTab} items`}
+                                            </p>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        </div>
                     </div>
-                    </div>
-                </div>
                 </main>
             </div>
 
