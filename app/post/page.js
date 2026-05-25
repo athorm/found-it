@@ -350,7 +350,7 @@ function PostItemContent() {
         <button onClick={() => router.back()} className="text-orange-400 p-2 bg-white/5 rounded-full">
           <ArrowLeft size={20} />
         </button>
-        <h1 className="text-2xl font-bold tracking-tight">Post Report</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Post Item</h1>
       </header>
 
       {/* Admin review info banner */}
