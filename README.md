@@ -2,7 +2,7 @@
 
 A lost & found board for the LSPU campus community. Students can post lost or found items, browse active listings, and connect with the original poster to recover their belongings — no more scattered Facebook group posts or missed announcements.
 
-<img width="1288" height="715" alt="image" src="https://github.com/user-attachments/assets/8f0e84fb-bdc6-4b97-a111-5791c8e3d040" />
+<img width="1079" height="605" alt="image" src="https://github.com/user-attachments/assets/b677965f-6d1f-4850-9f85-9eba74cbbb56" />
 
 ## Features
 
